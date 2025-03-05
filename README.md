@@ -2,7 +2,7 @@
 This is a spatial polio transmission model built on the LASER framework.
 
 ## Installation 
-The recommended approach is to use uv to setup your vevn and install the package. 
+The recommended approach is to use uv to setup your venv and install the package. 
 
 Install uv & setup your venv:
 ```

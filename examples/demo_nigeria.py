@@ -21,7 +21,7 @@ The model uses the same data and setup as the EMOD model, except in the followin
 regions = ['NIGERIA']
 start_year = 2019
 n_days = 90
-pop_scale = 1 / 100_000
+pop_scale = 1 / 1000
 init_region = 'PLATEAU'
 init_prev = 0.01
 results_path = 'results/demo_nigeria'
@@ -73,7 +73,7 @@ df_comp = df_comp[df_comp['year'] == start_year]
 # Population data
 pop_u5 = df_comp.set_index('dot_name').loc[dot_names, 'pop_u5'].values  # Extract the pop data in the same order as the dot_names
 pop = pop_u5 / prop_u5  # Estimate the total population size since the data is only for under 5s
-pop = pop_u5 * 1000 * pop_scale  # Scale population (data is in thousands)
+pop = pop * pop_scale  # Scale population
 cbr = df_comp.set_index('dot_name').loc[dot_names, 'cbr'].values  # CBR data
 ri = df_comp.set_index('dot_name').loc[dot_names, 'ri_eff'].values  # RI data
 sia = df_comp.set_index('dot_name').loc[dot_names, 'sia_prob'].values  # SIA data

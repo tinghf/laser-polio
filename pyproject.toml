@@ -1,19 +1,21 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "laser-polio"
+name = "laser_polio"
 version = "0.0.0"
 authors = [
   { name="Jonathan Bloedow", email="jonathan.bloedow@gatesfoundation.org" },
   { name="Christopher Lorton", email="christopher.lorton@gatesfoundation.org" },
+  { name="Steve Kroiss", email="steve.kroiss@gatesfoundation.org" },
 ]
 maintainers = [
   { name="Jonathan Bloedow", email="jonathan.bloedow@gatesfoundation.org" },
   { name="Christopher Lorton", email="christopher.lorton@gatesfoundation.org" },
+  { name="Steve Kroiss", email="steve.kroiss@gatesfoundation.org" },
 ]
-description = "PHASER - Polio Huge Agent based Simulation for ERadication"
+description = "A spatial polio model built using LASER"
 readme = "README.rst"
 license = {file = "LICENSE"}
 requires-python = ">=3.9"
@@ -33,17 +35,26 @@ classifiers = [
 ]
 
 dependencies = [
+    "alive_progress",
     "click",
-    "laser-core~=0.2",
-    "numpy>=1.26.4,<2.0.0",
-    "numba>=0.59.1",
-    "tqdm",
-    "matplotlib",
     "geopandas",
-    "requests",
-    "pypdf",
+    "geopy",
     "h5py",
-    "pandas"
+    "laser-core~=0.2",
+    "matplotlib",
+    "numba>=0.59.1",
+    "numpy>=1.26.4,<2.0.0",
+    "pandas",
+    "pypdf",
+    "pytest",
+    "openpyxl",
+    "rastertools @ git+https://github.com/InstituteforDiseaseModeling/RasterTools.git",
+    "requests",
+    "scipy",
+    "shapely",
+    "tables",
+    "tqdm",
+    "unidecode",
 ]
 
 [tool.setuptools.package-data]

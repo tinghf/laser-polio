@@ -1,74 +1,27 @@
-*.py[cod]
-__pycache__
+# Ignore egg-info directory
+*.egg-info/
 
-# Temp files
-.*.sw[po]
-*~
-*.bak
-.DS_Store
+# uv
+uv.lock
 
-# C extensions
-*.so
+# File types
+*.cpg
+*.dbf
+*.geojson
+*.nbc
+*.nbi
+*.png
+*.prg
+*.prj
+*.pyc
+*.rds
+*.shp
+*.shx
+*.tif
 
-# Build and package files
-*.egg
-*.egg-info
-.bootstrap
-.build
-.cache
-.eggs
-.env
-.installed.cfg
-.ve
-bin
-build
-develop-eggs
-dist
-eggs
-lib
-lib64
-parts
-pip-wheel-metadata/
-pyvenv*/
-sdist
-var
-venv*/
-wheelhouse
-
-# Installer logs
-pip-log.txt
-
-# Unit test / coverage reports
-.benchmarks
-.coverage
-.coverage.*
-.pytest
-.pytest_cache/
-.tox
-coverage.xml
-htmlcov
-nosetests.xml
-
-# Translations
-*.mo
-
-# Buildout
-.mr.developer.cfg
-
-# IDE project files
-*.iml
-*.komodoproject
-.idea
-.project
-.pydevproject
-.vscode
-
-# Complexity
-output/*.html
-output/*/index.html
-
-# Sphinx
-docs/_build
-
-# Mypy Cache
-.mypy_cache/
+# Large files
+*distance_matrix_africa.csv
+*dpt_district_summaries.csv
+*geojson.zip
+*sia_district_rows.csv
+*WPP2024_POP_F02_1_POPULATION_5-YEAR_AGE_GROUPS_BOTH_SEXES.xlsx

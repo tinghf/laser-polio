@@ -208,10 +208,16 @@ class DiseaseState_ABM:
         sim.results.add_array_property("paralyzed", shape=(pars.timesteps, len(self.nodes)), dtype=np.float32)
 
         # Initialize immunity
-        if len(pars.init_immun) == 1: 
+        if isinstance(pars.init_immun, float):
             # Initialize across total population
             num_recovered = int(sum(pars.n_ppl) * pars.init_immun)
             recovered_indices = np.random.choice(sum(pars.n_ppl), size=num_recovered, replace=False)
+            sim.people.disease_state[recovered_indices] = 3
+        elif isinstance(pars.init_immun, list) and len(pars.init_immun) == 1:
+            # Initialize across total population
+            num_recovered = int(sum(pars.n_ppl) * pars.init_immun[0])
+            recovered_indices = np.random.choice(sum(pars.n_ppl), size=num_recovered, replace=False)
+            sim.people.disease_state[recovered_indices] = 3
         else:
             # Initialize by node
             # Extract age bins dynamically from column names
@@ -231,15 +237,18 @@ class DiseaseState_ABM:
                     n_recovered = np.minimum(np.random.poisson(exp_n_recovered), sum(eligible))
                     eligible_indices = np.where(alive_in_node)[0][eligible]
                     recovered_indices = np.random.choice(eligible_indices, size=n_recovered, replace=False)
-                    sim.people.disease_state[recovered_indices] = 3  # Set as recovered
+                    # Set as recovered
+                    sim.people.disease_state[recovered_indices] = 3
             # Assume everyone older than 15 years of age is immune
             o15 = (sim.people.date_of_birth * -1) >= age_max
             sim.people.disease_state[o15] = 3  # Set as recovered
             
         # Seed infections - (potentially overwrites immunity, e.g., if an individual is drawn as both immune (during immunity initialization above) and infected (below), they will be infected)
-        if len(pars.init_prev) == 1:
-            # Seed infections across total population
+        if isinstance(pars.init_prev, float):
             num_infected = int(sum(pars.n_ppl) * pars.init_prev)
+            infected_indices = np.random.choice(sum(pars.n_ppl), size=num_infected, replace=False)
+        elif isinstance(pars.init_prev, list) and len(pars.init_prev) == 1:
+            num_infected = int(sum(pars.n_ppl) * pars.init_prev[0])
             infected_indices = np.random.choice(sum(pars.n_ppl), size=num_infected, replace=False)
         else:
             # Seed infections by node
@@ -254,6 +263,13 @@ class DiseaseState_ABM:
         sim.people.infection_timer[infected_indices] = self.pars.dur_inf(num_infected)
 
     def step(self):
+
+        # Add these if they don't exist from the Transmission_ABM component (e.g., if running DiseaseState_ABM alone for testing)
+        if not hasattr(self.people, "acq_risk_multiplier"): 
+            self.people.add_scalar_property("acq_risk_multiplier", dtype=np.float32, default=1.0)
+        if not hasattr(self.people, "daily_infectivity"):
+            self.people.add_scalar_property("daily_infectivity", dtype=np.float32, default=1.0)
+
         # Do nothing. Susceptibility is lost in the Transmission component.
         step_nb(
             self.people.disease_state,

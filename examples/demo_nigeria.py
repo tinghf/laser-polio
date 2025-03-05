@@ -1,5 +1,4 @@
 from laser_core.propertyset import PropertySet
-# from laser_polio.utils import *
 import laser_polio as lp
 import pandas as pd
 import numpy as np

@@ -4,7 +4,6 @@
     - Transmission_abm
     - RI_abm
     - SIA_abm
-- Port code over to IDM repo: https://github.com/InstituteforDiseaseModeling/laser-polio
 - Set a random number seed
 - Use KM's gravity model scaling approach
 - Check the RI & SIA figures - they're plotting strange results

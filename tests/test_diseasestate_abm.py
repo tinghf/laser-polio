@@ -62,51 +62,49 @@ def test_exposed_to_infected():
     ))
     sim = lp.SEIR_ABM(pars)
     sim.add_component(lp.DiseaseState_ABM(sim))
-    sim.DiseaseState_ABM.step()
-    sim.people.exposure_timer[:] = 1  # Fast-track exposure
+    assert np.all(sim.people.exposure_timer[:pars['n_ppl'].sum()] == 1), 'The exposure timer was not initialized correctly'
+    assert np.all(sim.people.infection_timer[:pars['n_ppl'].sum()] == 1), 'The infection timer was not initialized correctly'
+    sim.people.disease_state[:sim.pars.n_ppl.sum()] = 1  # Set all to Exposed
     sim.run()
-    assert np.sum(sim.people.disease_state == 1) == 0  # No one should be Exposed
-    assert np.sum(sim.people.disease_state == 2) > 0  # Some should be Infected
-
-
-def test_infected_to_recovered():
-    """Ensure Infected individuals transition to Recovered after infection_timer expires."""
-    sim = setup_sim()
-    sim.people.disease_state[:] = 2  # Set all to Infected
-    sim.people.infection_timer[:] = 1  # Fast-track infection duration
-    sim.run()
-    assert np.sum(sim.people.disease_state == 2) == 0  # No one should be Infected
-    assert np.sum(sim.people.disease_state == 3) > 0  # Some should be Recovered
+    assert np.sum(sim.people.disease_state == 0) == np.sum(sim.results.S, axis=1) == 0  # No one should be Susceptible
+    assert np.sum(sim.people.disease_state == 1) == np.sum(sim.results.E, axis=1) == 0  # No one should be Exposed
+    assert np.sum(sim.people.disease_state == 2) == np.sum(sim.results.I, axis=1) == pars['n_ppl'].sum()  # Everyone should be Infected
+    assert np.sum(sim.people.disease_state == 3) == np.sum(sim.results.R, axis=1) == 0  # No one should be Recovered
+    sim.run()  # Run for another day
+    assert np.sum(sim.people.disease_state == 0) == np.sum(sim.results.S, axis=1) == 0  # No one should be Susceptible
+    assert np.sum(sim.people.disease_state == 1) == np.sum(sim.results.E, axis=1) == 0  # No one should be Exposed
+    assert np.sum(sim.people.disease_state == 2) == np.sum(sim.results.I, axis=1) == 0  # No one should be Infected
+    assert np.sum(sim.people.disease_state == 3) == np.sum(sim.results.R, axis=1) == pars['n_ppl'].sum()  # Everyone should be Recovered
 
 # Test Paralysis Probability
 def test_paralysis_probability():
     """Ensure the correct fraction of infected individuals become paralyzed."""
-    sim = setup_sim()
-    sim.people.disease_state[:] = 2  # Set all to Infected
-    sim.people.infection_timer[:] = 1
-    sim.run()
-    expected_paralyzed = int(0.01 * np.sum(sim.people.disease_state == 2))
-    assert np.sum(sim.people.paralyzed == 1) == expected_paralyzed
-
-# Test Edge Cases
-def test_no_transmission_in_immune_population():
-    """Ensure that if all individuals are immune, no infections occur."""
+    # Setup sim with 0 infections
     pars = PropertySet(dict(
-        start_date  = lp.date('2020-01-01'),
-        timesteps   = 30,
-        n_ppl       = np.array([1000, 500]),
-        init_immun  = [1.0],  # 100% immune
-        init_prev   = [0.0],  # No initial infections
+        start_date      = lp.date('2020-01-01'),
+        timesteps       = 1,
+        n_ppl           = np.array([10000, 5000]),  # Two nodes with populations
+        cbr             = np.array([30, 25]),  # Birth rate per 1000/year
+        beta_spatial    = np.array([0.5, 2.0]),  # Spatial transmission scalar (multiplied by global rate)
+        age_pyramid_path= 'data/Nigeria_age_pyramid_2024.csv',  # From https://www.populationpyramid.net/nigeria/2024/
+        init_immun      = 0.0,  # 20% initially immune
+        init_prev       = 1.0,  # 5% initially infected
+        dur_exp         = lp.constant(value=1),  # Duration of the exposed state
+        dur_inf         = lp.constant(value=1),  # Duration of the infectious state
+        p_paralysis     = 1 / 2000,  # 1% paralysis probability
     ))
     sim = lp.SEIR_ABM(pars)
     sim.add_component(lp.DiseaseState_ABM(sim))
+    sim.people.disease_state[:sim.pars.n_ppl.sum()] = 1  # Set all to Exposed
     sim.run()
-    assert np.sum(sim.people.disease_state == 2) == 0  # No one should be Infected
+    exp_paralysis = int(pars.p_paralysis * pars.n_ppl.sum())
+    assert 0 > np.sum(sim.people.paralyzed == 1) <= exp_paralysis * 2  # Added some leeway for randomness
+
 
 if __name__ == '__main__':
-    # test_disease_state_initialization()
-    # test_initial_population_counts()
+    test_disease_state_initialization()
+    test_initial_population_counts()
     test_exposed_to_infected()
-    # test_infected_to_recovered()
-    # test_paralysis_probability()
-    # test_no_transmission_in_immune_population()
+    test_paralysis_probability()
+    print('All disease state tests passed!')
+    

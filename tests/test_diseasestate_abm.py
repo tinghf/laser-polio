@@ -45,7 +45,7 @@ def test_initial_population_counts():
     assert (exp_rec - exp_inf) <= np.sum(sim.people.disease_state == 3) <= exp_rec, 'Recovered counts are incorrect'
 
 # Test Disease Progression
-def test_exposed_to_infected():
+def test_progression_manual_seeding():
     # Setup sim with 0 infections
     pars = PropertySet(dict(
         start_date      = lp.date('2020-01-01'),
@@ -76,6 +76,67 @@ def test_exposed_to_infected():
     assert np.sum(sim.people.disease_state == 2) == np.sum(sim.results.I, axis=1) == 0  # No one should be Infected
     assert np.sum(sim.people.disease_state == 3) == np.sum(sim.results.R, axis=1) == pars['n_ppl'].sum()  # Everyone should be Recovered
 
+
+# Test Disease Progression
+def test_progression_with_transmission():
+    # Setup sim with 0 infections
+    pars = PropertySet(dict(
+        start_date      = lp.date('2020-01-01'),
+        timesteps       = 2,
+        n_ppl           = np.array([1000, 500]),  # Two nodes with populations
+        cbr             = np.array([30, 25]),  # Birth rate per 1000/year
+        beta_spatial    = np.array([0.5, 2.0]),  # Spatial transmission scalar (multiplied by global rate)
+        age_pyramid_path= 'data/Nigeria_age_pyramid_2024.csv',  # From https://www.populationpyramid.net/nigeria/2024/
+        init_immun      = 0.5,  # 20% initially immune
+        init_prev       = 0.1,  # 5% initially infected
+        dur_exp         = lp.constant(value=1),  # Duration of the exposed state
+        dur_inf         = lp.constant(value=1),  # Duration of the infectious state
+        p_paralysis     = 1 / 2000,  # 1% paralysis probability
+        r0              = 999,  # Basic reproduction number
+        risk_mult_var   = 4.0,  # Lognormal variance for the individual-level risk multiplier (risk of acquisition multiplier; mean = 1.0)
+        corr_risk_inf   = 0.8,  # Correlation between individual risk multiplier and individual infectivity (daily infectivity, mean = 14/24)
+        seasonal_factor = 0.125,  # Seasonal variation in transmission
+        seasonal_phase  = 180,  # Phase of seasonal variation
+        distances       = np.array([[0,1],[1,0]]), # Distance in km between nodes
+        gravity_k       = 0.5,  # Gravity scaling constant
+        gravity_a       = 1,  # Origin population exponent
+        gravity_b       = 1,  # Destination population exponent
+        gravity_c       = 2.0,  # Distance exponent
+        max_migr_frac   = 0.01, # Fraction of population that migrates
+    ))
+    sim = lp.SEIR_ABM(pars)
+    sim.add_component(lp.DiseaseState_ABM(sim))
+    sim.add_component(lp.Transmission_ABM(sim))
+
+    # Ensure that there's a mix of disease states
+    n_sus_t0 = np.sum(sim.people.disease_state == 0)
+    n_exp_t0 = np.sum(sim.people.disease_state == 1)
+    n_inf_t0 = np.sum(sim.people.disease_state == 2)
+    n_rec_t0 = np.sum(sim.people.disease_state == 3)
+    assert n_sus_t0 > 0
+    assert n_exp_t0 == 0
+    assert n_inf_t0 > 0
+    assert n_rec_t0 > 0
+
+    # Run the simulation for one timestep
+    sim.run()
+    n_sus_t1 = np.sum(sim.people.disease_state == 0)
+    n_exp_t1 = np.sum(sim.people.disease_state == 1)
+    n_inf_t1 = np.sum(sim.people.disease_state == 2)
+    n_rec_t1 = np.sum(sim.people.disease_state == 3)
+
+    s = sim.results.S
+    e = sim.results.E
+    i = sim.results.I
+    r = sim.results.R
+    assert n_sus_t1 == n_sus_t0
+    assert n_exp_t1 > 0
+    assert n_inf_t1 == 0
+    assert n_rec_t1 == n_rec_t0 + n_inf_t0
+
+    # sim.run()  # Run for another day
+
+
 # Test Paralysis Probability
 def test_paralysis_probability():
     """Ensure the correct fraction of infected individuals become paralyzed."""
@@ -102,9 +163,9 @@ def test_paralysis_probability():
 
 
 if __name__ == '__main__':
-    test_disease_state_initialization()
-    test_initial_population_counts()
-    test_exposed_to_infected()
-    test_paralysis_probability()
+    # test_disease_state_initialization()
+    # test_initial_population_counts()
+    # test_progression_manual_seeding()
+    test_progression_with_transmission()
+    # test_paralysis_probability()
     print('All disease state tests passed!')
-    

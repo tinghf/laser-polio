@@ -14,6 +14,7 @@ from tqdm import tqdm
 import laser_polio as lp
 from laser_core.demographics.pyramid import load_pyramid_csv, AliasedDistribution
 from laser_core.demographics.kmestimator import KaplanMeierEstimator
+#from .faster_transmission import Transmission_ABM
 
 __all__ = ['SEIR_ABM', 'DiseaseState_ABM', 'Transmission_ABM', 'VitalDynamics_ABM', 'RI_ABM', 'SIA_ABM']
 
@@ -318,9 +319,11 @@ class DiseaseState_ABM:
             infected_indices = []
             #for node, prev in enumerate(pars.init_prev):
             # This is a bottleneck when running at scale
+            node_ids = self.people.node_id[:self.people.count]
+            disease_states = self.people.disease_state[:self.people.count]
             for node, prev in tqdm(enumerate(pars.init_prev), total=len(pars.init_prev), desc="Seeding infections in nodes"):
                 num_infected = int(pars.n_ppl[node] * prev)
-                alive_in_node = (self.people.node_id == node) & (self.people.disease_state >= 0)
+                alive_in_node = ( node_ids == node) & (disease_states >= 0)
                 infected_indices_node = np.random.choice(np.where(alive_in_node)[0], size=num_infected, replace=False)
                 infected_indices.extend(infected_indices_node)
         num_infected = len(infected_indices)

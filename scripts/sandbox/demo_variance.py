@@ -1,9 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 # Given parameters
 R0 = 14.0  # Basic reproduction number
-c = 10     # Avg. contacts per day
-D = 5      # Avg. infectious period (days)
+c = 10  # Avg. contacts per day
+D = 5  # Avg. infectious period (days)
 ind_variance = 4.0  # Variance in individual risk
 corr = 0.8  # Correlation between acquisition and transmission risk
 
@@ -24,13 +25,10 @@ acq_risk, trans_risk = np.exp(log_risks[:, 0]), np.exp(log_risks[:, 1])
 beta_individuals = beta_0 * acq_risk * trans_risk
 
 # Plot acq_risk vs trans_risk
-import matplotlib.pyplot as plt
+
 plt.figure(figsize=(10, 6))
 plt.scatter(acq_risk, trans_risk, alpha=0.5)
 plt.show()
-
-
-
 
 
 # Check if population-level mean beta produces desired R0

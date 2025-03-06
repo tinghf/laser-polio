@@ -1,6 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
-import matplotlib.pyplot as plt
 
 # A demo of how to generate correlated samples from two distributions
 # Based on Kurt's description in the EMOD_NGA_Model_Overview_2025_02_12.pdf
@@ -14,7 +14,7 @@ mu_ln = np.log(mean_lognormal**2 / np.sqrt(variance_lognormal + mean_lognormal**
 sigma_ln = np.sqrt(np.log(variance_lognormal / mean_lognormal**2 + 1))
 
 # Step 2: Define parameters for Gamma
-mean_gamma = 14/24
+mean_gamma = 14 / 24
 shape_gamma = 1  # Arbitrary shape parameter
 scale_gamma = mean_gamma / shape_gamma  # scale = mean / shape
 

@@ -1,18 +1,12 @@
 """
-Test that disease model timers increment correctly and 
+Test that disease model timers increment correctly and
 don't go below zero.
 """
+
 from laser_core.propertyset import PropertySet
-import laser_polio as lp
-import numpy as np
 
 # Setup parameters
-params = PropertySet(dict(
-    population_size = 1000,
-    init_prev = 0.01,
-    infection_rate = 0.3,
-    timesteps = 100
-))
+params = PropertySet(dict(population_size=1000, init_prev=0.01, infection_rate=0.3, timesteps=100))  # noqa: C408
 
 # def test_timers():
 

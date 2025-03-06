@@ -166,8 +166,8 @@ def count_SEIRP(node_id, disease_state, paralyzed, n_nodes):
 
 
 @nb.njit(parallel=True)
-def step_nb(disease_state, exposure_timer, infection_timer, acq_risk_multiplier, daily_infectivity, paralyzed, p_paralysis):
-    for i in nb.prange(disease_state.size):
+def step_nb(disease_state, exposure_timer, infection_timer, acq_risk_multiplier, daily_infectivity, paralyzed, p_paralysis, active_count):
+    for i in nb.prange(active_count):
         if disease_state[i] == 1:  # Exposed -> Infected
             exposure_timer[i] -= 1
             if exposure_timer[i] <= 0:
@@ -342,7 +342,8 @@ class DiseaseState_ABM:
             self.people.acq_risk_multiplier,
             self.people.daily_infectivity,
             self.people.paralyzed,
-            self.pars.p_paralysis
+            self.pars.p_paralysis,
+            self.people.count
         )
 
     def log(self, t):
@@ -805,7 +806,7 @@ class VitalDynamics_ABM:
             plt.show()
 
 @nb.njit(parallel=True)
-def fast_vaccination(node_id, disease_state, date_of_birth, ri_timer, sim_t, vx_prob_ri, results_ri_vaccinated, results_ri_protected, rand_vals):
+def fast_vaccination(node_id, disease_state, date_of_birth, ri_timer, sim_t, vx_prob_ri, results_ri_vaccinated, results_ri_protected, rand_vals, count ):
     """
     Optimized vaccination step with thread-local storage and parallel execution.
     """
@@ -813,7 +814,7 @@ def fast_vaccination(node_id, disease_state, date_of_birth, ri_timer, sim_t, vx_
         return
 
 
-    num_people = len(node_id)
+    num_people = count
     num_nodes = results_ri_vaccinated.shape[1]  # Assuming shape (timesteps, nodes)
 
     # Thread-local storage for results
@@ -865,7 +866,8 @@ class RI_ABM:
             self.pars['vx_prob_ri'],
             self.results.ri_vaccinated,
             self.results.ri_protected,
-            rand_vals
+            rand_vals,
+            self.people.count
         )
 
     def log(self, t):
@@ -943,12 +945,16 @@ class SIA_ABM:
         min_age, max_age = event['age_range']
         nodes_to_vaccinate = event['nodes']
 
+        node_ids = self.people.node_id[:self.people.count]
+        disease_states = self.people.disease_state[:self.people.count]
+        dobs = self.people.date_of_birth[:self.people.count]
+
         for node in nodes_to_vaccinate:
             # Find eligible individuals: Alive, susceptible, in the age range
-            alive_in_node = (self.people.node_id == node) & (self.people.disease_state >= 0)
-            age = (self.sim.t - self.people.date_of_birth)
+            alive_in_node = (node_ids == node) & (disease_states >= 0)
+            age = (self.sim.t - dobs)
             in_age_range = (age >= min_age) & (age <= max_age)
-            susceptible = self.people.disease_state == 0
+            susceptible = disease_states == 0
             eligible = alive_in_node & in_age_range & susceptible
 
             # Apply vaccine coverage probability
@@ -957,7 +963,7 @@ class SIA_ABM:
             vaccinated_indices = np.where(eligible)[0][vaccinated]
 
             # Move vaccinated individuals to the Recovered (R) state
-            self.people.disease_state[vaccinated_indices] = 3
+            disease_states[vaccinated_indices] = 3
 
             # Track the number vaccinated
             #TODO: clarify that this is the number of people who enter Recovered state, not number vaccinated

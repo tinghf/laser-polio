@@ -14,7 +14,7 @@ from tqdm import tqdm
 import laser_polio as lp
 from laser_core.demographics.pyramid import load_pyramid_csv, AliasedDistribution
 from laser_core.demographics.kmestimator import KaplanMeierEstimator
-#from .faster_transmission import Transmission_ABM
+from .faster_transmission import Transmission_ABM
 
 __all__ = ['SEIR_ABM', 'DiseaseState_ABM', 'Transmission_ABM', 'VitalDynamics_ABM', 'RI_ABM', 'SIA_ABM']
 
@@ -43,7 +43,7 @@ class SEIR_ABM:
         self.people = LaserFrame(capacity=capacity, initial_count=int(np.sum(pars.n_ppl)))
         # We initialize disease_state here since it's required for most other components (which facilitates testing)
         self.people.add_scalar_property("disease_state", dtype=np.int32, default=-1)  # -1=Dead/inactive, 0=S, 1=E, 2=I, 3=R
-        self.people.disease_state[:np.sum(self.pars.n_ppl)] = 0  # Set initial population as susceptible
+        self.people.disease_state[:self.people.count] = 0  # Set initial population as susceptible
         self.results = LaserFrame(capacity=1)
 
         # Setup spatial component with node IDs
@@ -230,6 +230,10 @@ class DiseaseState_ABM:
                         # Assign recovered status based on immunity data
 
                 def viz():
+                    """
+                    Utility function to display histogram of population (active agents) by age. Can
+                    be used to view population structure before and after EULA-gizing.
+                    """
                     ages = sim.people.date_of_birth[:sim.people.count]*-1/365.
                     plt.figure(figsize=(10, 6))
                     plt.hist(ages, bins=np.arange(0, 101, 1), edgecolor='black', alpha=0.7)  # Bins in 5-year intervals
@@ -244,60 +248,105 @@ class DiseaseState_ABM:
                 #viz()
 
                 # Assume everyone older than 15 years of age is immune
+                # We EULA-gize the 15+ first.
                 o15 = (sim.people.date_of_birth * -1) >= 15*365
                 sim.people.disease_state[o15] = 3  # Set as recovered
                 active_count = sim.people.count  # This gives the active population size
                 valid_agents = self.people.disease_state[:active_count] >= 0  # Apply only to active agents
                 filter_mask = (self.people.disease_state[:active_count] < 3) & valid_agents  # Now matches active count
+                def get_node_counts_pre_squash( filter_mask ):
+                    # Count up R by node before we squash
+                    # Ensure everything is properly sliced up to active_count
+                    node_ids = sim.people.node_id[:active_count]  
+                    # Get a mask for elements outside the filter (i.e., those with disease_state >= 3 or inactive)
+                    outside_filter_mask = ~filter_mask  # Invert the mask
+                    # Get the node IDs corresponding to those outside the filter
+                    outside_nodes = node_ids[outside_filter_mask]  # Now should match in length
+                    # Use np.bincount to count occurrences efficiently
+                    max_node_id = sim.people.node_id.max()  # Get max node_id to define the bin range
+                    node_counts = np.bincount(outside_nodes, minlength=max_node_id + 1) 
+                    return node_counts
+
+                def prepop_eula( node_counts, life_expectancies ):
+                    # Get simulation parameters
+                    T = self.results.R.shape[0]  # Number of timesteps
+                    node_count = self.results.R.shape[1]  # Number of nodes
+
+                    # Compute mean date_of_birth per node
+                    node_dob_sums = np.bincount(self.people.node_id[:self.people.count], 
+                                                weights=self.people.date_of_birth[:self.people.count], 
+                                                minlength=node_count)
+
+                    mean_dob = np.where(node_counts > 0, node_dob_sums / node_counts, 0)  # Avoid div by zero
+
+                    # Calculate mean age per node
+                    mean_ages_years = -mean_dob/365  # Approximate mean age per node
+                    adjusted_life_expectancy = np.maximum(life_expectancies - mean_ages_years, 1)  # Avoid zero or negative values
+
+                    # Compute age-dependent mortality rate (days^-1)
+                    # Assume mortality rate λ = 1 / life_expectancy
+                    mortality_rates = 1 / (adjusted_life_expectancy * 365)
+
+                    # Generate mortality-adjusted population over time
+                    time_range = np.arange(T)[:, None] # Create time indices
+                    self.results.R[:, :] += (node_counts * np.exp(-mortality_rates * time_range)).astype(np.float32)
+
+                # Get our EULA populations
+                node_counts = get_node_counts_pre_squash( filter_mask )
+                # Add EULA pops and projected populations over time due to mortality to reported R counts for whole sim
+                prepop_eula( node_counts, pars.life_expectancies )
+                # Now squash
                 sim.people.squash(filter_mask)
-                new_active_count = sim.people.count
-                deletions = active_count - new_active_count
+                deletions = active_count - sim.people.count
+                # We don't have nice solution for resizing the population LaserFrame yet so we'll make a note of our actual new capacity
                 sim.people.true_capacity = sim.people.capacity - deletions
 
-                def faster():
-                    alive_mask = self.people.disease_state >= 0  # Mask for alive individuals
-                    node_ids = self.people.node_id
-                    dob = self.people.date_of_birth * -1
+                # This is our faster solution for doing initial immunity
+                alive_mask = self.people.disease_state >= 0  # Mask for alive individuals
+                node_ids = self.people.node_id
+                dob = self.people.date_of_birth * -1
 
-                    # Initialize expected recovered counts
-                    expected_recovered = np.zeros_like(self.people.disease_state, dtype=np.int32)
+                # Initialize expected recovered counts
+                expected_recovered = np.zeros_like(self.people.disease_state, dtype=np.int32)
 
-                    # Iterate over age bins, vectorizing across nodes
-                    for age_key, (age_min, age_max) in age_bins.items():
-                        immune_fractions = pars.init_immun[age_key].values  # Immunity fraction per node
+                # Iterate over age bins, vectorizing across nodes
+                for age_key, (age_min, age_max) in age_bins.items():
+                    immune_fractions = pars.init_immun[age_key].values  # Immunity fraction per node
 
-                        # Mask for eligible individuals
-                        eligible_mask = alive_mask & (dob >= age_min) & (dob < age_max)
+                    # Mask for eligible individuals
+                    eligible_mask = alive_mask & (dob >= age_min) & (dob < age_max)
 
-                        # Count eligible individuals per node
-                        per_node_eligible = np.bincount(node_ids[eligible_mask], minlength=len(self.nodes))
+                    # Count eligible individuals per node
+                    per_node_eligible = np.bincount(node_ids[eligible_mask], minlength=len(self.nodes))
 
-                        # Compute expected recovered count per node, ensuring proper scaling
-                        expected_recovered_per_node = np.random.poisson(immune_fractions * per_node_eligible)
+                    # Compute expected recovered count per node, ensuring proper scaling
+                    expected_recovered_per_node = np.random.poisson(immune_fractions * per_node_eligible)
 
-                        # Assign expected recoveries per node to individuals
-                        eligible_indices = np.where(eligible_mask)[0]
-                        if len(eligible_indices) > 0:
-                            # Ensure node index is within valid range
-                            valid_node_indices = np.clip(node_ids[eligible_indices], 0, len(immune_fractions) - 1)
+                    # Assign expected recoveries per node to individuals
+                    eligible_indices = np.where(eligible_mask)[0]
+                    if len(eligible_indices) > 0:
+                        # Ensure node index is within valid range
+                        valid_node_indices = np.clip(node_ids[eligible_indices], 0, len(immune_fractions) - 1)
 
-                            # Compute per-individual recovery probability
-                            recovery_prob = expected_recovered_per_node[valid_node_indices] / np.maximum(per_node_eligible[valid_node_indices], 1)
+                        # Compute per-individual recovery probability
+                        recovery_prob = expected_recovered_per_node[valid_node_indices] / np.maximum(per_node_eligible[valid_node_indices], 1)
 
-                            # Clip probability to [0, 1] to avoid errors
-                            recovery_prob = np.clip(recovery_prob, 0, 1)
+                        # Clip probability to [0, 1] to avoid errors
+                        recovery_prob = np.clip(recovery_prob, 0, 1)
 
-                            # Apply probabilistic recovery assignment
-                            expected_recovered[eligible_indices] = np.random.binomial(1, recovery_prob)
+                        # Apply probabilistic recovery assignment
+                        expected_recovered[eligible_indices] = np.random.binomial(1, recovery_prob)
 
-                    # Assign recovery state
-                    self.people.disease_state[expected_recovered.astype(bool)] = 3  # Set as recovered
+                # Assign recovery state
+                self.people.disease_state[expected_recovered.astype(bool)] = 3  # Set as recovered
 
-                faster()
-
+                # We're going to squash again to EULA-gize the initial R population in our under 15s
                 active_count = sim.people.count  # This gives the active population size
                 valid_agents = self.people.disease_state[:active_count] >= 0  # Apply only to active agents
                 filter_mask = (self.people.disease_state[:active_count] < 3) & valid_agents  # Now matches active count
+                node_counts = get_node_counts_pre_squash( filter_mask )
+                prepop_eula( node_counts, pars.life_expectancies )
+
                 sim.people.squash(filter_mask)
                 new_active_count = sim.people.count
                 deletions = active_count - new_active_count
@@ -362,7 +411,8 @@ class DiseaseState_ABM:
         self.results.S[t, :]         = S_counts
         self.results.E[t, :]         = E_counts
         self.results.I[t, :]         = I_counts
-        self.results.R[t, :]         = R_counts
+        # Note that we add to existing non-zero EULA values for R
+        self.results.R[t, :]         += R_counts
         self.results.paralyzed[t, :] = P_counts
 
     def plot(self, save=False, results_path=None):
@@ -481,7 +531,7 @@ class DiseaseState_ABM:
 
 #     return new_exposed_indices
 
-class Transmission_ABM:
+class Transmission_ABM_Slow:
     def __init__(self, sim):
         self.sim = sim
         self.people = sim.people

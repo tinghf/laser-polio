@@ -438,11 +438,6 @@ class DiseaseState_ABM:
 
         #sc.printcyan(f'DiseaseState_ABM t={self.sim.t}')
 
-        # Note that we add to existing non-zero EULA values for R
-        # MERGING: Move this to Transmission where counting is being done.
-        self.results.R[t, :]         += R_counts
-        self.results.paralyzed[t, :] = P_counts
-        
         #exp_inx = np.where(self.sim.people.disease_state == 1)[0]
         #exp_timer = self.sim.people.exposure_timer[exp_inx]
         #print( f"DEBUG: {exp_inx=}" )
@@ -694,10 +689,9 @@ class Transmission_ABM_Slow:
         self.results.S[t, :]         = S_counts
         self.results.E[t, :]         = E_counts
         self.results.I[t, :]         = I_counts
-        self.results.R[t, :]         = R_counts
+        # Note that we add to existing non-zero EULA values for R
+        self.results.R[t, :]         += R_counts
         self.results.paralyzed[t, :] = P_counts
-
-
 
         #sc.printcyan(f'Transmission_ABM t={self.sim.t}')
 

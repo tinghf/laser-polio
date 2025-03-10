@@ -92,6 +92,47 @@ def compute_infections_nb(
 
     return exposure_sums
 
+@nb.njit((nb.int32[:], nb.int32[:], nb.int32[:], nb.int32), nogil=True, cache=True)
+def count_SEIRP(node_id, disease_state, paralyzed, n_nodes):
+    """
+    Go through each person exactly once and increment counters for their node.
+    
+    node_id:        array of node IDs for each individual
+    disease_state:  array storing each person's disease state (-1=dead/inactive, 0=S, 1=E, 2=I, 3=R)
+    paralyzed:      array (0 or 1) if the person is paralyzed
+    n_nodes:        total number of nodes
+    
+    Returns: S, E, I, R, P arrays, each length n_nodes
+    """
+
+    alive = disease_state >= 0 # Only count those who are alive
+    S = np.zeros(n_nodes, dtype=np.int64)
+    E = np.zeros(n_nodes, dtype=np.int64)
+    I = np.zeros(n_nodes, dtype=np.int64)
+    R = np.zeros(n_nodes, dtype=np.int64)
+    P = np.zeros(n_nodes, dtype=np.int64)
+
+    # Single pass over the entire population
+    for i in nb.prange(len(alive)):
+        if alive[i]:  # Only count those who are alive
+            nd = node_id[i]
+            ds = disease_state[i]
+
+            if ds == 0:   # Susceptible
+                S[nd] += 1
+            elif ds == 1: # Exposed
+                E[nd] += 1
+            elif ds == 2: # Infected
+                I[nd] += 1
+            elif ds == 3: # Recovered
+                R[nd] += 1
+
+            # Check paralyzed
+            if paralyzed[i] == 1:
+                P[nd] += 1
+
+    return S, E, I, R, P
+
 
 class Transmission_ABM:
     def __init__(self, sim):
@@ -99,6 +140,7 @@ class Transmission_ABM:
         self.people = sim.people
         self.nodes = np.arange(len(sim.pars.n_ppl))
         self.pars = sim.pars
+        self.results = sim.results
 
         # Calcultate geographic R0 modifiers based on underweight data (one for each node)
         underwt = self.pars.beta_spatial  # Placeholder for now
@@ -153,6 +195,7 @@ class Transmission_ABM:
         # 1) Sum up the total amount of infectivity shed by all infectious agents within a node. 
         # This is the daily number of infections that these individuals would be expected to generate 
         # in a fully susceptible population sans spatial and seasonal factors.
+        #check_time = time.perf_counter()
         disease_state = self.people.disease_state[:self.people.count]
         node_ids = self.people.node_id[:self.people.count]
         infectivity = self.people.daily_infectivity[:self.people.count]
@@ -170,13 +213,8 @@ class Transmission_ABM:
                                   disease_state,
                                   len(self.nodes))
             return beta_ind_sums
-        beta_ind_sums = fast_beta()
+        node_beta_sums = fast_beta()
 
-        check_time = time.perf_counter()
-        is_infected = disease_state == 2
-        node_beta_sums = np.bincount(node_ids[is_infected], 
-                                    weights=infectivity[is_infected], 
-                                    minlength=len(self.nodes)).astype(np.float64)
         #new_check_time = time.perf_counter()
         #elapsed = new_check_time - check_time
         #self.beta_sum_time += elapsed
@@ -203,10 +241,6 @@ class Transmission_ABM:
 
         # 4) Calculate base probability for each agent to become exposed    
         # Surely the alive count is available from report (sum)?
-        #import pdb
-        #pdb.set_trace()
-        #is_alive = self.people.disease_state >= 0  
-        #alive_counts = np.bincount(node_ids[is_alive], minlength=len(self.nodes))  # Count number of alive agents in each node
         alive_counts = self.sim.results.S[self.sim.t] + self.sim.results.E[self.sim.t] + self.sim.results.I[self.sim.t] + self.sim.results.R[self.sim.t]
         per_agent_infection_rate = beta / np.clip(alive_counts, 1, None) 
         base_prob_infection = 1 - np.exp(-per_agent_infection_rate)
@@ -259,7 +293,21 @@ class Transmission_ABM:
         #     self.people.exposure_timer[new_exposed_indices] = self.pars.dur_exp(len(new_exposed_indices))
 
     def log(self, t):
-        pass
+       # Get the counts for each node in one pass
+        S_counts, E_counts, I_counts, R_counts, P_counts = count_SEIRP(
+            self.people.node_id,
+            self.people.disease_state,
+            self.people.paralyzed,
+            np.int32(len(self.nodes)),
+        )
+
+        # Store them in results
+        self.results.S[t, :]         = S_counts
+        self.results.E[t, :]         = E_counts
+        self.results.I[t, :]         = I_counts
+        # Note that we add to existing non-zero EULA values for R
+        self.results.R[t, :]         += R_counts
+        self.results.paralyzed[t, :] = P_counts
 
     def plot(self, save=False, results_path="" ):
         """

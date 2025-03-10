@@ -7,7 +7,7 @@ def setup_sim():
     """Initialize a test simulation with DiseaseState_ABM component."""
     pars = PropertySet(dict(
         start_date      = lp.date('2020-01-01'),
-        timesteps       = 30,
+        dur       = 30,
         n_ppl           = np.array([1000, 500]),  # Two nodes with populations
         cbr             = np.array([30, 25]),  # Birth rate per 1000/year
         beta_spatial    = np.array([0.5, 2.0]),  # Spatial transmission scalar (multiplied by global rate)
@@ -19,7 +19,7 @@ def setup_sim():
         p_paralysis     = 1 / 2000,  # 1% paralysis probability
     ))
     sim = lp.SEIR_ABM(pars)
-    sim.add_component(lp.DiseaseState_ABM(sim))
+    sim.components = [ lp.DiseaseState_ABM ]
     return sim
 
 # Test Initialization
@@ -49,7 +49,7 @@ def test_progression_manual_seeding():
     # Setup sim with 0 infections
     pars = PropertySet(dict(
         start_date      = lp.date('2020-01-01'),
-        timesteps       = 1,
+        dur       = 1,
         n_ppl           = np.array([1000, 500]),  # Two nodes with populations
         cbr             = np.array([30, 25]),  # Birth rate per 1000/year
         beta_spatial    = np.array([0.5, 2.0]),  # Spatial transmission scalar (multiplied by global rate)
@@ -61,7 +61,6 @@ def test_progression_manual_seeding():
         p_paralysis     = 1 / 2000,  # 1% paralysis probability
     ))
     sim = lp.SEIR_ABM(pars)
-    sim.add_component(lp.DiseaseState_ABM(sim))
     assert np.all(sim.people.exposure_timer[:pars['n_ppl'].sum()] == 1), 'The exposure timer was not initialized correctly'
     assert np.all(sim.people.infection_timer[:pars['n_ppl'].sum()] == 1), 'The infection timer was not initialized correctly'
     sim.people.disease_state[:sim.pars.n_ppl.sum()] = 1  # Set all to Exposed
@@ -82,7 +81,7 @@ def test_progression_with_transmission():
     # Setup sim with 0 infections
     pars = PropertySet(dict(
         start_date      = lp.date('2020-01-01'),
-        timesteps       = 2,
+        dur       = 1,
         n_ppl           = np.array([1000, 500]),  # Two nodes with populations
         cbr             = np.array([30, 25]),  # Birth rate per 1000/year
         beta_spatial    = np.array([0.5, 2.0]),  # Spatial transmission scalar (multiplied by global rate)
@@ -105,8 +104,7 @@ def test_progression_with_transmission():
         max_migr_frac   = 0.01, # Fraction of population that migrates
     ))
     sim = lp.SEIR_ABM(pars)
-    sim.add_component(lp.DiseaseState_ABM(sim))
-    sim.add_component(lp.Transmission_ABM(sim))
+    sim.components = [ lp.DiseaseState_ABM, lp.Transmission_ABM ]
 
     # Ensure that there's a mix of disease states
     n_sus_t0 = np.sum(sim.people.disease_state == 0)
@@ -117,6 +115,12 @@ def test_progression_with_transmission():
     assert n_exp_t0 == 0
     assert n_inf_t0 > 0
     assert n_rec_t0 > 0
+
+    inf_idx = np.where(sim.people.disease_state == 2)[0]
+    sim.people.infection_timer[inf_idx]
+
+    exp_inx = np.where(sim.people.disease_state == 1)[0]
+    sim.people.exposure_timer[exp_inx]
 
     # Run the simulation for one timestep
     sim.run()
@@ -143,7 +147,7 @@ def test_paralysis_probability():
     # Setup sim with 0 infections
     pars = PropertySet(dict(
         start_date      = lp.date('2020-01-01'),
-        timesteps       = 1,
+        dur       = 1,
         n_ppl           = np.array([10000, 5000]),  # Two nodes with populations
         cbr             = np.array([30, 25]),  # Birth rate per 1000/year
         beta_spatial    = np.array([0.5, 2.0]),  # Spatial transmission scalar (multiplied by global rate)
@@ -155,7 +159,7 @@ def test_paralysis_probability():
         p_paralysis     = 1 / 2000,  # 1% paralysis probability
     ))
     sim = lp.SEIR_ABM(pars)
-    sim.add_component(lp.DiseaseState_ABM(sim))
+    sim.components = [ lp.DiseaseState_ABM ]
     sim.people.disease_state[:sim.pars.n_ppl.sum()] = 1  # Set all to Exposed
     sim.run()
     exp_paralysis = int(pars.p_paralysis * pars.n_ppl.sum())

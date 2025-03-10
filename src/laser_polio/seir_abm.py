@@ -1,5 +1,6 @@
 import numpy as np
 import numba as nb
+#import sciris as sc
 import matplotlib.pyplot as plt
 from laser_core.laserframe import LaserFrame
 from laser_core.migration import gravity, row_normalizer
@@ -29,15 +30,18 @@ class SEIR_ABM:
     def __init__(self, pars):
         self.pars = pars       
         pars = self.pars
-        self.t = 0
-        self.dates = lp.daterange(self.pars['start_date'], days=self.pars.timesteps)
+
+        # Setup time
+        self.t = 0  # Current timestep
+        self.nt = pars.dur + 1  # Number of timesteps. We add 1 to include step 0 (initial conditions) and then run for pars.dur steps. Individual components can have their own step sizes
+        self.datevec = lp.daterange(self.pars['start_date'], days=self.nt)  # Time represented as an array of datetime objects
 
         # Initialize the population
         pars.n_ppl = np.atleast_1d(pars.n_ppl).astype(int)  # Ensure pars.n_ppl is an array
         if (pars.cbr is not None) & (len(pars.cbr) == 1):
-            capacity = int(1.1*calc_capacity(np.sum(pars.n_ppl), pars.timesteps, pars.cbr))
+            capacity = int(1.1*calc_capacity(np.sum(pars.n_ppl), self.nt, pars.cbr))
         elif (pars.cbr is not None) & (len(pars.cbr) > 1):
-            capacity = int(1.1*calc_capacity(np.sum(pars.n_ppl), pars.timesteps, np.mean(pars.cbr)))
+            capacity = int(1.1*calc_capacity(np.sum(pars.n_ppl), self.nt, np.mean(pars.cbr)))
         else:
             capacity = int(np.sum(pars.n_ppl))      
         self.people = LaserFrame(capacity=capacity, initial_count=int(np.sum(pars.n_ppl)))
@@ -51,20 +55,52 @@ class SEIR_ABM:
         self.people.add_scalar_property("node_id", dtype=np.int32, default=0)
         node_ids = np.concatenate([np.full(count, i) for i, count in enumerate(pars.n_ppl)])
         self.people.node_id[0:np.sum(pars.n_ppl)] = node_ids  # Assign node IDs to initial people
-        self.results.add_array_property("node_pop", shape=(pars.timesteps, len(self.nodes)), dtype=np.int32)
+        self.results.add_array_property("node_pop", shape=(self.nt, len(self.nodes)), dtype=np.int32)
 
         # Components
         self.components = []
 
-    def add_component(self, component):
-        self.components.append(component)
+    @property
+    def components(self) -> list:
+        """
+        Retrieve the list of model components.
+
+        Returns:
+
+            list: A list containing the components.
+        """
+
+        return self._components
+
+    @components.setter
+    def components(self, components: list) -> None:
+        """
+        Sets up the components of the model and initializes instances and phases.
+
+        This function takes a list of component types, creates an instance of each, and adds each callable component to the phase list.
+        It also registers any components with an `on_birth` function with the `Births` component.
+
+        Args:
+
+            components (list): A list of component classes to be initialized and integrated into the model.
+
+        Returns:
+
+            None
+        """
+
+        self._components = components
+        self.instances = []  # instantiated instances of components
+        for component in components:
+            instance = component(self)
+            self.instances.append(instance)
 
     def run(self):
-        self.component_times = { component: 0.0 for component in self.components }
+        self.component_times = { component: 0.0 for component in self.instances }
         self.component_times["report"] = 0
-        with alive_bar(self.pars.timesteps, title='Simulation progress:') as bar:
-            for tick in range(self.pars.timesteps):
-                for component in self.components:
+        with alive_bar(self.nt, title='Simulation progress:') as bar:
+            for tick in range(self.nt):
+                for component in self.instances:
                     start_time = time.perf_counter()
                     component.step()
                     end_time = time.perf_counter()
@@ -78,7 +114,7 @@ class SEIR_ABM:
                 bar()  # Update the progress bar
 
     def log_results(self, t):
-        for component in self.components:
+        for component in self.instances:
             component.log(t)
     
     def plot(self, save=False, results_path=None):
@@ -89,17 +125,17 @@ class SEIR_ABM:
             else:
                 results_path = Path(results_path)  # Ensure results_path is a Path object
                 results_path.mkdir(parents=True, exist_ok=True)
-        for component in self.components:
+        for component in self.instances:
             component.plot(save=save, results_path=results_path)
         self.plot_node_pop(save=save, results_path=results_path)
 
         if self.component_times:
-            labels = [component.__class__.__name__ for component in self.components]
+            labels = [component.__class__.__name__ for component in self.instances]
             labels.append( "report" )
-            print( f"{self.components=}" )
+            print( f"{self.instances=}" )
             print( f"{labels=}" )
             #times = [self.component_times[component] for component in labels ]
-            times = [self.component_times[component] for component in self.components ]
+            times = [self.component_times[component] for component in self.instances ]
             times.append( self.component_times["report"] )# hack
             plt.figure(figsize=(6, 6))
             plt.pie(times, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
@@ -169,22 +205,23 @@ def count_SEIRP(node_id, disease_state, paralyzed, n_nodes):
 @nb.njit(parallel=True)
 def step_nb(disease_state, exposure_timer, infection_timer, acq_risk_multiplier, daily_infectivity, paralyzed, p_paralysis, active_count):
     for i in nb.prange(active_count):
-        if disease_state[i] == 1:  # Exposed -> Infected
-            exposure_timer[i] -= 1
+        # Update states in reverse order so that newly exposed don't become infected on the same timestep
+        if disease_state[i] == 2:  # Infected
+            if infection_timer[i] <= 0:
+                disease_state[i] = 3  # Become recovered
+                acq_risk_multiplier[i] = 0.0  # Reset risk
+                daily_infectivity[i] = 0.0  # Reset infectivity
+            infection_timer[i] -= 1  # Decrement infection timer so that they recover on the next timestep
+
+        elif disease_state[i] == 1:  # Exposed
             if exposure_timer[i] <= 0:
                 disease_state[i] = 2  # Become infected
-                # infection_timer already preset for everyone
-
                 # Apply paralysis probability immediately after infection
                 if np.random.random() < p_paralysis:
                     paralyzed[i] = 1
+            exposure_timer[i] -= 1  # Decrement exposure timer so that they become infected on the next timestep
 
-        elif disease_state[i] == 2:  # Infected -> Recovered
-            infection_timer[i] -= 1
-            if infection_timer[i] <= 0:
-                disease_state[i] = 3  # Recovered
-                acq_risk_multiplier[i] = 0.0  # Reset risk
-                daily_infectivity[i] = 0.0  # Reset infectivity
+
 
 
 class DiseaseState_ABM:
@@ -202,14 +239,15 @@ class DiseaseState_ABM:
         sim.people.add_scalar_property("paralyzed", dtype=np.int32, default=0)
         sim.people.add_scalar_property("exposure_timer", dtype=np.int32, default=0)
         # should probably set for entire population, not just initial, but giving issues. TBD.
-        sim.people.exposure_timer[:np.sum(self.pars.n_ppl)] = self.pars.dur_exp(np.sum(self.pars.n_ppl)) # initialize all agents with an infection_timer
+        sim.people.exposure_timer[:np.sum(self.pars.n_ppl)] = self.pars.dur_exp(np.sum(self.pars.n_ppl)) - 1  # initialize all agents with an infection_timer. Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
         sim.people.add_scalar_property("infection_timer", dtype=np.int32, default=0)
         sim.people.infection_timer[:np.sum(self.pars.n_ppl)] = self.pars.dur_inf(np.sum(self.pars.n_ppl)) # initialize all agents with an infection_timer
-        sim.results.add_array_property("S", shape=(pars.timesteps, len(self.nodes)), dtype=np.float32)
-        sim.results.add_array_property("E", shape=(pars.timesteps, len(self.nodes)), dtype=np.float32)
-        sim.results.add_array_property("I", shape=(pars.timesteps, len(self.nodes)), dtype=np.float32)
-        sim.results.add_array_property("R", shape=(pars.timesteps, len(self.nodes)), dtype=np.float32)
-        sim.results.add_array_property("paralyzed", shape=(pars.timesteps, len(self.nodes)), dtype=np.float32)
+
+        sim.results.add_array_property("S", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
+        sim.results.add_array_property("E", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
+        sim.results.add_array_property("I", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
+        sim.results.add_array_property("R", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
+        sim.results.add_array_property("paralyzed", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
 
         def do_init_imm():
             print( f"Before immune initialization, we have {sim.people.count} active agents." )
@@ -398,22 +436,25 @@ class DiseaseState_ABM:
             self.people.count
         )
 
-    def log(self, t):
-        # Get the counts for each node in one pass
-        S_counts, E_counts, I_counts, R_counts, P_counts = count_SEIRP(
-            self.people.node_id,
-            self.people.disease_state,
-            self.people.paralyzed,
-            np.int32(len(self.nodes)),
-        )
+        #sc.printcyan(f'DiseaseState_ABM t={self.sim.t}')
 
-        # Store them in results
-        self.results.S[t, :]         = S_counts
-        self.results.E[t, :]         = E_counts
-        self.results.I[t, :]         = I_counts
         # Note that we add to existing non-zero EULA values for R
+        # MERGING: Move this to Transmission where counting is being done.
         self.results.R[t, :]         += R_counts
         self.results.paralyzed[t, :] = P_counts
+        
+        #exp_inx = np.where(self.sim.people.disease_state == 1)[0]
+        #exp_timer = self.sim.people.exposure_timer[exp_inx]
+        #print( f"DEBUG: {exp_inx=}" )
+        #print( f"DEBUG: {exp_timer=}" )
+
+        #inf_idx = np.where(self.sim.people.disease_state == 2)[0]
+        #inf_timer = self.sim.people.infection_timer[inf_idx]
+        #print( f"DEBUG: {inf_idx=}" )
+        #print( f"DEBUG: {inf_timer=}" )
+
+    def log(self, t):
+        pass
 
     def plot(self, save=False, results_path=None):
         self.plot_total_seir_counts(save=save, results_path=results_path)
@@ -453,7 +494,7 @@ class DiseaseState_ABM:
             plt.show()
 
     def plot_infected_map(self, save=False, results_path=None, n_panels=6):
-        timepoints = np.linspace(0, self.pars.timesteps - 1, n_panels, dtype=int)
+        timepoints = np.linspace(0, self.pars.dur, n_panels, dtype=int)
         
         rows, cols = 2, int(np.ceil(n_panels / 2))
         fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 6), sharex=True, sharey=True)
@@ -537,6 +578,9 @@ class Transmission_ABM_Slow:
         self.people = sim.people
         self.nodes = np.arange(len(sim.pars.n_ppl))
         self.pars = sim.pars
+
+        # Track disease states here because transmission will be the last component to run
+        self.results = sim.results
 
         # Calcultate geographic R0 modifiers based on underweight data (one for each node)
         underwt = self.pars.beta_spatial  # Placeholder for now
@@ -638,7 +682,34 @@ class Transmission_ABM_Slow:
         #     self.people.exposure_timer[new_exposed_indices] = self.pars.dur_exp(len(new_exposed_indices))
 
     def log(self, t):
-        pass
+        # Get the counts for each node in one pass
+        S_counts, E_counts, I_counts, R_counts, P_counts = count_SEIRP(
+            self.people.node_id,
+            self.people.disease_state,
+            self.people.paralyzed,
+            np.int32(len(self.nodes)),
+        )
+
+        # Store them in results
+        self.results.S[t, :]         = S_counts
+        self.results.E[t, :]         = E_counts
+        self.results.I[t, :]         = I_counts
+        self.results.R[t, :]         = R_counts
+        self.results.paralyzed[t, :] = P_counts
+
+
+
+        #sc.printcyan(f'Transmission_ABM t={self.sim.t}')
+
+        #exp_inx = np.where(self.sim.people.disease_state == 1)[0]
+        #exp_timer = self.sim.people.exposure_timer[exp_inx]
+        #print( f"DEBUG: {exp_inx=}" )
+        #print( f"DEBUG: {exp_timer=}" )
+
+        #inf_idx = np.where(self.sim.people.disease_state == 2)[0]
+        #inf_timer = self.sim.people.infection_timer[inf_idx]
+        #print( f"DEBUG: {inf_idx=}" )
+        #print( f"DEBUG: {inf_timer=}" )
 
     def plot(self, save=False, results_path=None):
         pass
@@ -722,8 +793,8 @@ class VitalDynamics_ABM:
             sim.people.date_of_birth[:len(sim.people)] = -ages
 
         if pars.cbr is not None:
-            sim.results.add_array_property("births", shape=(pars.timesteps, len(sim.nodes)), dtype=np.int32)
-            sim.results.add_array_property("deaths", shape=(pars.timesteps, len(sim.nodes)), dtype=np.int32)
+            sim.results.add_array_property("births", shape=(sim.nt, len(sim.nodes)), dtype=np.int32)
+            sim.results.add_array_property("deaths", shape=(sim.nt, len(sim.nodes)), dtype=np.int32)
             sim.people.add_scalar_property("date_of_death", dtype=np.int32, default=0)
 
             cumulative_deaths = lp.create_cumulative_deaths(np.sum(pars.n_ppl), max_age_years=100)
@@ -903,8 +974,8 @@ class RI_ABM:
         self.nodes = sim.nodes
         self.pars = sim.pars       
         self.people.add_scalar_property("ri_timer", dtype=np.int32, default=-1)
-        sim.results.add_array_property("ri_vaccinated", shape=(sim.pars.timesteps, len(sim.nodes)), dtype=np.int32)  # Track number of people vaccinated by RI
-        sim.results.add_array_property("ri_protected", shape=(sim.pars.timesteps, len(sim.nodes)), dtype=np.int32)  # Track number of people who enter Recovered state due to RI
+        sim.results.add_array_property("ri_vaccinated", shape=(sim.nt, len(sim.nodes)), dtype=np.int32)  # Track number of people vaccinated by RI
+        sim.results.add_array_property("ri_protected", shape=(sim.nt, len(sim.nodes)), dtype=np.int32)  # Track number of people who enter Recovered state due to RI
         self.results = sim.results
 
     def step(self):
@@ -975,7 +1046,7 @@ class SIA_ABM:
         self.results = sim.results
 
         # Add result tracking for SIA
-        self.results.add_array_property("sia_vx", shape=(sim.pars.timesteps, len(sim.nodes)), dtype=np.int32)
+        self.results.add_array_property("sia_vx", shape=(sim.nt, len(sim.nodes)), dtype=np.int32)
 
         # Store vaccination schedule
         self.sia_schedule = sim.pars['sia_schedule']
@@ -985,7 +1056,7 @@ class SIA_ABM:
 
         # Check if there is an SIA event today
         for event in self.sia_schedule:
-            if event['date'] == self.sim.dates[t]:
+            if event['date'] == self.sim.datevec[t]:
                 self.run_vaccination(event)
 
     def run_vaccination(self, event):
@@ -1040,4 +1111,3 @@ class SIA_ABM:
             plt.savefig(results_path / "cum_sia_vx.png")
         if not save:
             plt.show()
-

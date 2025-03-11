@@ -27,29 +27,12 @@
 # print('Done.')
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import os
 
 import geopandas as gpd
-import os
-import numpy as np
-import pandas as pd
-from unidecode import unidecode
-import re
-from laser_polio.utils import clean_strings
 from alive_progress import alive_bar
+
+from laser_polio.utils import clean_strings
 
 # Paths
 input_dir = "data/curation_scripts/shapes/polis"  # Folder where input shapefiles are stored
@@ -60,11 +43,11 @@ os.makedirs(output_dir, exist_ok=True)  # Ensure output directory exists
 shapefile_path = os.path.join(input_dir, "polis_adm0_africa.shp")
 gdf = gpd.read_file(shapefile_path)
 # List unique ISO3 codes
-isos = gdf['is_3_cd'].unique()
+isos = gdf["is_3_cd"].unique()
 print(f"Processing {len(isos)} countries...")
 
 # Columns to clean
-columns_to_clean = ['who_rgn', 'adm0_nm', 'adm1_nm', 'adm2_nm']
+columns_to_clean = ["who_rgn", "adm0_nm", "adm1_nm", "adm2_nm"]
 
 # Progress bar
 with alive_bar(len(isos)) as bar:
@@ -85,7 +68,7 @@ with alive_bar(len(isos)) as bar:
             shp[columns_to_clean] = shp[columns_to_clean].map(clean_strings)
 
             # Generate dot-separated 'dot_name'
-            shp['dot_name'] = shp[columns_to_clean].agg(':'.join, axis=1)
+            shp["dot_name"] = shp[columns_to_clean].agg(":".join, axis=1)
 
             # Save the cleaned shapefile
             shp.to_file(shp_path, driver="ESRI Shapefile")

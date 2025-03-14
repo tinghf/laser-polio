@@ -263,6 +263,7 @@ class DiseaseState_ABM:
 
         def do_init_imm():
             print(f"Before immune initialization, we have {sim.people.count} active agents.")
+            active_count_init = sim.people.count  # This gives the active population size
             # Initialize immunity
             if isinstance(pars.init_immun, float):
                 # Initialize across total population
@@ -339,7 +340,8 @@ class DiseaseState_ABM:
                         minlength=node_count,
                     )
 
-                    mean_dob = np.where(node_counts > 0, node_dob_sums / node_counts, 0)  # Avoid div by zero
+                    with np.errstate(divide='ignore', invalid='ignore'):
+                        mean_dob = np.where(node_counts > 0, node_dob_sums / node_counts, 0)  # Avoid div by zero
 
                     # Calculate mean age per node
                     mean_ages_years = -mean_dob / 365  # Approximate mean age per node
@@ -415,7 +417,8 @@ class DiseaseState_ABM:
                 new_active_count = sim.people.count
                 deletions = active_count - new_active_count
                 sim.people.true_capacity -= deletions
-                print(f"After immune initialization, we have {sim.people.count} active agents.")
+
+                print(f"After immune initialization and EULA-gizing, we have {sim.people.count} active agents.")
                 # viz()
 
         do_init_imm()
@@ -513,12 +516,10 @@ class DiseaseState_ABM:
             plt.show()
 
     def plot_infected_map(self, save=False, results_path=None, n_panels=6):
-        timepoints = np.linspace(0, self.pars.dur, n_panels, dtype=int)
-
         rows, cols = 2, int(np.ceil(n_panels / 2))
-        fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 6), sharex=True, sharey=True)
+        fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 6), sharex=True, sharey=True, constrained_layout=True)
         axs = axs.ravel()  # Flatten in case of non-square grid
-
+        timepoints = np.linspace(0, self.pars.dur, n_panels, dtype=int)
         lats, lons = self.pars.centroids["CENTER_LAT"], self.pars.centroids["CENTER_LON"]
 
         # Get global min and max for consistent color scale
@@ -546,12 +547,10 @@ class DiseaseState_ABM:
                 ax.set_xticklabels([])
 
         # Add a single colorbar for all plots
-        if "scatter" in locals():  # Ensure scatter was created successfully
-            cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])  # Position colorbar next to subplots
-            fig.colorbar(scatter, cax=cbar_ax, label="Infection Count")
+        cbar = fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
+
         # Add title
         fig.suptitle("Infected Population by Node", fontsize=16)
-        plt.tight_layout(rect=[0, 0, 0.9, 0.95])  # Pad the top and right for title and colorbar
 
         if save:
             if results_path is None:

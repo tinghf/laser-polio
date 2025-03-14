@@ -34,4 +34,4 @@ The contents of the other folders is as follows:
 - The **tests** folder contains code for testing model functionality and benchmarking.
 
 ## Tests
-Tests can be run `python -m pytest tests/`
+Tests can be run with `python -m pytest tests/`

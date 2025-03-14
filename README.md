@@ -22,16 +22,16 @@ uv pip install -e .
 ```
 
 ## Usage
-You can run a simple demo with `scripts/demos/demo_nigeria.py`
+You can run a simple demo with `examples/demo_nigeria.py`
 
 ## Repo organization
-All core model code is located in the `src\laser_polio` subfolder. The majority of the model architecture resides in `seir_abm.py` which contains classes like `SEIR_ABM`, `DiseaseState_ABM`, `Transmission_ABM`, `VitalDynamics_ABM`, `RI_ABM`, and `SIA_ABM`. These classes contain methods for running the sim, tracking infection status, transmitting, managing births and deaths, and applying vaccination interventions. The `distributions.py` file contains a `Distributions` class which facilitates specification of distributions in the pars (see `scripts/demos/demo_nigeria.py`) so that in the model you can call the distribution from pars and the only input it requires is the number of draws. The  `utils.py` file has a variety of helper functions. The `seir_mpm.py` file contains an experimental meta-population model which will be developed at a future date.
+All core model code is located in the `src\laser_polio` subfolder. The majority of the model architecture resides in `seir_abm.py` which contains classes like `SEIR_ABM`, `DiseaseState_ABM`, `Transmission_ABM`, `VitalDynamics_ABM`, `RI_ABM`, and `SIA_ABM`. These classes contain methods for running the sim, tracking infection status, transmitting, managing births and deaths, and applying vaccination interventions. The `distributions.py` file contains a `Distributions` class which facilitates specification of distributions in the pars (e.g., lp.normal(mean=3, std=1), see `examples/demo_nigeria.py`). The  `utils.py` file has a variety of helper functions to handle dates, dot_names (e.g., AFRO:NIGERIA:ZAMFARA:ANKA), and process data. The `seir_mpm.py` file contains an experimental meta-population model which will be developed at a future date.
 
 The contents of the other folders is as follows:
-- The data folder contains curated files needed for modeling along with the raw versions of the data and curation scripts.
-- The docs folder contains information about model design and architecture.
-- The scripts folder contains code for running and calibrating the model, profiling, and demos.
-- The tests folder contains code for testing model functionality and benchmarking.
+- The **data** folder contains curated files needed for modeling along with the raw versions of the data and curation scripts.
+- The **docs** folder contains information about model design and architecture.
+- The **scripts** folder contains code for running and calibrating the model, profiling, and demos.
+- The **tests** folder contains code for testing model functionality and benchmarking.
 
 ## Tests
 Tests can be run `python -m pytest tests/`

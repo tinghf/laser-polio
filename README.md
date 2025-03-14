@@ -28,7 +28,7 @@ You can run a simple demo with `examples/demo_nigeria.py`
 All core model code is located in the `src\laser_polio` subfolder. The majority of the model architecture resides in `seir_abm.py` which contains classes like `SEIR_ABM`, `DiseaseState_ABM`, `Transmission_ABM`, `VitalDynamics_ABM`, `RI_ABM`, and `SIA_ABM`. These classes contain methods for running the sim, tracking infection status, transmitting, managing births and deaths, and applying vaccination interventions. The `distributions.py` file contains a `Distributions` class which facilitates specification of distributions in the pars (e.g., lp.normal(mean=3, std=1), see `examples/demo_nigeria.py`). The  `utils.py` file has a variety of helper functions to handle dates, dot_names (e.g., AFRO:NIGERIA:ZAMFARA:ANKA), and process data. The `seir_mpm.py` file contains an experimental meta-population model which will be developed at a future date.
 
 The contents of the other folders is as follows:
-- The **data** folder contains curated files. The raw versions of the data along with the curation scripts can be found in `data\curation_scripts`.
+- The **data** folder contains curated datasets. The raw versions of the data along with the curation scripts can be found in `data\curation_scripts`.
 - The **docs** folder contains information about model design and architecture.
 - The **scripts** folder contains code for running and calibrating the model, profiling, and demos.
 - The **tests** folder contains code for testing model functionality and benchmarking.

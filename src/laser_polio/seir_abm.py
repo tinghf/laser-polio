@@ -418,6 +418,14 @@ class DiseaseState_ABM:
                 deletions = active_count - new_active_count
                 sim.people.true_capacity -= deletions
 
+
+                #TODO: remove these after debugging
+                n_recovered = np.sum(self.people.disease_state == 3)
+                n_recovered_results = self.results.R[0].sum()
+                assert n_recovered == n_recovered_results, "Mismatch in recovered count after EULA-gizing."
+                assert active_count_init - n_recovered == new_active_count, "Mismatch in active count after EULA-gizing."
+
+
                 print(f"After immune initialization and EULA-gizing, we have {sim.people.count} active agents.")
                 # viz()
 

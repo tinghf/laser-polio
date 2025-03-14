@@ -263,7 +263,6 @@ class DiseaseState_ABM:
 
         def do_init_imm():
             print(f"Before immune initialization, we have {sim.people.count} active agents.")
-            active_count_init = sim.people.count  # This gives the active population size
             # Initialize immunity
             if isinstance(pars.init_immun, float):
                 # Initialize across total population
@@ -308,14 +307,14 @@ class DiseaseState_ABM:
                 # viz()
 
                 # Assume everyone older than 15 years of age is immune
-                # We EULA-gize the 15+ first.
+                # We EULA-gize the 15+ first to speedup immunity initialization for <15s
                 o15 = (sim.people.date_of_birth * -1) >= 15 * 365
                 sim.people.disease_state[o15] = 3  # Set as recovered
-                active_count = sim.people.count  # This gives the active population size
-                valid_agents = self.people.disease_state[:active_count] >= 0  # Apply only to active agents
-                filter_mask = (self.people.disease_state[:active_count] < 3) & valid_agents  # Now matches active count
+                active_count_init = sim.people.count  # This gives the active population size
+                valid_agents = self.people.disease_state[:active_count_init] >= 0  # Apply only to active agents
+                filter_mask = (self.people.disease_state[:active_count_init] < 3) & valid_agents  # Now matches active count
 
-                def get_node_counts_pre_squash(filter_mask):
+                def get_node_counts_pre_squash(filter_mask, active_count):
                     # Count up R by node before we squash
                     # Ensure everything is properly sliced up to active_count
                     node_ids = sim.people.node_id[:active_count]
@@ -329,6 +328,8 @@ class DiseaseState_ABM:
                     return node_counts
 
                 def prepop_eula(node_counts, life_expectancies):
+                    #TODO: refine mortality estimates since the following code is just a rough cut
+                    
                     # Get simulation parameters
                     T = self.results.R.shape[0]  # Number of timesteps
                     node_count = self.results.R.shape[1]  # Number of nodes
@@ -356,12 +357,12 @@ class DiseaseState_ABM:
                     self.results.R[:, :] += (node_counts * np.exp(-mortality_rates * time_range)).astype(np.float32)
 
                 # Get our EULA populations
-                node_counts = get_node_counts_pre_squash(filter_mask)
+                node_counts = get_node_counts_pre_squash(filter_mask, active_count_init)
                 # Add EULA pops and projected populations over time due to mortality to reported R counts for whole sim
                 prepop_eula(node_counts, pars.life_expectancies)
                 # Now squash
                 sim.people.squash(filter_mask)
-                deletions = active_count - sim.people.count
+                deletions = active_count_init - sim.people.count
                 # We don't have nice solution for resizing the population LaserFrame yet so we'll make a note of our actual new capacity
                 sim.people.true_capacity = sim.people.capacity - deletions
 
@@ -410,7 +411,7 @@ class DiseaseState_ABM:
                 active_count = sim.people.count  # This gives the active population size
                 valid_agents = self.people.disease_state[:active_count] >= 0  # Apply only to active agents
                 filter_mask = (self.people.disease_state[:active_count] < 3) & valid_agents  # Now matches active count
-                node_counts = get_node_counts_pre_squash(filter_mask)
+                node_counts = get_node_counts_pre_squash(filter_mask, active_count)
                 prepop_eula(node_counts, pars.life_expectancies)
 
                 sim.people.squash(filter_mask)
@@ -419,11 +420,16 @@ class DiseaseState_ABM:
                 sim.people.true_capacity -= deletions
 
 
-                #TODO: remove these after debugging
-                n_recovered = np.sum(self.people.disease_state == 3)
-                n_recovered_results = self.results.R[0].sum()
-                assert n_recovered == n_recovered_results, "Mismatch in recovered count after EULA-gizing."
-                assert active_count_init - n_recovered == new_active_count, "Mismatch in active count after EULA-gizing."
+                # #TODO: remove these after debugging
+                # n_recovered = np.sum(self.people.disease_state== 3) # this should be the same as the results at t=0???
+                # active_count = sim.people.count  # This gives the active population size
+                # n_recovered_active = np.sum(self.people.disease_state[:active_count] == 3) # this should be 0
+                # n_recovered_results = self.results.R[:0].sum() # this should be all our EULA-gized Rs at t=0 and same as n_recovered???
+                # assert n_recovered == n_recovered_results, "The EULA-gized recovered count is not equal to the results count of R"
+                # assert n_recovered_active == 0, "The number of active recovered individuals is not 0."
+                # assert active_count_init - n_recovered == new_active_count, "Mismatch in active count after EULA-gizing."
+
+
 
 
                 print(f"After immune initialization and EULA-gizing, we have {sim.people.count} active agents.")
@@ -503,7 +509,6 @@ class DiseaseState_ABM:
         plt.ylabel("Count")
         plt.legend()
         plt.grid()
-        plt.savefig("total_seir.png")
         if save:
             plt.savefig(results_path / "total_seir_counts.png")
         if not save:

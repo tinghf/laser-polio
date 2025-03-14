@@ -1,13 +1,12 @@
-import time
-from pathlib import Path
-
-# import sciris as sc
+from alive_progress import alive_bar
 import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import scipy.stats as stats
-from alive_progress import alive_bar
+import sciris as sc
+import time
 from laser_core.demographics.kmestimator import KaplanMeierEstimator
 from laser_core.demographics.pyramid import AliasedDistribution
 from laser_core.demographics.pyramid import load_pyramid_csv
@@ -32,9 +31,11 @@ class SEIR_ABM:
     Disease state codes: 0=S, 1=E, 2=I, 3=R
     """
 
-    def __init__(self, pars):
+    def __init__(self, pars, verbose=0.1):
+        sc.printcyan("Initializing simulation...")
         self.pars = pars
         pars = self.pars
+        self.verbose = verbose
 
         # Setup time
         self.t = 0  # Current timestep
@@ -103,6 +104,7 @@ class SEIR_ABM:
             self.instances.append(instance)
 
     def run(self):
+        sc.printcyan("Initialization complete. Running simulation...")
         self.component_times = {component: 0.0 for component in self.instances}
         self.component_times["report"] = 0
         with alive_bar(self.nt, title="Simulation progress:") as bar:
@@ -119,6 +121,7 @@ class SEIR_ABM:
                 self.component_times["report"] += end_time - start_time
                 self.t += 1
                 bar()  # Update the progress bar
+        sc.printcyan("Simulation complete.")
 
     def log_results(self, t):
         for component in self.instances:
@@ -132,6 +135,7 @@ class SEIR_ABM:
             else:
                 results_path = Path(results_path)  # Ensure results_path is a Path object
                 results_path.mkdir(parents=True, exist_ok=True)
+            sc.printcyan("Saving plots in " + str(results_path))
         for component in self.instances:
             component.plot(save=save, results_path=results_path)
         self.plot_node_pop(save=save, results_path=results_path)
@@ -139,8 +143,9 @@ class SEIR_ABM:
         if self.component_times:
             labels = [component.__class__.__name__ for component in self.instances]
             labels.append("report")
-            print(f"{self.instances=}")
-            print(f"{labels=}")
+            if self.verbose > 0.1:
+                print(f"{self.instances=}")
+                print(f"{labels=}")
             # times = [self.component_times[component] for component in labels ]
             times = [self.component_times[component] for component in self.instances]
             times.append(self.component_times["report"])  # hack
@@ -231,13 +236,11 @@ def step_nb(disease_state, exposure_timer, infection_timer, acq_risk_multiplier,
 
 class DiseaseState_ABM:
     def __init__(self, sim):
-        print("DiseaseState_ABM ctor")
         self.sim = sim
         self.people = sim.people
         self.pars = sim.pars
         self.nodes = sim.nodes
         self.results = sim.results
-        print("Setup SEIR components...")
 
         # Setup the SEIR components
         pars = self.pars

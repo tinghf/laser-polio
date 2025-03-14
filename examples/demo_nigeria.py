@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import sciris as sc
 from laser_core.propertyset import PropertySet
 
 import laser_polio as lp
@@ -22,7 +23,7 @@ The model uses the same data and setup as the EMOD model, except in the followin
 regions = ["NIGERIA"]
 start_year = 2019
 n_days = 365
-pop_scale = 1 / 10
+pop_scale = 1 / 1000
 init_region = "PLATEAU"
 init_prev = 0.01
 results_path = "results/demo_nigeria"
@@ -46,7 +47,7 @@ init_immun = init_immun[init_immun["period"] == start_year]
 # Initial prevalence
 init_prevs = np.zeros(len(dot_names))
 prev_indices = [i for i, dot_name in enumerate(dot_names) if init_region in dot_name]
-print(f"Seeding infections in {len(prev_indices)} nodes containing the string {init_region}.")
+print(f"Infections will be seeded in {len(prev_indices)} nodes containing the string {init_region} at {init_prev} prevalence.")
 # Throw an error if the region is not found
 if len(prev_indices) == 0:
     raise ValueError(f"No nodes found containing the string {init_region}. Cannot seed infections.")
@@ -93,7 +94,6 @@ assert (
     == len(sia)
     == len(beta_spatial)
 )
-print("Data successfully loaded. Initializing simulation...")
 
 # Set parameters
 pars = PropertySet(
@@ -143,4 +143,4 @@ sim.run()
 # Plot results
 sim.plot(save=True, results_path=results_path)
 
-print("Done.")
+sc.printcyan("Done.")

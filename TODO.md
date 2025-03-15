@@ -1,4 +1,6 @@
 # Priorities
+- Fix last two tests in test_diseasestate_abm.py
+- Add test for squashing
 - Track down what happened to the priority ordering
     # Set the order in which components should be run during step()
     PRIORITY_ORDER = [

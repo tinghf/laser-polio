@@ -1,4 +1,14 @@
 # Priorities
+- Track down what happened to the priority ordering
+    # Set the order in which components should be run during step()
+    PRIORITY_ORDER = [
+        "VitalDynamics_ABM",
+        "DiseaseState_ABM",
+        "RI_ABM",
+        "SIA_ABM",
+        "Transmission_ABM"
+    ]
+- Rename variables to distinguish between exposure and infection
 - Testing
     - DiseaseState_abm
     - Transmission_abm

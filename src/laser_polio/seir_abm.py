@@ -111,7 +111,10 @@ class SEIR_ABM:
             for tick in range(self.nt):
                 for component in self.instances:
                     start_time = time.perf_counter()
+                    # print(f"Running component: {component.__class__.__name__} at tick {tick}")
+                    # print(f"Disease state counts before: {np.bincount(self.people.disease_state[:self.people.count])}")
                     component.step()
+                    # print(f"Disease state counts after: {np.bincount(self.people.disease_state[:self.people.count])}")
                     end_time = time.perf_counter()
                     self.component_times[component] += end_time - start_time
 
@@ -264,14 +267,9 @@ class DiseaseState_ABM:
         def do_init_imm():
             print(f"Before immune initialization, we have {sim.people.count} active agents.")
             # Initialize immunity
-            if isinstance(pars.init_immun, float):
-                # Initialize across total population
-                num_recovered = int(sum(pars.n_ppl) * pars.init_immun)
-                recovered_indices = np.random.choice(sum(pars.n_ppl), size=num_recovered, replace=False)
-                sim.people.disease_state[recovered_indices] = 3
-            elif isinstance(pars.init_immun, list) and len(pars.init_immun) == 1:
-                # Initialize across total population
-                num_recovered = int(sum(pars.n_ppl) * pars.init_immun[0])
+            if isinstance(pars.init_immun, (float, list)):  # Handle both float and list cases
+                init_immun_value = pars.init_immun[0] if isinstance(pars.init_immun, list) else pars.init_immun
+                num_recovered = int(sum(pars.n_ppl) * init_immun_value)
                 recovered_indices = np.random.choice(sum(pars.n_ppl), size=num_recovered, replace=False)
                 sim.people.disease_state[recovered_indices] = 3
             else:
@@ -421,10 +419,12 @@ class DiseaseState_ABM:
 
 
                 # #TODO: remove these after debugging
-                # n_recovered = np.sum(self.people.disease_state== 3) # this should be the same as the results at t=0???
+                # TODO need to filter on self.people.count
+                # alive = self.people.disease_state >= 0  # Only count those who are alive
+                # n_recovered = np.sum(self.people.disease_state[alive]== 3) # this should be the same as the results at t=0???
                 # active_count = sim.people.count  # This gives the active population size
                 # n_recovered_active = np.sum(self.people.disease_state[:active_count] == 3) # this should be 0
-                # n_recovered_results = self.results.R[:0].sum() # this should be all our EULA-gized Rs at t=0 and same as n_recovered???
+                # n_recovered_results = self.results.R[0].sum() # this should be all our EULA-gized Rs at t=0 and same as n_recovered???
                 # assert n_recovered == n_recovered_results, "The EULA-gized recovered count is not equal to the results count of R"
                 # assert n_recovered_active == 0, "The number of active recovered individuals is not 0."
                 # assert active_count_init - n_recovered == new_active_count, "Mismatch in active count after EULA-gizing."

@@ -127,7 +127,7 @@ def fast_infect(node_ids, exposure_probs, disease_state, new_infections):
                 else:
                     right = mid
 
-            # Infect the chosen individual
+            # Expose the chosen individual
             disease_state[sus_indices[left]] = 1
 
 
@@ -207,6 +207,8 @@ class Transmission_ABM:
         cov_matrix = np.array([[1, rho], [rho, 1]])  # Create covariance matrix
         L = np.linalg.cholesky(cov_matrix)  # Cholesky decomposition
         # Generate standard normal samples
+        if not hasattr(self.people, "true_capacity"):
+            self.people.true_capacity = self.people.capacity # Ensure true_capacity is set even if we don't initialize prevalence by node
         n_samples = self.people.true_capacity
         z = np.random.normal(size=(n_samples, 2))
         z_corr = z @ L.T  # Apply Cholesky to introduce correlation

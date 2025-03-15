@@ -48,10 +48,10 @@ def test_births_generated():
 
     dobs = sim.people.date_of_birth[: sim.people.count]  # Extract date_of_birth; only consider active individuals
     dobs = dobs[dobs >= 0]  # Remove negatives (pop initialized before sim)
-    expected_births = np.bincount(dobs, minlength=sim.pars.dur)  # Tally births per day
+    expected_births = np.bincount(dobs, minlength=sim.pars.dur + 1)  # Tally births per day, add 1 since results include init conditions and dur timesteps
     observed_births = np.sum(sim.results.births, axis=1)  # Sum across nodes per timestep
     assert np.array_equal(expected_births, observed_births), "Births did not occur on the expected days"
-    print("Births:", sim.results.births)
+    # print("Births:", sim.results.births)
 
 
 # Test Deaths when timestep = 1
@@ -64,7 +64,7 @@ def test_deaths_occur_step_size_1():
     assert np.all(sim.people.disease_state[:5] == -1), "First 5 were not marked dead with disease_state"
 
     dods = sim.people.date_of_death[: sim.people.count]  # Extract date_of_death; only consider active individuals
-    expected_deaths = np.bincount(dods)[: sim.pars.dur]  # Tally deaths per day
+    expected_deaths = np.bincount(dods)[: sim.pars.dur + 1]  # Tally deaths per day, add 1 since results are include init conditions and dur timesteps
     observed_deaths = np.sum(sim.results.deaths, axis=1)  # Sum across nodes per timestep
     assert np.array_equal(expected_deaths, observed_deaths), "Deaths did not occur on the expected days"
 
@@ -85,9 +85,9 @@ def test_deaths_occur_step_size_7():
     # Check that deaths occurred on the correct dates and were correctly aggregated into weekly bins
     bin_edges = np.arange(0, sim.pars.dur + 1, 7)  # Define bin edges
     dods = sim.people.date_of_death[: sim.people.count]  # Extract date_of_death for active individuals
-    expected_deaths = np.bincount(dods, minlength=sim.pars.dur)[: sim.pars.dur]  # Daily expected deaths
+    expected_deaths = np.bincount(dods, minlength=sim.pars.dur + 1)[: sim.pars.dur + 1]  # Daily expected deaths
     observed_deaths = np.sum(sim.results.deaths, axis=1)  # Daily observed deaths
-    death_bins = np.digitize(np.arange(sim.pars.dur), bin_edges, right=True)  # Digitize days into bins
+    death_bins = np.digitize(np.arange(sim.pars.dur + 1), bin_edges, right=True)  # Digitize days into bins
     expected_deaths_binned = np.bincount(death_bins, weights=expected_deaths)[: len(bin_edges) - 1]  # Aggregate deaths per bin
     observed_deaths_binned = np.bincount(death_bins, weights=observed_deaths)[: len(bin_edges) - 1]  # Aggregate deaths per bin
     assert np.array_equal(expected_deaths_binned, observed_deaths_binned), "Deaths did not occur on the expected days"
@@ -105,7 +105,7 @@ def test_age_progression():
     )  # Only focus on active individuals. Unborn agents don't age until born
     sim.run()
     end_ages = sim.t - sim.people.date_of_birth[: np.sum(sim.pars.n_ppl)]
-    assert np.all(end_ages == initial_ages + sim.pars.dur)
+    assert np.all(end_ages == initial_ages + sim.pars.dur + 1)
 
 
 # Test Edge Case: Zero Birth Rate

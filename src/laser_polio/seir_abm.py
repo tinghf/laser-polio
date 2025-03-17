@@ -111,10 +111,14 @@ class SEIR_ABM:
             for tick in range(self.nt):
                 for component in self.instances:
                     start_time = time.perf_counter()
-                    # print(f"Running component: {component.__class__.__name__} at tick {tick}")
-                    # print(f"Disease state counts before: {np.bincount(self.people.disease_state[:self.people.count])}")
+                    sc.printcyan(f"Running component: {component.__class__.__name__} at tick {tick}")
+                    print(f"Disease state counts before: {np.bincount(self.people.disease_state[:self.people.count])}")
+                    print(f"E indeces before: {np.where(self.people.disease_state[:self.people.count] == 1)}")
+                    print(f"I indeces before: {np.where(self.people.disease_state[:self.people.count] == 2)}")
                     component.step()
-                    # print(f"Disease state counts after: {np.bincount(self.people.disease_state[:self.people.count])}")
+                    print(f"Disease state counts after: {np.bincount(self.people.disease_state[:self.people.count])}")
+                    print(f"E indeces after: {np.where(self.people.disease_state[:self.people.count] == 1)}")
+                    print(f"I indeces after: {np.where(self.people.disease_state[:self.people.count] == 2)}")
                     end_time = time.perf_counter()
                     self.component_times[component] += end_time - start_time
 
@@ -248,15 +252,13 @@ class DiseaseState_ABM:
         # Setup the SEIR components
         pars = self.pars
         sim.people.add_scalar_property("paralyzed", dtype=np.int32, default=0)
+        # TODO should probably set for entire population, not just initial, but giving issues. TBD.
+        # Initialize all agents with an infection_timer. Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
         sim.people.add_scalar_property("exposure_timer", dtype=np.int32, default=0)
-        # should probably set for entire population, not just initial, but giving issues. TBD.
-        sim.people.exposure_timer[: np.sum(self.pars.n_ppl)] = (
-            self.pars.dur_exp(np.sum(self.pars.n_ppl)) - 1
-        )  # initialize all agents with an infection_timer. Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
+        sim.people.exposure_timer[: np.sum(self.pars.n_ppl)] = self.pars.dur_exp(np.sum(self.pars.n_ppl)) - 1   
+        # initialize all agents with an infection_timer
         sim.people.add_scalar_property("infection_timer", dtype=np.int32, default=0)
-        sim.people.infection_timer[: np.sum(self.pars.n_ppl)] = self.pars.dur_inf(
-            np.sum(self.pars.n_ppl)
-        )  # initialize all agents with an infection_timer
+        sim.people.infection_timer[: np.sum(self.pars.n_ppl)] = self.pars.dur_inf(np.sum(self.pars.n_ppl)) - 1  
 
         sim.results.add_array_property("S", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
         sim.results.add_array_property("E", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
@@ -456,6 +458,7 @@ class DiseaseState_ABM:
                 infected_indices.extend(infected_indices_node)
         num_infected = len(infected_indices)
         sim.people.disease_state[infected_indices] = 2
+        # TODO: why is this here??? are'nt we handling that during initialization???
         sim.people.infection_timer[infected_indices] = self.pars.dur_inf(num_infected)
 
     def step(self):

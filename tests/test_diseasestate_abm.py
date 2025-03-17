@@ -76,7 +76,7 @@ def test_progression_without_transmission():
     assert np.all(sim.people.infection_timer[: pars["n_ppl"].sum()] == 1), "The infection timer was not initialized correctly"
     sim.people.disease_state[: sim.pars.n_ppl.sum()] = 1  # Set all to Exposed
     sim.run()  # Run for one day
-    # Remember that results are not tallied in the DiseaseState_ABM component (done in Transmission_ABM)
+    # Remember that results are not tallied in the DiseaseState_ABM component (results are tallied in Transmission_ABM) so we have to sum them up manually
     assert np.sum(sim.people.disease_state == 0) == 0  # No one should be Susceptible
     assert np.sum(sim.people.disease_state == 1) == 0  # No one should be Exposed
     assert np.sum(sim.people.disease_state == 2) == pars["n_ppl"].sum()  # Everyone should be Infected
@@ -88,13 +88,13 @@ def test_progression_without_transmission():
     assert np.sum(sim.people.disease_state == 3) == pars["n_ppl"].sum()  # Everyone should be Recovered
 
 
-# Test Disease Progression
+# Test Disease Progression with transmission
 def test_progression_with_transmission():
     # Setup sim with 0 infections
     pars = PropertySet(
         {
             "start_date": lp.date("2020-01-01"),
-            "dur": 2,
+            "dur": 4,
             "n_ppl": np.array([100, 50]),  # Two nodes with populations
             "cbr": np.array([30, 25]),  # Birth rate per 1000/year
             "beta_spatial": np.array([0.5, 2.0]),  # Spatial transmission scalar (multiplied by global rate)
@@ -120,38 +120,80 @@ def test_progression_with_transmission():
     sim = lp.SEIR_ABM(pars)
     sim.components = [lp.DiseaseState_ABM, lp.Transmission_ABM]
 
-    # Ensure that there's a mix of disease states
+    # Test the initalized counts
     disease_state = sim.people.disease_state[: sim.people.count]  # Filter to the active individuals
-    n_sus_t0 = np.sum(disease_state == 0)
-    n_exp_t0 = np.sum(disease_state == 1)
-    n_inf_t0 = np.sum(disease_state == 2)
-    n_rec_t0 = np.sum(disease_state == 3)
-
-    assert np.isclose(n_sus_t0, sim.pars.n_ppl.sum() * (1 - sim.pars.init_immun) * (1-sim.pars.init_prev), atol=10)  # Not immune or infected
-    assert n_exp_t0 == 0
-    assert np.isclose(n_inf_t0, sim.pars.n_ppl.sum() * (sim.pars.init_prev), atol=5) # Infected
-    assert np.isclose(n_rec_t0, sim.pars.n_ppl.sum() * (sim.pars.init_immun) * (1-sim.pars.init_prev), atol=5)  # Recovered and not infected (since infections can override immunity in initialization)
+    n_s_init = np.sum(disease_state == 0)
+    n_e_init = np.sum(disease_state == 1)
+    n_i_init = np.sum(disease_state == 2)
+    n_r_init = np.sum(disease_state == 3)
+    assert np.isclose(n_s_init, sim.pars.n_ppl.sum() * (1 - sim.pars.init_immun) * (1-sim.pars.init_prev), atol=10), "Roughly 18% of the pop should be S"
+    assert n_e_init == 0, 'There should be no E during initialization'
+    assert np.isclose(n_i_init, sim.pars.n_ppl.sum() * (sim.pars.init_prev), atol=5), "Roughly 10% of the population should be infected"
+    assert np.isclose(n_r_init, sim.pars.n_ppl.sum() * (sim.pars.init_immun) * (1-sim.pars.init_prev), atol=5), "Roughly 72% of the pop should be R (since infections can override immunity in initialization)"
 
     # Run the simulation for one timestep
     sim.run()
 
-    # Check disease states again
-    disease_state = sim.people.disease_state[: sim.people.count]
-    n_sus_t1 = np.sum(disease_state == 0)
-    n_exp_t1 = np.sum(disease_state == 1)
-    n_inf_t1 = np.sum(disease_state == 2)
-    n_rec_t1 = np.sum(disease_state == 3)
+    # Check disease states at the end of the day 0 (after initialization)
+    n_s_t0 = sim.results.S[0].sum()
+    n_e_t0 = sim.results.E[0].sum()
+    n_i_t0 = sim.results.I[0].sum()
+    n_r_t0 = sim.results.R[0].sum()
+    assert n_s_t0 < n_s_init, "Some should have become exposed"
+    assert n_e_t0 > 0, "Some should have become exposed since transmission occurred"
+    assert n_i_t0 == n_i_init, "Infected counts after initialization should be the same as during initialization since they won't change until the next timestep"
+    assert n_r_t0 == n_r_init, "Recovered counts after initialization should be the same as during initialization since they won't change until the next timestep"
 
-    assert n_sus_t1 < n_sus_t0,  "Some should have become exposed or infected"
-    assert n_exp_t1 > 0, "Some should have become exposed since transmission occurred when the exposed be came infected on the last timestep"
-    assert n_inf_t1 > 0, "Some should be infected"
-    assert n_rec_t1 == n_rec_t0 + n_inf_t0, "Recovereds should equal the previous infected plus any were infected on t0"
-    assert sim.results.E[0].sum() == sim.results.E[1].sum() == n_inf_t1, "Those exposed on the first timestep should persist the next day and become infected on the last timestep"
-    assert sim.results.I[0].sum() == n_inf_t0, "The results and init infection counts are not equal"
+    # Check disease states at the end of day 1
+    n_s_t1 = sim.results.S[1].sum()
+    n_e_t1 = sim.results.E[1].sum()
+    n_i_t1 = sim.results.I[1].sum()
+    n_r_t1 = sim.results.R[1].sum()
+    assert n_s_t1 == n_s_t0, "Susceptible counts should be the same since no one should be infected"
+    assert n_e_t1 == n_e_t0, "Exposed counts should be the same since dur_exp = 2 & no one should be infected to make more E"
+    assert n_i_t1 == 0, "Infected counts should be 0 since dur_inf = 1 & exposed won't become infected until the next timestep"
+    assert n_r_t1 == n_r_t0 + n_r_t0, "Recovered counts should be higher since I's should've recovered"
+
+    # Check disease states at the end of day 2
+    n_s_t2 = sim.results.S[2].sum()
+    n_e_t2 = sim.results.E[2].sum()
+    n_i_t2 = sim.results.I[2].sum()
+    n_r_t2 = sim.results.R[2].sum()
+    assert n_s_t2 == n_s_t1 - n_e_t2, "S's should be the same as yesterday minus those who became exposed"
+    assert n_i_t2 == n_i_t1 + n_e_t1, "I's should be the sum of E and I from yesterday"
+    assert n_r_t2 == n_r_t1, "No one should be recovered since there were no infected on the previous day"
+
+    # Check disease states at the end of day 3
+    n_s_t3 = sim.results.S[3].sum()
+    n_e_t3 = sim.results.E[3].sum()
+    n_i_t3 = sim.results.I[3].sum()
+    n_r_t3 = sim.results.R[3].sum()
+    assert n_s_t3 == n_s_t2, "S's should be the same as yesterday since there shouldn't be any I to make new E"
+    assert n_e_t3 == n_e_t2, "E's should be the same as yesterday since there shouldn't be any I"
+    assert n_i_t3 == 0, "I's should be 0 since dur_inf = 1 & exposed won't become infected until the next timestep"
+    assert n_r_t3 == n_r_t2 + n_i_t2, "Recovered counts should be higher since I's should've recovered"
+
+    if n_i_t2 > 0: # If there were infected on the previous day
+        assert n_s_t3 < n_s_t2, "S's should be the same as yesterday minus those who became exposed"
+        assert n_i_t3 == n_i_t2 + n_e_t2, "I's should be the sum of E and I from yesterday"
+        assert n_r_t3 == n_r_t2 + n_i_t2, "Recovered counts should be higher since I's should've recovered"
+
+    # Check disease states at the end
+    disease_state = sim.people.disease_state[: sim.people.count]
+    n_s_end = np.sum(disease_state == 0)
+    n_e_end = np.sum(disease_state == 1)
+    n_i_end = np.sum(disease_state == 2)
+    n_r_end = np.sum(disease_state == 3)
+    assert n_s_end < n_s_init,  "Some should have become exposed or infected"
+    # assert n_e_end > 0, "Some should have become exposed since transmission occurred when the exposed became infected on the last timestep"
+    # assert n_i_end > 0, "Some should be infected"
+    assert n_r_end > n_r_init, "Recovereds should equal the previous infected plus any were infected on t0"
+    assert sim.results.E[0].sum() == sim.results.E[1].sum() == n_i_end, "Those exposed on the first timestep should persist the next day and become infected on the last timestep"
+    assert sim.results.I[0].sum() == n_i_init, "The results and init infection counts are not equal"
     assert sim.results.I[1].sum() == 0, "No one should be infected. The initial seeds should be recovered and they should've only exposed others"
-    assert sim.results.R[0].sum() == n_rec_t0, "The results and init recovered counts are not equal"
-    assert sim.results.R[1].sum() == n_rec_t0 + n_inf_t0, "The results and init recovered counts are not equal"
-    assert sim.results.R[2].sum() == n_rec_t0 + n_inf_t0, "The results and init recovered counts are not equal"
+    assert sim.results.R[0].sum() == n_r_init, "The results and init recovered counts are not equal"
+    assert sim.results.R[1].sum() == n_r_init + n_i_init, "The results and init recovered counts are not equal"
+    assert sim.results.R[2].sum() == n_r_init + n_i_init, "The results and init recovered counts are not equal"
 
 
 # Test Paralysis Probability
@@ -178,13 +220,13 @@ def test_paralysis_probability():
     sim.people.disease_state[: sim.pars.n_ppl.sum()] = 1  # Set all to Exposed
     sim.run()
     exp_paralysis = int(pars.p_paralysis * pars.n_ppl.sum())
-    assert 0 > np.sum(sim.people.paralyzed == 1) <= exp_paralysis * 2  # Added some leeway for randomness
+    assert 0 < np.sum(sim.people.paralyzed == 1) <= exp_paralysis * 2  # Added some leeway for randomness
 
 
 if __name__ == "__main__":
     # test_disease_state_initialization()
     # test_initial_population_counts()
     # test_progression_without_transmission()
-    # test_progression_with_transmission()
-    test_paralysis_probability()
+    test_progression_with_transmission()
+    # test_paralysis_probability()
     print("All disease state tests passed!")

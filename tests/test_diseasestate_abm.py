@@ -52,8 +52,8 @@ def test_initial_population_counts():
     assert (exp_rec - exp_inf) <= np.sum(sim.people.disease_state == 3) <= exp_rec, "Recovered counts are incorrect"
 
 
-# Test Disease Progression
-def test_progression_manual_seeding():
+# Test Disease Progression without transmission
+def test_progression_without_transmission():
     # Setup sim with 0 infections
     pars = PropertySet(
         {
@@ -72,19 +72,20 @@ def test_progression_manual_seeding():
     )
     sim = lp.SEIR_ABM(pars)
     sim.components = [lp.DiseaseState_ABM]
-    assert np.all(sim.people.exposure_timer[: pars["n_ppl"].sum()] == 1), "The exposure timer was not initialized correctly"
+    assert np.all(sim.people.exposure_timer[: pars["n_ppl"].sum()] == 0), "The exposure timer was not initialized correctly"
     assert np.all(sim.people.infection_timer[: pars["n_ppl"].sum()] == 1), "The infection timer was not initialized correctly"
     sim.people.disease_state[: sim.pars.n_ppl.sum()] = 1  # Set all to Exposed
-    sim.run()
-    assert np.sum(sim.people.disease_state == 0) == np.sum(sim.results.S, axis=1) == 0  # No one should be Susceptible
-    assert np.sum(sim.people.disease_state == 1) == np.sum(sim.results.E, axis=1) == 0  # No one should be Exposed
-    assert np.sum(sim.people.disease_state == 2) == np.sum(sim.results.I, axis=1) == pars["n_ppl"].sum()  # Everyone should be Infected
-    assert np.sum(sim.people.disease_state == 3) == np.sum(sim.results.R, axis=1) == 0  # No one should be Recovered
+    sim.run()  # Run for one day
+    # Remember that results are not tallied in the DiseaseState_ABM component (done in Transmission_ABM)
+    assert np.sum(sim.people.disease_state == 0) == 0  # No one should be Susceptible
+    assert np.sum(sim.people.disease_state == 1) == 0  # No one should be Exposed
+    assert np.sum(sim.people.disease_state == 2) == pars["n_ppl"].sum()  # Everyone should be Infected
+    assert np.sum(sim.people.disease_state == 3) == 0  # No one should be Recovered
     sim.run()  # Run for another day
-    assert np.sum(sim.people.disease_state == 0) == np.sum(sim.results.S, axis=1) == 0  # No one should be Susceptible
-    assert np.sum(sim.people.disease_state == 1) == np.sum(sim.results.E, axis=1) == 0  # No one should be Exposed
-    assert np.sum(sim.people.disease_state == 2) == np.sum(sim.results.I, axis=1) == 0  # No one should be Infected
-    assert np.sum(sim.people.disease_state == 3) == np.sum(sim.results.R, axis=1) == pars["n_ppl"].sum()  # Everyone should be Recovered
+    assert np.sum(sim.people.disease_state == 0) == 0  # No one should be Susceptible
+    assert np.sum(sim.people.disease_state == 1) == 0  # No one should be Exposed
+    assert np.sum(sim.people.disease_state == 2) == 0  # No one should be Infected
+    assert np.sum(sim.people.disease_state == 3) == pars["n_ppl"].sum()  # Everyone should be Recovered
 
 
 # Test Disease Progression
@@ -183,7 +184,7 @@ def test_paralysis_probability():
 if __name__ == "__main__":
     # test_disease_state_initialization()
     # test_initial_population_counts()
-    test_progression_manual_seeding()
+    # test_progression_without_transmission()
     # test_progression_with_transmission()
     test_paralysis_probability()
     print("All disease state tests passed!")

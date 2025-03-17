@@ -50,6 +50,11 @@ def test_births_generated():
     dobs = dobs[dobs >= 0]  # Remove negatives (pop initialized before sim)
     expected_births = np.bincount(dobs, minlength=sim.pars.dur + 1)  # Tally births per day, add 1 since results include init conditions and dur timesteps
     observed_births = np.sum(sim.results.births, axis=1)  # Sum across nodes per timestep
+    # Combine births on day 0 and day 1 since we don't run vital rates on day 0, we only log results
+    expected_births[1] += expected_births[0]  # Combine day 0 and day 1
+    expected_births = expected_births[1:]  # Remove day 0 since it's combined with day 1
+    observed_births[1] += observed_births[0]  # Combine day 0 and day 1
+    observed_births = observed_births[1:]  # Remove day 0 since it's combined with day 1
     assert np.array_equal(expected_births, observed_births), "Births did not occur on the expected days"
     # print("Births:", sim.results.births)
 

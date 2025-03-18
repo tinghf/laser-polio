@@ -78,6 +78,7 @@ assert (
     == len(beta_spatial)
 )
 
+
 def setup_sim():
     """Initialize a test simulation with DiseaseState_ABM component."""
     pars = PropertySet(
@@ -126,10 +127,10 @@ def test_squash():
     """Ensure disease state properties are correctly initialized."""
     sim = setup_sim()
 
-    age = (sim.people.date_of_birth[:sim.people.count] * -1)
+    age = sim.people.date_of_birth[: sim.people.count] * -1
     assert np.all(age / 365 <= 15), "No >15yo should be present in the sim since we're assuming they're Rs."
 
-    disease_state = sim.people.disease_state[:sim.people.count]
+    disease_state = sim.people.disease_state[: sim.people.count]
     assert np.all(disease_state < 3), "No one should be in the recovered state since they should be squashed out."
 
     exp_pop = np.sum(pop)
@@ -138,7 +139,7 @@ def test_squash():
 
     # Check the number of recovered in results. I did a really rough calc for <15yo immunity since it's broken up by age bins
     exp_o15 = exp_pop * 0.43
-    exclude_cols = ['guid', 'period', 'serotype', 'dpt1', 'dpt3']
+    exclude_cols = ["guid", "period", "serotype", "dpt1", "dpt3"]
     mean_immun = np.mean(init_immun.drop(columns=exclude_cols))
     exp_u15 = exp_pop - exp_o15
     exp_u15_r = exp_u15 * mean_immun
@@ -158,5 +159,4 @@ def test_squash():
 
 if __name__ == "__main__":
     test_squash()
-
     print("All squash tests passed!")

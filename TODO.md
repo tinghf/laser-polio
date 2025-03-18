@@ -10,7 +10,6 @@
     ]
 - Rename variables to distinguish between exposure and infection
 - Testing
-    - Transmission_abm
     - RI_abm
     - SIA_abm
     - Full models with real data

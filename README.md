@@ -35,3 +35,6 @@ The contents of the other folders is as follows:
 
 ## Tests
 Tests can be run with `python -m pytest tests/`
+
+## Linting
+Linting and formatting can be run with ruff `uv run ruff check --fix`

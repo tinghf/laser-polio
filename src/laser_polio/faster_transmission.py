@@ -285,7 +285,7 @@ class Transmission_ABM:
         # 4) Calculate base probability for each agent to become exposed
         # Surely the alive count is available from report (sum)?
         alive_counts = (
-            self.people.count 
+            self.people.count
             + self.sim.results.R[self.sim.t]
         )
         per_agent_infection_rate = beta / np.clip(alive_counts, 1, None)

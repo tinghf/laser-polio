@@ -1,18 +1,16 @@
-from alive_progress import alive_bar
+import time
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import scipy.stats as stats
 import sciris as sc
-import time
+from alive_progress import alive_bar
 from laser_core.demographics.kmestimator import KaplanMeierEstimator
 from laser_core.demographics.pyramid import AliasedDistribution
 from laser_core.demographics.pyramid import load_pyramid_csv
 from laser_core.laserframe import LaserFrame
-from laser_core.migration import gravity
-from laser_core.migration import row_normalizer
 from laser_core.utils import calc_capacity
 from tqdm import tqdm
 
@@ -105,7 +103,7 @@ class SEIR_ABM:
 
     def run(self):
         sc.printcyan("Initialization complete. Running simulation...")
-        self.component_times = {component: 0.0 for component in self.instances}
+        self.component_times = dict.fromkeys(self.instances, 0.0)
         self.component_times["report"] = 0
         with alive_bar(self.nt, title="Simulation progress:") as bar:
             for tick in range(self.nt):
@@ -113,7 +111,7 @@ class SEIR_ABM:
                     # Just record the initial state on t=0 & don't run any components
                     self.log_results(tick)
                     self.t += 1
-                else: 
+                else:
                     for component in self.instances:
                         start_time = time.perf_counter()
                         # sc.printcyan(f"Running component: {component.__class__.__name__} at tick {tick}")
@@ -331,7 +329,7 @@ class DiseaseState_ABM:
 
                 def prepop_eula(node_counts, life_expectancies):
                     #TODO: refine mortality estimates since the following code is just a rough cut
-                    
+
                     # Get simulation parameters
                     T = self.results.R.shape[0]  # Number of timesteps
                     node_count = self.results.R.shape[1]  # Number of nodes
@@ -816,7 +814,7 @@ class VitalDynamics_ABM:
                 mask[:] = samples == i  # ...find the agents that belong to this bin
                 # ...and assign a random age, in days, within the bin
                 ages[mask] = np.random.randint(bin_min_age_days[i], bin_max_age_days[i], mask.sum())
-            # Move births on day 0 to one day prior. This prevents births on day 0 when we only record results, we don't run components. 
+            # Move births on day 0 to one day prior. This prevents births on day 0 when we only record results, we don't run components.
             ages[ages == 0] = 1
             sim.people.date_of_birth[: len(sim.people)] = -ages
 

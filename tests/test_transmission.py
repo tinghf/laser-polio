@@ -1,5 +1,6 @@
 import numpy as np
 from laser_core.propertyset import PropertySet
+
 import laser_polio as lp
 
 #TODO: (ask AI)
@@ -17,7 +18,7 @@ def setup_sim(dur=1, n_ppl=[10000, 10000], beta_spatial=[0.5, 2.0], r0=14, dur_e
             "cbr": np.array([30, 25]),  # Birth rate per 1000/year
             "beta_spatial": beta_spatial,  # Spatial transmission scalar (multiplied by global rate)
             "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",  # From https://www.populationpyramid.net/nigeria/2024/
-            "init_immun": init_immun,  # initially immune 
+            "init_immun": init_immun,  # initially immune
             "init_prev": init_prev,  # initially infected from any age
             "dur_exp": dur_exp,  # Duration of the exposed state
             "dur_inf": dur_inf,  # Duration of the infectious state
@@ -77,7 +78,7 @@ def test_zero_trans():
 
 
 # Test DOUBLE transmission scenarios
-def test_double_trans(): 
+def test_double_trans():
 
     # Default scenario
     init_immun = 0.0

@@ -1,5 +1,6 @@
 import numpy as np
 from laser_core.propertyset import PropertySet
+
 import laser_polio as lp
 
 
@@ -183,7 +184,7 @@ def test_progression_with_transmission():
     assert n_r_t4 == n_r_t3 + n_i_t3, "R counts should be higher since I's should've become R"
 
     # Check disease states at the end of day 5
-    n_s_t5 = sim.results.S[5].sum() 
+    n_s_t5 = sim.results.S[5].sum()
     n_e_t5 = sim.results.E[5].sum()
     n_i_t5 = sim.results.I[5].sum()
     n_r_t5 = sim.results.R[5].sum()

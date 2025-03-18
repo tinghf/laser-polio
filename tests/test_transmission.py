@@ -9,7 +9,15 @@ import laser_polio as lp
 # Test with different beta_spatials
 # Test impact of differnt dur_inf
 
-def setup_sim(dur=1, n_ppl=[10000, 10000], beta_spatial=[0.5, 2.0], r0=14, dur_exp=lp.constant(value=2), dur_inf=lp.constant(value=1), init_immun=0.8, init_prev=0.01):
+def setup_sim(dur=1, n_ppl=None, beta_spatial=None, r0=14, dur_exp=None, dur_inf=None, init_immun=0.8, init_prev=0.01):
+    if n_ppl is None:
+        n_ppl = [10000, 10000]
+    if beta_spatial is None:
+        beta_spatial = [0.5, 2.0]
+    if dur_exp is None:
+        dur_exp = lp.constant(value=2)
+    if dur_inf is None:
+        dur_inf = lp.constant(value=1)
     pars = PropertySet(
         {
             "start_date": lp.date("2020-01-01"),

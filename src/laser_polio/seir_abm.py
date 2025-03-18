@@ -546,7 +546,7 @@ class DiseaseState_ABM:
                 ax.set_xticklabels([])
 
         # Add a single colorbar for all plots
-        cbar = fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
+        fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
 
         # Add title
         fig.suptitle("Infected Population by Node", fontsize=16)

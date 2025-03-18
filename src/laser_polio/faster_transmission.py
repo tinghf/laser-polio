@@ -202,6 +202,7 @@ class Transmission_ABM:
         mean_gamma = self.pars.r0 / np.mean(self.pars.dur_inf(1000))  # mean_gamma = R0 / mean(dur_inf)
         shape_gamma = 1  # makes this equivalent to an exponential distribution
         scale_gamma = mean_gamma / shape_gamma
+        scale_gamma = max(scale_gamma, 1e-10)  # Ensure scale is never exactly 0 since gamma is undefined for scale_gamma=0
         # Step 3: Generate correlated normal samples
         rho = 0.8  # Desired correlation
         cov_matrix = np.array([[1, rho], [rho, 1]])  # Create covariance matrix
@@ -215,8 +216,6 @@ class Transmission_ABM:
         # Step 4: Transform normal variables into target distributions
         acq_risk_multiplier = np.exp(mu_ln + sigma_ln * z_corr[:, 0])  # Lognormal transformation
         daily_infectivity = stats.gamma.ppf(stats.norm.cdf(z_corr[:, 1]), a=shape_gamma, scale=scale_gamma)  # Gamma transformation
-        # If scale_gamma=0, daily_infectivity will contain nans since gamma is undefined for scale_gamma=0. Let's replace those nans with 0
-        daily_infectivity[np.isnan(daily_infectivity)] = 0 
         self.people.acq_risk_multiplier[: self.people.true_capacity] = acq_risk_multiplier
         self.people.daily_infectivity[: self.people.true_capacity] = daily_infectivity
 
@@ -286,9 +285,7 @@ class Transmission_ABM:
         # 4) Calculate base probability for each agent to become exposed
         # Surely the alive count is available from report (sum)?
         alive_counts = (
-            self.sim.results.S[self.sim.t]
-            + self.sim.results.E[self.sim.t]
-            + self.sim.results.I[self.sim.t]
+            self.people.count 
             + self.sim.results.R[self.sim.t]
         )
         per_agent_infection_rate = beta / np.clip(alive_counts, 1, None)

@@ -1,12 +1,13 @@
-from alive_progress import alive_bar
+import time
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
 import pandas as pd
-from pathlib import Path
 import scipy.stats as stats
 import sciris as sc
-import time
+from alive_progress import alive_bar
 from laser_core.demographics.kmestimator import KaplanMeierEstimator
 from laser_core.demographics.pyramid import AliasedDistribution
 from laser_core.demographics.pyramid import load_pyramid_csv
@@ -105,7 +106,7 @@ class SEIR_ABM:
 
     def run(self):
         sc.printcyan("Initialization complete. Running simulation...")
-        self.component_times = {component: 0.0 for component in self.instances}
+        self.component_times = dict.fromkeys(self.instances, 0.0)
         self.component_times["report"] = 0
         with alive_bar(self.nt, title="Simulation progress:") as bar:
             for tick in range(self.nt):
@@ -330,8 +331,8 @@ class DiseaseState_ABM:
                     return node_counts
 
                 def prepop_eula(node_counts, life_expectancies):
-                    #TODO: refine mortality estimates since the following code is just a rough cut
-                    
+                    # TODO: refine mortality estimates since the following code is just a rough cut
+
                     # Get simulation parameters
                     T = self.results.R.shape[0]  # Number of timesteps
                     node_count = self.results.R.shape[1]  # Number of nodes
@@ -343,7 +344,7 @@ class DiseaseState_ABM:
                         minlength=node_count,
                     )
 
-                    with np.errstate(divide='ignore', invalid='ignore'):
+                    with np.errstate(divide="ignore", invalid="ignore"):
                         mean_dob = np.where(node_counts > 0, node_dob_sums / node_counts, 0)  # Avoid div by zero
 
                     # Calculate mean age per node
@@ -548,7 +549,7 @@ class DiseaseState_ABM:
                 ax.set_xticklabels([])
 
         # Add a single colorbar for all plots
-        cbar = fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
+        _cbar = fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
 
         # Add title
         fig.suptitle("Infected Population by Node", fontsize=16)

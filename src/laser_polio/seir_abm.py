@@ -184,46 +184,46 @@ class SEIR_ABM:
             plt.show()
 
 
-@nb.njit((nb.int32[:], nb.int32[:], nb.int32[:], nb.int32), nogil=True, cache=True)
-def count_SEIRP(node_id, disease_state, paralyzed, n_nodes):
-    """
-    Go through each person exactly once and increment counters for their node.
+# @nb.njit((nb.int32[:], nb.int32[:], nb.int32[:], nb.int32), nogil=True, cache=True)
+# def count_SEIRP(node_id, disease_state, paralyzed, n_nodes):
+#     """
+#     Go through each person exactly once and increment counters for their node.
 
-    node_id:        array of node IDs for each individual
-    disease_state:  array storing each person's disease state (-1=dead/inactive, 0=S, 1=E, 2=I, 3=R)
-    paralyzed:      array (0 or 1) if the person is paralyzed
-    n_nodes:        total number of nodes
+#     node_id:        array of node IDs for each individual
+#     disease_state:  array storing each person's disease state (-1=dead/inactive, 0=S, 1=E, 2=I, 3=R)
+#     paralyzed:      array (0 or 1) if the person is paralyzed
+#     n_nodes:        total number of nodes
 
-    Returns: S, E, I, R, P arrays, each length n_nodes
-    """
+#     Returns: S, E, I, R, P arrays, each length n_nodes
+#     """
 
-    alive = disease_state >= 0  # Only count those who are alive
-    S = np.zeros(n_nodes, dtype=np.int64)
-    E = np.zeros(n_nodes, dtype=np.int64)
-    I = np.zeros(n_nodes, dtype=np.int64)
-    R = np.zeros(n_nodes, dtype=np.int64)
-    P = np.zeros(n_nodes, dtype=np.int64)
+#     alive = disease_state >= 0  # Only count those who are alive
+#     S = np.zeros(n_nodes, dtype=np.int64)
+#     E = np.zeros(n_nodes, dtype=np.int64)
+#     I = np.zeros(n_nodes, dtype=np.int64)
+#     R = np.zeros(n_nodes, dtype=np.int64)
+#     P = np.zeros(n_nodes, dtype=np.int64)
 
-    # Single pass over the entire population
-    for i in nb.prange(len(alive)):
-        if alive[i]:  # Only count those who are alive
-            nd = node_id[i]
-            ds = disease_state[i]
+#     # Single pass over the entire population
+#     for i in nb.prange(len(alive)):
+#         if alive[i]:  # Only count those who are alive
+#             nd = node_id[i]
+#             ds = disease_state[i]
 
-            if ds == 0:  # Susceptible
-                S[nd] += 1
-            elif ds == 1:  # Exposed
-                E[nd] += 1
-            elif ds == 2:  # Infected
-                I[nd] += 1
-            elif ds == 3:  # Recovered
-                R[nd] += 1
+#             if ds == 0:  # Susceptible
+#                 S[nd] += 1
+#             elif ds == 1:  # Exposed
+#                 E[nd] += 1
+#             elif ds == 2:  # Infected
+#                 I[nd] += 1
+#             elif ds == 3:  # Recovered
+#                 R[nd] += 1
 
-            # Check paralyzed
-            if paralyzed[i] == 1:
-                P[nd] += 1
+#             # Check paralyzed
+#             if paralyzed[i] == 1:
+#                 P[nd] += 1
 
-    return S, E, I, R, P
+#     return S, E, I, R, P
 
 
 @nb.njit(parallel=True)
@@ -594,199 +594,199 @@ class DiseaseState_ABM:
 #     return new_exposed_indices
 
 
-class Transmission_ABM_Slow:
-    def __init__(self, sim):
-        self.sim = sim
-        self.people = sim.people
-        self.nodes = np.arange(len(sim.pars.n_ppl))
-        self.pars = sim.pars
+# class Transmission_ABM_Slow:
+#     def __init__(self, sim):
+#         self.sim = sim
+#         self.people = sim.people
+#         self.nodes = np.arange(len(sim.pars.n_ppl))
+#         self.pars = sim.pars
 
-        # Track disease states here because transmission will be the last component to run
-        self.results = sim.results
+#         # Track disease states here because transmission will be the last component to run
+#         self.results = sim.results
 
-        # Calcultate geographic R0 modifiers based on underweight data (one for each node)
-        underwt = self.pars.beta_spatial  # Placeholder for now
-        self.beta_spatial = 1 / (1 + np.exp(24 * (np.mean(underwt) - underwt))) + 0.2
+#         # Calcultate geographic R0 modifiers based on underweight data (one for each node)
+#         underwt = self.pars.beta_spatial  # Placeholder for now
+#         self.beta_spatial = 1 / (1 + np.exp(24 * (np.mean(underwt) - underwt))) + 0.2
 
-        # Pre-compute individual risk of acquisition and infectivity with correlated sampling
-        # Step 0: Add properties to people
-        self.people.add_scalar_property(
-            "acq_risk_multiplier", dtype=np.float32, default=1.0
-        )  # Individual-level acquisition risk multiplier (multiplied by base probability for an agent becoming infected)
-        self.people.add_scalar_property(
-            "daily_infectivity", dtype=np.float32, default=1.0
-        )  # Individual daily infectivity (e.g., number of infections generated per day in a fully susceptible population; mean = R0/dur_inf = 14/24)
-        # Step 1: Define parameters for Lognormal & convert to log-space parameters
-        mean_lognormal = 1
-        variance_lognormal = self.pars.risk_mult_var
-        mu_ln = np.log(mean_lognormal**2 / np.sqrt(variance_lognormal + mean_lognormal**2))
-        sigma_ln = np.sqrt(np.log(variance_lognormal / mean_lognormal**2 + 1))
-        # Step 2: Define parameters for Gamma
-        mean_gamma = 14 / 24
-        shape_gamma = 1  # makes this equivalent to an exponential distribution
-        scale_gamma = mean_gamma / shape_gamma
-        # Step 3: Generate correlated normal samples
-        rho = 0.8  # Desired correlation
-        cov_matrix = np.array([[1, rho], [rho, 1]])  # Create covariance matrix
-        L = np.linalg.cholesky(cov_matrix)  # Cholesky decomposition
-        # Generate standard normal samples
-        n_samples = self.people.true_capacity
-        z = np.random.normal(size=(n_samples, 2))
-        z_corr = z @ L.T  # Apply Cholesky to introduce correlation
-        # Step 4: Transform normal variables into target distributions
-        acq_risk_multiplier = np.exp(mu_ln + sigma_ln * z_corr[:, 0])  # Lognormal transformation
-        daily_infectivity = stats.gamma.ppf(stats.norm.cdf(z_corr[:, 1]), a=shape_gamma, scale=scale_gamma)  # Gamma transformation
-        self.people.acq_risk_multiplier[: self.people.true_capacity] = acq_risk_multiplier
-        self.people.daily_infectivity[: self.people.true_capacity] = daily_infectivity
+#         # Pre-compute individual risk of acquisition and infectivity with correlated sampling
+#         # Step 0: Add properties to people
+#         self.people.add_scalar_property(
+#             "acq_risk_multiplier", dtype=np.float32, default=1.0
+#         )  # Individual-level acquisition risk multiplier (multiplied by base probability for an agent becoming infected)
+#         self.people.add_scalar_property(
+#             "daily_infectivity", dtype=np.float32, default=1.0
+#         )  # Individual daily infectivity (e.g., number of infections generated per day in a fully susceptible population; mean = R0/dur_inf = 14/24)
+#         # Step 1: Define parameters for Lognormal & convert to log-space parameters
+#         mean_lognormal = 1
+#         variance_lognormal = self.pars.risk_mult_var
+#         mu_ln = np.log(mean_lognormal**2 / np.sqrt(variance_lognormal + mean_lognormal**2))
+#         sigma_ln = np.sqrt(np.log(variance_lognormal / mean_lognormal**2 + 1))
+#         # Step 2: Define parameters for Gamma
+#         mean_gamma = 14 / 24
+#         shape_gamma = 1  # makes this equivalent to an exponential distribution
+#         scale_gamma = mean_gamma / shape_gamma
+#         # Step 3: Generate correlated normal samples
+#         rho = 0.8  # Desired correlation
+#         cov_matrix = np.array([[1, rho], [rho, 1]])  # Create covariance matrix
+#         L = np.linalg.cholesky(cov_matrix)  # Cholesky decomposition
+#         # Generate standard normal samples
+#         n_samples = self.people.true_capacity
+#         z = np.random.normal(size=(n_samples, 2))
+#         z_corr = z @ L.T  # Apply Cholesky to introduce correlation
+#         # Step 4: Transform normal variables into target distributions
+#         acq_risk_multiplier = np.exp(mu_ln + sigma_ln * z_corr[:, 0])  # Lognormal transformation
+#         daily_infectivity = stats.gamma.ppf(stats.norm.cdf(z_corr[:, 1]), a=shape_gamma, scale=scale_gamma)  # Gamma transformation
+#         self.people.acq_risk_multiplier[: self.people.true_capacity] = acq_risk_multiplier
+#         self.people.daily_infectivity[: self.people.true_capacity] = daily_infectivity
 
-        # Compute the infection migration network
-        sim.results.add_vector_property("network", length=len(sim.nodes), dtype=np.float32)
-        self.network = sim.results.network
-        init_pops = sim.pars.n_ppl
-        k, a, b, c = self.pars.gravity_k, self.pars.gravity_a, self.pars.gravity_b, self.pars.gravity_c
-        dist_matrix = self.pars.distances
-        self.network = gravity(init_pops, dist_matrix, k, a, b, c)
-        self.network /= np.power(init_pops.sum(), c)  # Normalize
-        self.network = row_normalizer(self.network, self.pars.max_migr_frac)
+#         # Compute the infection migration network
+#         sim.results.add_vector_property("network", length=len(sim.nodes), dtype=np.float32)
+#         self.network = sim.results.network
+#         init_pops = sim.pars.n_ppl
+#         k, a, b, c = self.pars.gravity_k, self.pars.gravity_a, self.pars.gravity_b, self.pars.gravity_c
+#         dist_matrix = self.pars.distances
+#         self.network = gravity(init_pops, dist_matrix, k, a, b, c)
+#         self.network /= np.power(init_pops.sum(), c)  # Normalize
+#         self.network = row_normalizer(self.network, self.pars.max_migr_frac)
 
-    def step(self):
-        # 1) Sum up the total amount of infectivity shed by all infectious agents within a node.
-        # This is the daily number of infections that these individuals would be expected to generate
-        # in a fully susceptible population sans spatial and seasonal factors.
-        is_infected = self.people.disease_state == 2
-        node_beta_sums = np.bincount(
-            self.people.node_id[is_infected], weights=self.people.daily_infectivity[is_infected], minlength=len(self.nodes)
-        ).astype(np.float64)
+#     def step(self):
+#         # 1) Sum up the total amount of infectivity shed by all infectious agents within a node.
+#         # This is the daily number of infections that these individuals would be expected to generate
+#         # in a fully susceptible population sans spatial and seasonal factors.
+#         is_infected = self.people.disease_state == 2
+#         node_beta_sums = np.bincount(
+#             self.people.node_id[is_infected], weights=self.people.daily_infectivity[is_infected], minlength=len(self.nodes)
+#         ).astype(np.float64)
 
-        # 2) Spatially redistribute infectivity among nodes
-        transfer = (node_beta_sums * self.network).astype(np.float64)  # Don't round here, we'll handle fractional infections later
-        # Ensure net contagion remains positive after movement
-        node_beta_sums += transfer.sum(axis=1) - transfer.sum(axis=0)
-        node_beta_sums = np.maximum(node_beta_sums, 0)  # Prevent negative contagion
+#         # 2) Spatially redistribute infectivity among nodes
+#         transfer = (node_beta_sums * self.network).astype(np.float64)  # Don't round here, we'll handle fractional infections later
+#         # Ensure net contagion remains positive after movement
+#         node_beta_sums += transfer.sum(axis=1) - transfer.sum(axis=0)
+#         node_beta_sums = np.maximum(node_beta_sums, 0)  # Prevent negative contagion
 
-        # 3) Apply seasonal & geographic modifiers
-        beta_seasonality = lp.get_seasonality(self.sim)
-        beta_spatial = self.beta_spatial
-        beta = node_beta_sums * beta_seasonality * beta_spatial  # Total node infection rate
+#         # 3) Apply seasonal & geographic modifiers
+#         beta_seasonality = lp.get_seasonality(self.sim)
+#         beta_spatial = self.beta_spatial
+#         beta = node_beta_sums * beta_seasonality * beta_spatial  # Total node infection rate
 
-        # 4) Calculate base probability for each agent to become exposed
-        is_alive = self.people.disease_state >= 0
-        alive_counts = np.bincount(self.people.node_id[is_alive], minlength=len(self.nodes))  # Count number of alive agents in each node
-        per_agent_infection_rate = beta / np.clip(alive_counts, 1, None)
-        base_prob_infection = 1 - np.exp(-per_agent_infection_rate)
+#         # 4) Calculate base probability for each agent to become exposed
+#         is_alive = self.people.disease_state >= 0
+#         alive_counts = np.bincount(self.people.node_id[is_alive], minlength=len(self.nodes))  # Count number of alive agents in each node
+#         per_agent_infection_rate = beta / np.clip(alive_counts, 1, None)
+#         base_prob_infection = 1 - np.exp(-per_agent_infection_rate)
 
-        # 5) Calculate infections
-        is_sus = self.people.disease_state == 0  # Filter to susceptibles
-        exposure_probs = (
-            base_prob_infection[self.people.node_id] * self.people.acq_risk_multiplier
-        )  # Multiply by individual risk multiplier
-        node_ids_sus = self.people.node_id[is_sus]
-        exposure_prob_sums = np.bincount(node_ids_sus, weights=exposure_probs[is_sus], minlength=len(self.nodes))
-        n_expected_exposures = np.random.poisson(exposure_prob_sums)
-        # print( f"{n_expected_exposures=}" )
+#         # 5) Calculate infections
+#         is_sus = self.people.disease_state == 0  # Filter to susceptibles
+#         exposure_probs = (
+#             base_prob_infection[self.people.node_id] * self.people.acq_risk_multiplier
+#         )  # Multiply by individual risk multiplier
+#         node_ids_sus = self.people.node_id[is_sus]
+#         exposure_prob_sums = np.bincount(node_ids_sus, weights=exposure_probs[is_sus], minlength=len(self.nodes))
+#         n_expected_exposures = np.random.poisson(exposure_prob_sums)
+#         # print( f"{n_expected_exposures=}" )
 
-        # 6) Draw n_expected_exposures for each node according to their exposure_probs
-        # v1
-        for node in self.nodes:
-            n_to_draw = n_expected_exposures[node]
-            if n_to_draw > 0:
-                node_sus_indices = np.where((self.people.node_id == node) & is_sus)[0]
-                node_exposure_probs = exposure_probs[node_sus_indices]
-                if len(node_sus_indices) > 0:
-                    new_exposed_inds = np.random.choice(
-                        node_sus_indices, size=n_to_draw, p=node_exposure_probs / node_exposure_probs.sum(), replace=True
-                    )
-                    new_exposed_inds = np.unique(new_exposed_inds)  # Ensure unique individuals
-                    # Mark them as exposed
-                    self.people.disease_state[new_exposed_inds] = 1
-                    # self.people.exposure_timer[new_exposed_inds] = self.pars.dur_exp(len(new_exposed_inds))
+#         # 6) Draw n_expected_exposures for each node according to their exposure_probs
+#         # v1
+#         for node in self.nodes:
+#             n_to_draw = n_expected_exposures[node]
+#             if n_to_draw > 0:
+#                 node_sus_indices = np.where((self.people.node_id == node) & is_sus)[0]
+#                 node_exposure_probs = exposure_probs[node_sus_indices]
+#                 if len(node_sus_indices) > 0:
+#                     new_exposed_inds = np.random.choice(
+#                         node_sus_indices, size=n_to_draw, p=node_exposure_probs / node_exposure_probs.sum(), replace=True
+#                     )
+#                     new_exposed_inds = np.unique(new_exposed_inds)  # Ensure unique individuals
+#                     # Mark them as exposed
+#                     self.people.disease_state[new_exposed_inds] = 1
+#                     # self.people.exposure_timer[new_exposed_inds] = self.pars.dur_exp(len(new_exposed_inds))
 
-        # # v2
-        # if n_expected_exposures.sum() > 0:
-        #     new_exposed_indices = assign_exposures(node_ids_sus, exposure_probs[is_sus], n_expected_exposures)
+#         # # v2
+#         # if n_expected_exposures.sum() > 0:
+#         #     new_exposed_indices = assign_exposures(node_ids_sus, exposure_probs[is_sus], n_expected_exposures)
 
-        #     # Assign new state
-        #     self.people.disease_state[new_exposed_indices] = 1
-        #     self.people.exposure_timer[new_exposed_indices] = self.pars.dur_exp(len(new_exposed_indices))
+#         #     # Assign new state
+#         #     self.people.disease_state[new_exposed_indices] = 1
+#         #     self.people.exposure_timer[new_exposed_indices] = self.pars.dur_exp(len(new_exposed_indices))
 
-    def log(self, t):
-        # Get the counts for each node in one pass
-        S_counts, E_counts, I_counts, R_counts, P_counts = count_SEIRP(
-            self.people.node_id,
-            self.people.disease_state,
-            self.people.paralyzed,
-            np.int32(len(self.nodes)),
-        )
+#     def log(self, t):
+#         # Get the counts for each node in one pass
+#         S_counts, E_counts, I_counts, R_counts, P_counts = count_SEIRP(
+#             self.people.node_id,
+#             self.people.disease_state,
+#             self.people.paralyzed,
+#             np.int32(len(self.nodes)),
+#         )
 
-        # Store them in results
-        self.results.S[t, :] = S_counts
-        self.results.E[t, :] = E_counts
-        self.results.I[t, :] = I_counts
-        # Note that we add to existing non-zero EULA values for R
-        self.results.R[t, :] += R_counts
-        self.results.paralyzed[t, :] = P_counts
+#         # Store them in results
+#         self.results.S[t, :] = S_counts
+#         self.results.E[t, :] = E_counts
+#         self.results.I[t, :] = I_counts
+#         # Note that we add to existing non-zero EULA values for R
+#         self.results.R[t, :] += R_counts
+#         self.results.paralyzed[t, :] = P_counts
 
-        # sc.printcyan(f'Transmission_ABM t={self.sim.t}')
+#         # sc.printcyan(f'Transmission_ABM t={self.sim.t}')
 
-        # exp_inx = np.where(self.sim.people.disease_state == 1)[0]
-        # exp_timer = self.sim.people.exposure_timer[exp_inx]
-        # print( f"DEBUG: {exp_inx=}" )
-        # print( f"DEBUG: {exp_timer=}" )
+#         # exp_inx = np.where(self.sim.people.disease_state == 1)[0]
+#         # exp_timer = self.sim.people.exposure_timer[exp_inx]
+#         # print( f"DEBUG: {exp_inx=}" )
+#         # print( f"DEBUG: {exp_timer=}" )
 
-        # inf_idx = np.where(self.sim.people.disease_state == 2)[0]
-        # inf_timer = self.sim.people.infection_timer[inf_idx]
-        # print( f"DEBUG: {inf_idx=}" )
-        # print( f"DEBUG: {inf_timer=}" )
+#         # inf_idx = np.where(self.sim.people.disease_state == 2)[0]
+#         # inf_timer = self.sim.people.infection_timer[inf_idx]
+#         # print( f"DEBUG: {inf_idx=}" )
+#         # print( f"DEBUG: {inf_timer=}" )
 
-    def plot(self, save=False, results_path=None):
-        pass
+#     def plot(self, save=False, results_path=None):
+#         pass
 
-    # def select_exposure_indices(self, indices, exposure_probs, expected_new_exposures):
-    #     """
-    #     Efficiently selects individuals for exposure using the inverse transform method using a geometric distribution,
-    #     which allows you to efficiently sample a fixed number of individuals without iterating over the entire population.
-    #     This approach is based on skipping over agents efficiently rather than evaluating each agents probability one by one.
+#     # def select_exposure_indices(self, indices, exposure_probs, expected_new_exposures):
+#     #     """
+#     #     Efficiently selects individuals for exposure using the inverse transform method using a geometric distribution,
+#     #     which allows you to efficiently sample a fixed number of individuals without iterating over the entire population.
+#     #     This approach is based on skipping over agents efficiently rather than evaluating each agents probability one by one.
 
-    #     Instead of looping over all agents and sampling individually, we:
-    #       1. Sort the agents by their exposure probability (optional, but improves efficiency).
-    #       2. Use a geometric-like trick to jump directly to the next exposed agent.
-    #       3. Mathematically determine skips using the inverse CDF of the exponential distribution.
+#     #     Instead of looping over all agents and sampling individually, we:
+#     #       1. Sort the agents by their exposure probability (optional, but improves efficiency).
+#     #       2. Use a geometric-like trick to jump directly to the next exposed agent.
+#     #       3. Mathematically determine skips using the inverse CDF of the exponential distribution.
 
-    #     Parameters:
-    #     - indices: indices of the agents to consider for exposure
-    #     - exposure_probs: exposure probabilities for each agent
-    #     - expected_new_exposures: int -> Number of exposures to generate
+#     #     Parameters:
+#     #     - indices: indices of the agents to consider for exposure
+#     #     - exposure_probs: exposure probabilities for each agent
+#     #     - expected_new_exposures: int -> Number of exposures to generate
 
-    #     Returns:
-    #     - exposed_indices: List of selected agent indices
-    #     """
+#     #     Returns:
+#     #     - exposed_indices: List of selected agent indices
+#     #     """
 
-    #     # Sort individuals by infection probability (optional but can improve performance)
-    #     sorted_indices = np.argsort(-exposure_probs)  # Sort descending
-    #     sorted_probs = exposure_probs[sorted_indices]
-    #     sorted_agents = indices[sorted_indices]  # Get sorted agent IDs
+#     #     # Sort individuals by infection probability (optional but can improve performance)
+#     #     sorted_indices = np.argsort(-exposure_probs)  # Sort descending
+#     #     sorted_probs = exposure_probs[sorted_indices]
+#     #     sorted_agents = indices[sorted_indices]  # Get sorted agent IDs
 
-    #     # Efficient selection using geometric-like skips
-    #     exposed_indices = []
-    #     u = np.random.uniform(0, 1, expected_new_exposures)  # Generate uniform random values
+#     #     # Efficient selection using geometric-like skips
+#     #     exposed_indices = []
+#     #     u = np.random.uniform(0, 1, expected_new_exposures)  # Generate uniform random values
 
-    #     position = 0  # Start at first agent
-    #     for x in range(expected_new_exposures):
-    #         while position < len(sorted_agents):
-    #             denominator = np.log(1 - sorted_probs[position])
-    #             if denominator == 0 or np.isnan(denominator):
-    #                 skip_distance = 1  # Default to moving at least one step
-    #             else:
-    #                 skip_distance = int(np.log(u[x]) / denominator)  # Compute jump
-    #             # skip_distance = int(np.log(u[x]) / np.log(1 - sorted_probs[position]))  # Compute jump
-    #             position += max(1, skip_distance)  # Move to the next agent
-    #             if position < len(sorted_agents):
-    #                 exposed_indices.append(sorted_agents[position])
-    #                 position += 1  # Move to the next position
-    #             else:
-    #                 break  # Stop if we run out of agents
+#     #     position = 0  # Start at first agent
+#     #     for x in range(expected_new_exposures):
+#     #         while position < len(sorted_agents):
+#     #             denominator = np.log(1 - sorted_probs[position])
+#     #             if denominator == 0 or np.isnan(denominator):
+#     #                 skip_distance = 1  # Default to moving at least one step
+#     #             else:
+#     #                 skip_distance = int(np.log(u[x]) / denominator)  # Compute jump
+#     #             # skip_distance = int(np.log(u[x]) / np.log(1 - sorted_probs[position]))  # Compute jump
+#     #             position += max(1, skip_distance)  # Move to the next agent
+#     #             if position < len(sorted_agents):
+#     #                 exposed_indices.append(sorted_agents[position])
+#     #                 position += 1  # Move to the next position
+#     #             else:
+#     #                 break  # Stop if we run out of agents
 
-    #     return exposed_indices
+#     #     return exposed_indices
 
 
 class VitalDynamics_ABM:

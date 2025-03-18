@@ -1,12 +1,13 @@
-from alive_progress import alive_bar
+import time
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
 import pandas as pd
-from pathlib import Path
 import scipy.stats as stats
 import sciris as sc
-import time
+from alive_progress import alive_bar
 from laser_core.demographics.kmestimator import KaplanMeierEstimator
 from laser_core.demographics.pyramid import AliasedDistribution
 from laser_core.demographics.pyramid import load_pyramid_csv
@@ -105,7 +106,7 @@ class SEIR_ABM:
 
     def run(self):
         sc.printcyan("Initialization complete. Running simulation...")
-        self.component_times = {component: 0.0 for component in self.instances}
+        self.component_times = dict.fromkeys(self.instances, 0.0)
         self.component_times["report"] = 0
         with alive_bar(self.nt, title="Simulation progress:") as bar:
             for tick in range(self.nt):
@@ -113,7 +114,7 @@ class SEIR_ABM:
                     # Just record the initial state on t=0 & don't run any components
                     self.log_results(tick)
                     self.t += 1
-                else: 
+                else:
                     for component in self.instances:
                         start_time = time.perf_counter()
                         # sc.printcyan(f"Running component: {component.__class__.__name__} at tick {tick}")
@@ -245,6 +246,7 @@ def step_nb(disease_state, exposure_timer, infection_timer, acq_risk_multiplier,
                 daily_infectivity[i] = 0.0  # Reset infectivity
             infection_timer[i] -= 1  # Decrement infection timer so that they recover on the next timestep
 
+
 class DiseaseState_ABM:
     def __init__(self, sim):
         self.sim = sim
@@ -258,7 +260,8 @@ class DiseaseState_ABM:
         sim.people.add_scalar_property("paralyzed", dtype=np.int32, default=0)
         # Initialize all agents with an exposure_timer & infection_timer
         sim.people.add_scalar_property("exposure_timer", dtype=np.int32, default=0)
-        sim.people.exposure_timer[:] = self.pars.dur_exp(self.people.capacity) - 1  # Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
+        # Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
+        sim.people.exposure_timer[:] = self.pars.dur_exp(self.people.capacity) - 1
         sim.people.add_scalar_property("infection_timer", dtype=np.int32, default=0)
         sim.people.infection_timer[:] = self.pars.dur_inf(self.people.capacity)
 
@@ -330,8 +333,8 @@ class DiseaseState_ABM:
                     return node_counts
 
                 def prepop_eula(node_counts, life_expectancies):
-                    #TODO: refine mortality estimates since the following code is just a rough cut
-                    
+                    # TODO: refine mortality estimates since the following code is just a rough cut
+
                     # Get simulation parameters
                     T = self.results.R.shape[0]  # Number of timesteps
                     node_count = self.results.R.shape[1]  # Number of nodes
@@ -343,7 +346,7 @@ class DiseaseState_ABM:
                         minlength=node_count,
                     )
 
-                    with np.errstate(divide='ignore', invalid='ignore'):
+                    with np.errstate(divide="ignore", invalid="ignore"):
                         mean_dob = np.where(node_counts > 0, node_dob_sums / node_counts, 0)  # Avoid div by zero
 
                     # Calculate mean age per node
@@ -421,7 +424,6 @@ class DiseaseState_ABM:
                 deletions = active_count - new_active_count
                 sim.people.true_capacity -= deletions
 
-
                 # #TODO: remove these after debugging
                 # TODO need to filter on self.people.count
                 # alive = self.people.disease_state >= 0  # Only count those who are alive
@@ -432,9 +434,6 @@ class DiseaseState_ABM:
                 # assert n_recovered == n_recovered_results, "The EULA-gized recovered count is not equal to the results count of R"
                 # assert n_recovered_active == 0, "The number of active recovered individuals is not 0."
                 # assert active_count_init - n_recovered == new_active_count, "Mismatch in active count after EULA-gizing."
-
-
-
 
                 print(f"After immune initialization and EULA-gizing, we have {sim.people.count} active agents.")
                 # viz()
@@ -563,7 +562,7 @@ class DiseaseState_ABM:
                 ax.set_xticklabels([])
 
         # Add a single colorbar for all plots
-        cbar = fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
+        _cbar = fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
 
         # Add title
         fig.suptitle("Infected Population by Node", fontsize=16)
@@ -831,7 +830,7 @@ class VitalDynamics_ABM:
                 mask[:] = samples == i  # ...find the agents that belong to this bin
                 # ...and assign a random age, in days, within the bin
                 ages[mask] = np.random.randint(bin_min_age_days[i], bin_max_age_days[i], mask.sum())
-            # Move births on day 0 to one day prior. This prevents births on day 0 when we only record results, we don't run components. 
+            # Move births on day 0 to one day prior. This prevents births on day 0 when we only record results, we don't run components.
             ages[ages == 0] = 1
             sim.people.date_of_birth[: len(sim.people)] = -ages
 

@@ -1,5 +1,6 @@
 import numpy as np
 from laser_core.propertyset import PropertySet
+
 import laser_polio as lp
 
 
@@ -125,10 +126,14 @@ def test_progression_with_transmission():
     n_e_init = np.sum(disease_state == 1)
     n_i_init = np.sum(disease_state == 2)
     n_r_init = np.sum(disease_state == 3)
-    assert np.isclose(n_s_init, sim.pars.n_ppl.sum() * (1 - sim.pars.init_immun) * (1-sim.pars.init_prev), atol=10), "Roughly 18% of the pop should be S"
-    assert n_e_init == 0, 'There should be no E during initialization'
+    assert np.isclose(n_s_init, sim.pars.n_ppl.sum() * (1 - sim.pars.init_immun) * (1 - sim.pars.init_prev), atol=10), (
+        "Roughly 18% of the pop should be S"
+    )
+    assert n_e_init == 0, "There should be no E during initialization"
     assert np.isclose(n_i_init, sim.pars.n_ppl.sum() * (sim.pars.init_prev), atol=5), "Roughly 10% of the population should be infected"
-    assert np.isclose(n_r_init, sim.pars.n_ppl.sum() * (sim.pars.init_immun) * (1-sim.pars.init_prev), atol=5), "Roughly 72% of the pop should be R (since infections can override immunity in initialization)"
+    assert np.isclose(n_r_init, sim.pars.n_ppl.sum() * (sim.pars.init_immun) * (1 - sim.pars.init_prev), atol=5), (
+        "Roughly 72% of the pop should be R (since infections can override immunity in initialization)"
+    )
 
     # Run the simulation for one timestep
     sim.run()
@@ -183,7 +188,7 @@ def test_progression_with_transmission():
     assert n_r_t4 == n_r_t3 + n_i_t3, "R counts should be higher since I's should've become R"
 
     # Check disease states at the end of day 5
-    n_s_t5 = sim.results.S[5].sum() 
+    n_s_t5 = sim.results.S[5].sum()
     n_e_t5 = sim.results.E[5].sum()
     n_i_t5 = sim.results.I[5].sum()
     n_r_t5 = sim.results.R[5].sum()

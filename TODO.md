@@ -13,6 +13,7 @@
     - Transmission_abm
     - RI_abm
     - SIA_abm
+    - Full models with real data
 - Add default pars, then replace if user specifies pars
 - Set a random number seed
 - Use KM's gravity model scaling approach

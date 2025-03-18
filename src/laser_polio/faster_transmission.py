@@ -182,7 +182,7 @@ class Transmission_ABM:
         self.results = sim.results
 
         # Calcultate geographic R0 modifiers based on underweight data (one for each node)
-        underwt = self.pars.beta_spatial  # Placeholder for now
+        underwt = self.pars.beta_spatial
         self.beta_spatial = 1 / (1 + np.exp(24 * (np.mean(underwt) - underwt))) + 0.2
 
         # Pre-compute individual risk of acquisition and infectivity with correlated sampling
@@ -198,8 +198,8 @@ class Transmission_ABM:
         variance_lognormal = self.pars.risk_mult_var
         mu_ln = np.log(mean_lognormal**2 / np.sqrt(variance_lognormal + mean_lognormal**2))
         sigma_ln = np.sqrt(np.log(variance_lognormal / mean_lognormal**2 + 1))
-        # Step 2: Define parameters for Gamma
-        mean_gamma = 14 / 24
+        # Step 2: Define parameters for daily_infectivity (Gamma distribution)
+        mean_gamma = self.pars.r0 / np.mean(self.pars.dur_inf(1000))  # mean_gamma = R0 / mean(dur_inf)
         shape_gamma = 1  # makes this equivalent to an exponential distribution
         scale_gamma = mean_gamma / shape_gamma
         # Step 3: Generate correlated normal samples
@@ -215,6 +215,8 @@ class Transmission_ABM:
         # Step 4: Transform normal variables into target distributions
         acq_risk_multiplier = np.exp(mu_ln + sigma_ln * z_corr[:, 0])  # Lognormal transformation
         daily_infectivity = stats.gamma.ppf(stats.norm.cdf(z_corr[:, 1]), a=shape_gamma, scale=scale_gamma)  # Gamma transformation
+        # If scale_gamma=0, daily_infectivity will contain nans since gamma is undefined for scale_gamma=0. Let's replace those nans with 0
+        daily_infectivity[np.isnan(daily_infectivity)] = 0 
         self.people.acq_risk_multiplier[: self.people.true_capacity] = acq_risk_multiplier
         self.people.daily_infectivity[: self.people.true_capacity] = daily_infectivity
 

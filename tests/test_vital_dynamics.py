@@ -48,8 +48,14 @@ def test_births_generated():
 
     dobs = sim.people.date_of_birth[: sim.people.count]  # Extract date_of_birth; only consider active individuals
     dobs = dobs[dobs >= 0]  # Remove negatives (pop initialized before sim)
-    expected_births = np.bincount(dobs, minlength=sim.pars.dur + 1)  # Tally births per day, add 1 since results include init conditions and dur timesteps
+    # Tally births per day, add 1 since results include init conditions and dur timesteps
+    expected_births = np.bincount(dobs, minlength=sim.pars.dur + 1)
     observed_births = np.sum(sim.results.births, axis=1)  # Sum across nodes per timestep
+    # Combine births on day 0 and day 1 since we don't run vital rates on day 0, we only log results
+    expected_births[1] += expected_births[0]  # Combine day 0 and day 1
+    expected_births = expected_births[1:]  # Remove day 0 since it's combined with day 1
+    observed_births[1] += observed_births[0]  # Combine day 0 and day 1
+    observed_births = observed_births[1:]  # Remove day 0 since it's combined with day 1
     assert np.array_equal(expected_births, observed_births), "Births did not occur on the expected days"
     # print("Births:", sim.results.births)
 
@@ -64,7 +70,8 @@ def test_deaths_occur_step_size_1():
     assert np.all(sim.people.disease_state[:5] == -1), "First 5 were not marked dead with disease_state"
 
     dods = sim.people.date_of_death[: sim.people.count]  # Extract date_of_death; only consider active individuals
-    expected_deaths = np.bincount(dods)[: sim.pars.dur + 1]  # Tally deaths per day, add 1 since results are include init conditions and dur timesteps
+    # Tally deaths per day, add 1 since results are include init conditions and dur timesteps
+    expected_deaths = np.bincount(dods)[: sim.pars.dur + 1]
     observed_deaths = np.sum(sim.results.deaths, axis=1)  # Sum across nodes per timestep
     assert np.array_equal(expected_deaths, observed_deaths), "Deaths did not occur on the expected days"
 

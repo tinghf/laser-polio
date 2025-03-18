@@ -1,12 +1,13 @@
-from alive_progress import alive_bar
+import time
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
 import pandas as pd
-from pathlib import Path
 import scipy.stats as stats
 import sciris as sc
-import time
+from alive_progress import alive_bar
 from laser_core.demographics.kmestimator import KaplanMeierEstimator
 from laser_core.demographics.pyramid import AliasedDistribution
 from laser_core.demographics.pyramid import load_pyramid_csv
@@ -105,29 +106,34 @@ class SEIR_ABM:
 
     def run(self):
         sc.printcyan("Initialization complete. Running simulation...")
-        self.component_times = {component: 0.0 for component in self.instances}
+        self.component_times = dict.fromkeys(self.instances, 0.0)
         self.component_times["report"] = 0
         with alive_bar(self.nt, title="Simulation progress:") as bar:
             for tick in range(self.nt):
-                for component in self.instances:
-                    start_time = time.perf_counter()
-                    sc.printcyan(f"Running component: {component.__class__.__name__} at tick {tick}")
-                    print(f"Disease state counts before: {np.bincount(self.people.disease_state[:self.people.count])}")
-                    print(f"E indeces before: {np.where(self.people.disease_state[:self.people.count] == 1)}")
-                    print(f"I indeces before: {np.where(self.people.disease_state[:self.people.count] == 2)}")
-                    component.step()
-                    print(f"Disease state counts after: {np.bincount(self.people.disease_state[:self.people.count])}")
-                    print(f"E indeces after: {np.where(self.people.disease_state[:self.people.count] == 1)}")
-                    print(f"I indeces after: {np.where(self.people.disease_state[:self.people.count] == 2)}")
-                    end_time = time.perf_counter()
-                    self.component_times[component] += end_time - start_time
+                if tick == 0:
+                    # Just record the initial state on t=0 & don't run any components
+                    self.log_results(tick)
+                    self.t += 1
+                else:
+                    for component in self.instances:
+                        start_time = time.perf_counter()
+                        # sc.printcyan(f"Running component: {component.__class__.__name__} at tick {tick}")
+                        # print(f"Disease state counts before: {np.bincount(self.people.disease_state[:self.people.count])}")
+                        # print(f"E indices before: {np.where(self.people.disease_state[:self.people.count] == 1)}")
+                        # print(f"I indices before: {np.where(self.people.disease_state[:self.people.count] == 2)}")
+                        component.step()
+                        # print(f"Disease state counts after: {np.bincount(self.people.disease_state[:self.people.count])}")
+                        # print(f"E indices after: {np.where(self.people.disease_state[:self.people.count] == 1)}")
+                        # print(f"I indices after: {np.where(self.people.disease_state[:self.people.count] == 2)}")
+                        end_time = time.perf_counter()
+                        self.component_times[component] += end_time - start_time
 
-                start_time = time.perf_counter()
-                self.log_results(tick)
-                end_time = time.perf_counter()
-                self.component_times["report"] += end_time - start_time
-                self.t += 1
-                bar()  # Update the progress bar
+                    start_time = time.perf_counter()
+                    self.log_results(tick)
+                    end_time = time.perf_counter()
+                    self.component_times["report"] += end_time - start_time
+                    self.t += 1
+                    bar()  # Update the progress bar
         sc.printcyan("Simulation complete.")
 
     def log_results(self, t):
@@ -225,20 +231,20 @@ def count_SEIRP(node_id, disease_state, paralyzed, n_nodes):
 def step_nb(disease_state, exposure_timer, infection_timer, acq_risk_multiplier, daily_infectivity, paralyzed, p_paralysis, active_count):
     for i in nb.prange(active_count):
         # Update states in reverse order so that newly exposed don't become infected on the same timestep
-        if disease_state[i] == 2:  # Infected
-            if infection_timer[i] <= 0:
-                disease_state[i] = 3  # Become recovered
-                acq_risk_multiplier[i] = 0.0  # Reset risk
-                daily_infectivity[i] = 0.0  # Reset infectivity
-            infection_timer[i] -= 1  # Decrement infection timer so that they recover on the next timestep
-
-        elif disease_state[i] == 1:  # Exposed
+        if disease_state[i] == 1:  # Exposed
             if exposure_timer[i] <= 0:
                 disease_state[i] = 2  # Become infected
                 # Apply paralysis probability immediately after infection
                 if np.random.random() < p_paralysis:
                     paralyzed[i] = 1
             exposure_timer[i] -= 1  # Decrement exposure timer so that they become infected on the next timestep
+
+        if disease_state[i] == 2:  # Infected
+            if infection_timer[i] <= 0:
+                disease_state[i] = 3  # Become recovered
+                acq_risk_multiplier[i] = 0.0  # Reset risk
+                daily_infectivity[i] = 0.0  # Reset infectivity
+            infection_timer[i] -= 1  # Decrement infection timer so that they recover on the next timestep
 
 
 class DiseaseState_ABM:
@@ -252,13 +258,12 @@ class DiseaseState_ABM:
         # Setup the SEIR components
         pars = self.pars
         sim.people.add_scalar_property("paralyzed", dtype=np.int32, default=0)
-        # TODO should probably set for entire population, not just initial, but giving issues. TBD.
-        # Initialize all agents with an infection_timer. Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
+        # Initialize all agents with an exposure_timer & infection_timer
         sim.people.add_scalar_property("exposure_timer", dtype=np.int32, default=0)
-        sim.people.exposure_timer[: np.sum(self.pars.n_ppl)] = self.pars.dur_exp(np.sum(self.pars.n_ppl)) - 1   
-        # initialize all agents with an infection_timer
+        # Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
+        sim.people.exposure_timer[:] = self.pars.dur_exp(self.people.capacity) - 1
         sim.people.add_scalar_property("infection_timer", dtype=np.int32, default=0)
-        sim.people.infection_timer[: np.sum(self.pars.n_ppl)] = self.pars.dur_inf(np.sum(self.pars.n_ppl)) - 1  
+        sim.people.infection_timer[:] = self.pars.dur_inf(self.people.capacity)
 
         sim.results.add_array_property("S", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
         sim.results.add_array_property("E", shape=(sim.nt, len(self.nodes)), dtype=np.float32)
@@ -328,8 +333,8 @@ class DiseaseState_ABM:
                     return node_counts
 
                 def prepop_eula(node_counts, life_expectancies):
-                    #TODO: refine mortality estimates since the following code is just a rough cut
-                    
+                    # TODO: refine mortality estimates since the following code is just a rough cut
+
                     # Get simulation parameters
                     T = self.results.R.shape[0]  # Number of timesteps
                     node_count = self.results.R.shape[1]  # Number of nodes
@@ -341,7 +346,7 @@ class DiseaseState_ABM:
                         minlength=node_count,
                     )
 
-                    with np.errstate(divide='ignore', invalid='ignore'):
+                    with np.errstate(divide="ignore", invalid="ignore"):
                         mean_dob = np.where(node_counts > 0, node_dob_sums / node_counts, 0)  # Avoid div by zero
 
                     # Calculate mean age per node
@@ -419,7 +424,6 @@ class DiseaseState_ABM:
                 deletions = active_count - new_active_count
                 sim.people.true_capacity -= deletions
 
-
                 # #TODO: remove these after debugging
                 # TODO need to filter on self.people.count
                 # alive = self.people.disease_state >= 0  # Only count those who are alive
@@ -430,9 +434,6 @@ class DiseaseState_ABM:
                 # assert n_recovered == n_recovered_results, "The EULA-gized recovered count is not equal to the results count of R"
                 # assert n_recovered_active == 0, "The number of active recovered individuals is not 0."
                 # assert active_count_init - n_recovered == new_active_count, "Mismatch in active count after EULA-gizing."
-
-
-
 
                 print(f"After immune initialization and EULA-gizing, we have {sim.people.count} active agents.")
                 # viz()
@@ -458,8 +459,6 @@ class DiseaseState_ABM:
                 infected_indices.extend(infected_indices_node)
         num_infected = len(infected_indices)
         sim.people.disease_state[infected_indices] = 2
-        # TODO: why is this here??? are'nt we handling that during initialization???
-        sim.people.infection_timer[infected_indices] = self.pars.dur_inf(num_infected)
 
     def step(self):
         # Add these if they don't exist from the Transmission_ABM component (e.g., if running DiseaseState_ABM alone for testing)
@@ -563,7 +562,7 @@ class DiseaseState_ABM:
                 ax.set_xticklabels([])
 
         # Add a single colorbar for all plots
-        cbar = fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
+        _cbar = fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
 
         # Add title
         fig.suptitle("Infected Population by Node", fontsize=16)
@@ -831,6 +830,8 @@ class VitalDynamics_ABM:
                 mask[:] = samples == i  # ...find the agents that belong to this bin
                 # ...and assign a random age, in days, within the bin
                 ages[mask] = np.random.randint(bin_min_age_days[i], bin_max_age_days[i], mask.sum())
+            # Move births on day 0 to one day prior. This prevents births on day 0 when we only record results, we don't run components.
+            ages[ages == 0] = 1
             sim.people.date_of_birth[: len(sim.people)] = -ages
 
         if pars.cbr is not None:
@@ -866,7 +867,7 @@ class VitalDynamics_ABM:
 
         # 3) Compute births node by node, but without big boolean masks
         for node in self.nodes:
-            expected_births = 7 * self.birth_rate * alive_count_by_node[node]
+            expected_births = self.step_size * self.birth_rate * alive_count_by_node[node]
 
             # Integer part plus probabilistic fractional part
             birth_integer = int(expected_births)

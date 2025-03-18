@@ -1,5 +1,4 @@
 # Priorities
-- Fix last two tests in test_diseasestate_abm.py
 - Add test for squashing
 - Track down what happened to the priority ordering
     # Set the order in which components should be run during step()
@@ -12,7 +11,7 @@
     ]
 - Rename variables to distinguish between exposure and infection
 - Testing
-    - DiseaseState_abm
+    - Squashing
     - Transmission_abm
     - RI_abm
     - SIA_abm

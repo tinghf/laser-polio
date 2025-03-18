@@ -114,7 +114,7 @@ class SEIR_ABM:
                     # Just record the initial state on t=0 & don't run any components
                     self.log_results(tick)
                     self.t += 1
-                else: 
+                else:
                     for component in self.instances:
                         start_time = time.perf_counter()
                         # sc.printcyan(f"Running component: {component.__class__.__name__} at tick {tick}")
@@ -817,7 +817,7 @@ class VitalDynamics_ABM:
                 mask[:] = samples == i  # ...find the agents that belong to this bin
                 # ...and assign a random age, in days, within the bin
                 ages[mask] = np.random.randint(bin_min_age_days[i], bin_max_age_days[i], mask.sum())
-            # Move births on day 0 to one day prior. This prevents births on day 0 when we only record results, we don't run components. 
+            # Move births on day 0 to one day prior. This prevents births on day 0 when we only record results, we don't run components.
             ages[ages == 0] = 1
             sim.people.date_of_birth[: len(sim.people)] = -ages
 

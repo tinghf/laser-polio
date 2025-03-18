@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import sciris as sc
 from laser_core.propertyset import PropertySet
 
 import laser_polio as lp
@@ -134,7 +133,7 @@ def test_squash():
     assert np.all(disease_state < 3), "No one should be in the recovered state since they should be squashed out."
 
     exp_pop = np.sum(pop)
-    obs_pop = sim.people.count + sim.results.R[0].sum() 
+    obs_pop = sim.people.count + sim.results.R[0].sum()
     assert np.isclose(exp_pop, obs_pop, atol=100), f"Expected population size {exp_pop}, but got {obs_pop}."
 
     # Check the number of recovered in results. I did a really rough calc for <15yo immunity since it's broken up by age bins

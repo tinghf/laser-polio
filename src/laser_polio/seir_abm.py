@@ -227,7 +227,6 @@ class SEIR_ABM:
 @nb.njit(parallel=True)
 def step_nb(disease_state, exposure_timer, infection_timer, acq_risk_multiplier, daily_infectivity, paralyzed, p_paralysis, active_count):
     for i in nb.prange(active_count):
-        # Update states in reverse order so that newly exposed don't become infected on the same timestep
         if disease_state[i] == 1:  # Exposed
             if exposure_timer[i] <= 0:
                 disease_state[i] = 2  # Become infected
@@ -243,6 +242,7 @@ def step_nb(disease_state, exposure_timer, infection_timer, acq_risk_multiplier,
                 daily_infectivity[i] = 0.0  # Reset infectivity
             infection_timer[i] -= 1  # Decrement infection timer so that they recover on the next timestep
 
+
 class DiseaseState_ABM:
     def __init__(self, sim):
         self.sim = sim
@@ -256,7 +256,8 @@ class DiseaseState_ABM:
         sim.people.add_scalar_property("paralyzed", dtype=np.int32, default=0)
         # Initialize all agents with an exposure_timer & infection_timer
         sim.people.add_scalar_property("exposure_timer", dtype=np.int32, default=0)
-        sim.people.exposure_timer[:] = self.pars.dur_exp(self.people.capacity) - 1  # Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
+        # Subtract 1 to account for the fact that we expose people in transmission component after the disease state component (newly exposed miss their first timer decrement)
+        sim.people.exposure_timer[:] = self.pars.dur_exp(self.people.capacity) - 1
         sim.people.add_scalar_property("infection_timer", dtype=np.int32, default=0)
         sim.people.infection_timer[:] = self.pars.dur_inf(self.people.capacity)
 
@@ -328,7 +329,7 @@ class DiseaseState_ABM:
                     return node_counts
 
                 def prepop_eula(node_counts, life_expectancies):
-                    #TODO: refine mortality estimates since the following code is just a rough cut
+                    # TODO: refine mortality estimates since the following code is just a rough cut
 
                     # Get simulation parameters
                     T = self.results.R.shape[0]  # Number of timesteps
@@ -341,7 +342,7 @@ class DiseaseState_ABM:
                         minlength=node_count,
                     )
 
-                    with np.errstate(divide='ignore', invalid='ignore'):
+                    with np.errstate(divide="ignore", invalid="ignore"):
                         mean_dob = np.where(node_counts > 0, node_dob_sums / node_counts, 0)  # Avoid div by zero
 
                     # Calculate mean age per node

@@ -51,6 +51,7 @@ dependencies = [
     "rastertools @ git+https://github.com/InstituteforDiseaseModeling/RasterTools.git@76e4b737337449b103d8d9070248a970e9c05713",
     "requests",
     "scipy",
+    "sciris==3.1.7",
     "shapely",
     "tables",
     "tqdm",
@@ -115,6 +116,7 @@ ignore = [
     "PTH119", # I have no desire to think about paths as objects
     "PTH122", # I have neither desire nor need to think about paths as objects
     "PTH123", # I have neither desire nor need to think about paths as objects
+    "PTH208",
     "DTZ002" # I want to be able to just call a today() function.
 ]
 select = [

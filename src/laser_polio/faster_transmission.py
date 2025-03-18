@@ -209,7 +209,7 @@ class Transmission_ABM:
         L = np.linalg.cholesky(cov_matrix)  # Cholesky decomposition
         # Generate standard normal samples
         if not hasattr(self.people, "true_capacity"):
-            self.people.true_capacity = self.people.capacity # Ensure true_capacity is set even if we don't initialize prevalence by node
+            self.people.true_capacity = self.people.capacity  # Ensure true_capacity is set even if we don't initialize prevalence by node
         n_samples = self.people.true_capacity
         z = np.random.normal(size=(n_samples, 2))
         z_corr = z @ L.T  # Apply Cholesky to introduce correlation

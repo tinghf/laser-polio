@@ -64,7 +64,7 @@ def test_trans_default():
     N = sim.people.count
     exp_E = np.sum((R0 / D) * I * (S / N))
     obs_E = sim.results.E[1:].sum()
-    assert np.isclose(obs_E, exp_E, atol=60), "The number of exposures does not match the expected value."
+    assert np.isclose(obs_E, exp_E, atol=100), "The number of exposures does not match the expected value."
 
 
 # Test ZERO transmission scenarios

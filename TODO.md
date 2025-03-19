@@ -16,7 +16,7 @@
 - Add default pars, then replace if user specifies pars
 - Set a random number seed
 - Use KM's gravity model scaling approach
-- Tackle periodically failing tests: 
+- Tackle periodically failing tests:
     - test_deaths_occur_step_size_1
 - Enable different RI rates over time
 - Check the RI & SIA figures - they're plotting strange results

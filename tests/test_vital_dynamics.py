@@ -13,7 +13,7 @@ def setup_sim(step_size=1):
         {
             "start_date": lp.date("2020-01-01"),  # Start date of the simulation
             "dur": 30,  # Number of dur to run the simulation
-            "n_ppl": np.array([1000, 500]),  # Two nodes with populations
+            "n_ppl": np.array([10000, 5000]),  # Two nodes with populations
             "cbr": np.array([30, 25]),  # Birth rate per 1000/year
             "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",  # From https://www.populationpyramid.net/nigeria/2024/
         }

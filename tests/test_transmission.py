@@ -3,11 +3,12 @@ from laser_core.propertyset import PropertySet
 
 import laser_polio as lp
 
-#TODO: (ask AI)
+# TODO: (ask AI)
 # Test no transmission when r0 = 0
 # Test double transmission when r0x2 vs r0
 # Test with different beta_spatials
 # Test impact of differnt dur_inf
+
 
 def setup_sim(dur=1, n_ppl=None, beta_spatial=None, r0=14, dur_exp=None, dur_inf=None, init_immun=0.8, init_prev=0.01):
     if n_ppl is None:
@@ -57,7 +58,7 @@ def test_trans_default():
 
     # Check if the number of exposures matches the expected value
     R0 = sim.pars["r0"]
-    D = np.mean(sim.pars['dur_inf'](100))  # mean duration of infectiousness
+    D = np.mean(sim.pars["dur_inf"](100))  # mean duration of infectiousness
     I = sim.results.I[0]  # initial infected individuals
     S = sim.results.S[0]  # susceptible individuals at the start
     N = sim.people.count
@@ -68,14 +69,13 @@ def test_trans_default():
 
 # Test ZERO transmission scenarios
 def test_zero_trans():
-
     # Test with r0 = 0
     sim_r0_zero = setup_sim(r0=0)
     sim_r0_zero.run()
     assert sim_r0_zero.results.E[1:].sum() == 0, "There should be NO exposures when r0 is 0."
 
     # Test with beta_spatial = 0
-    sim_beta_spatial_zero = setup_sim(beta_spatial=[0,0])
+    sim_beta_spatial_zero = setup_sim(beta_spatial=[0, 0])
     sim_beta_spatial_zero.run()
     assert sim_beta_spatial_zero.results.E[1:].sum() == 0, "There should be NO exposures when beta_spatial is 0."
 
@@ -87,7 +87,6 @@ def test_zero_trans():
 
 # Test DOUBLE transmission scenarios
 def test_double_trans():
-
     # Default scenario
     init_immun = 0.0
     r0 = 5
@@ -115,8 +114,12 @@ def test_double_trans():
     n_e_t1_init_prev_2x = sim_init_prev_2x.results.E[1:].sum()
     atol = n_e_t1_default * 0.8  # Allow for some tolerance in the comparison
     assert np.isclose(n_e_t1_default * 2, n_e_t1_r0_2x, atol=atol), "Doubling r0 should approximately double the number of exposures."
-    assert np.isclose(n_e_t1_default * 2, n_e_t1_beta_spatial_2x, atol=atol), "Doubling beta_spatial should approximately double the number of exposures."
-    assert np.isclose(n_e_t1_default * 2, n_e_t1_init_prev_2x, atol=atol), "Doubling init_prev should approximately double the number of exposures."
+    assert np.isclose(n_e_t1_default * 2, n_e_t1_beta_spatial_2x, atol=atol), (
+        "Doubling beta_spatial should approximately double the number of exposures."
+    )
+    assert np.isclose(n_e_t1_default * 2, n_e_t1_init_prev_2x, atol=atol), (
+        "Doubling init_prev should approximately double the number of exposures."
+    )
 
 
 if __name__ == "__main__":

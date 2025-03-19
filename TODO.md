@@ -1,4 +1,5 @@
 # Priorities
+- Try loading gpkg data from Hil in Kurt_sharing\step01_shapes\shapes_alternative
 - Track down what happened to the priority ordering
     # Set the order in which components should be run during step()
     PRIORITY_ORDER = [
@@ -27,6 +28,7 @@
 - Reactive SIAs
 
 # Refinement
+- Do we need sub-adm2 resolution? And if so, how do we handle the distance matrix to minimize file size? Consider making values nan if over some threshold?
 - Add EMOD style seasonality
 - Fork polio-immunity-mapping repo
 - Double check that I'm using the ri_eff and sia_prob values correctly - do I need to multiply sia_prob by vx_eff?

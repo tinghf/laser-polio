@@ -1,5 +1,5 @@
 from .distributions import *  # noqa F403
-from .seir_abm import *  # noqa F403
+from .model import *  # noqa F403
 
 # from .seir_mpm import *
 from .utils import *  # noqa F403

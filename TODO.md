@@ -1,4 +1,5 @@
 # Priorities
+- Try loading gpkg data from Hil in Kurt_sharing\step01_shapes\shapes_alternative
 - Track down what happened to the priority ordering
     # Set the order in which components should be run during step()
     PRIORITY_ORDER = [
@@ -10,12 +11,15 @@
     ]
 - Rename variables to distinguish between exposure and infection
 - Testing
-    - Transmission_abm
     - RI_abm
     - SIA_abm
+    - Full models with real data
 - Add default pars, then replace if user specifies pars
 - Set a random number seed
 - Use KM's gravity model scaling approach
+- Tackle periodically failing tests:
+    - test_deaths_occur_step_size_1
+- Enable different RI rates over time
 - Check the RI & SIA figures - they're plotting strange results
 - Update the birth and death plot to summarize by country
 - Calibration
@@ -24,6 +28,7 @@
 - Reactive SIAs
 
 # Refinement
+- Do we need sub-adm2 resolution? And if so, how do we handle the distance matrix to minimize file size? Consider making values nan if over some threshold?
 - Add EMOD style seasonality
 - Fork polio-immunity-mapping repo
 - Double check that I'm using the ri_eff and sia_prob values correctly - do I need to multiply sia_prob by vx_eff?

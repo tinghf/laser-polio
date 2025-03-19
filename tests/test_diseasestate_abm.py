@@ -226,7 +226,7 @@ def test_paralysis_probability():
         {
             "start_date": lp.date("2020-01-01"),
             "dur": 1,
-            "n_ppl": np.array([10000, 5000]),  # Two nodes with populations
+            "n_ppl": np.array([50000, 50000]),  # Two nodes
             "cbr": np.array([30, 25]),  # Birth rate per 1000/year
             "beta_spatial": np.array([0.5, 2.0]),  # Spatial transmission scalar (multiplied by global rate)
             "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",  # From https://www.populationpyramid.net/nigeria/2024/
@@ -246,9 +246,9 @@ def test_paralysis_probability():
 
 
 if __name__ == "__main__":
-    test_disease_state_initialization()
-    test_initial_population_counts()
-    test_progression_without_transmission()
-    test_progression_with_transmission()
+    # test_disease_state_initialization()
+    # test_initial_population_counts()
+    # test_progression_without_transmission()
+    # test_progression_with_transmission()
     test_paralysis_probability()
     print("All disease state tests passed!")

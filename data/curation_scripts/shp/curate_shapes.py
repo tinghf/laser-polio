@@ -1,4 +1,5 @@
 import os
+import pathlib
 import zipfile
 from datetime import datetime
 
@@ -19,7 +20,7 @@ os.makedirs(extract_dir, exist_ok=True)
 
 # Extract the GeoJSON files from the zip archive
 extracted_geojson_files = [
-    os.path.join(extract_dir, f) for f in os.listdir(extract_dir) if f.endswith(".geojson")
+    os.path.join(extract_dir, f) for f in pathlib.Path.iterdir(extract_dir) if f.endswith(".geojson")
 ]  # Check if the files have already been unzipped and saved
 if not extracted_geojson_files:
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
@@ -36,7 +37,7 @@ if not extracted_geojson_files:
                 target.write(source.read())
 
 # List all GeoJSON files in the extracted directory
-extracted_geojson_files = [os.path.join(extract_dir, f) for f in os.listdir(extract_dir) if f.endswith(".geojson")]
+extracted_geojson_files = [os.path.join(extract_dir, f) for f in pathlib.Path.iterdir(extract_dir) if f.endswith(".geojson")]
 
 # Define the shapefiles and associated columns
 shapefiles = [

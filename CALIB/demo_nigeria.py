@@ -1,10 +1,11 @@
+import csv
+import json
+import pickle
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import sciris as sc
-import json
-import pickle
-import csv
-from pathlib import Path
 from laser_core.propertyset import PropertySet
 
 import laser_polio as lp
@@ -99,6 +100,7 @@ assert (
     == len(beta_spatial)
 )
 
+
 class ConfigurablePropertySet(PropertySet):
     def __init__(self, default_params: dict):
         """
@@ -124,7 +126,7 @@ class ConfigurablePropertySet(PropertySet):
         for key, value in override_params.items():
             self[key] = value  # Assuming PropertySet supports item assignment
 
-    def save(self, filename: str="params.pkl"):
+    def save(self, filename: str = "params.pkl"):
         """
         Save the current property set to a pickle file.
 
@@ -134,6 +136,7 @@ class ConfigurablePropertySet(PropertySet):
             pickle.dump(self.to_dict(), f)
 
         print(f"Configuration saved to {filename}")
+
 
 class ConfigurablePropertySetPrev(PropertySet):
     def __init__(self, default_params: dict):
@@ -159,19 +162,20 @@ class ConfigurablePropertySetPrev(PropertySet):
         for key, value in override_params.items():
             self[key] = value  # Assuming PropertySet supports item assignment
 
-    def save(self, filename: str="params.pkl"):
+    def save(self, filename: str = "params.pkl"):
         """
         Save the current property set to a JSON file.
 
         :param filename: Path to the output JSON file.
         """
-        #with open(filename, "w") as f:
+        # with open(filename, "w") as f:
         #    json.dump(self.to_dict(), f, indent=4)
 
         with open("params_final.pkl", "wb") as f:
             pickle.dump(self.to_dict(), f)
 
         print(f"Configuration saved to {filename}")
+
 
 # Set parameters
 pars = ConfigurablePropertySet(
@@ -214,7 +218,7 @@ pars = ConfigurablePropertySet(
 with Path("params.json").open("r") as par:
     params = json.load(par)
 
-pars.override( params )
+pars.override(params)
 
 # Initialize the sim
 sim = lp.SEIR_ABM(pars)
@@ -223,27 +227,29 @@ sim.components = [lp.VitalDynamics_ABM, lp.DiseaseState_ABM, lp.Transmission_ABM
 # Run the simulation
 sim.run()
 
+
 def save_results_to_csv(results, filename="simulation_results.csv"):
     """
     Save simulation results (S, E, I, R) to a CSV file with columns: Time, Node, S, E, I, R.
-    
+
     :param results: The results object containing numpy arrays for S, E, I, and R.
     :param filename: The name of the CSV file to save.
     """
     timesteps, nodes = results.S.shape  # Get the number of timesteps and nodes
-    
-    with open(filename, mode='w', newline='') as file:
+
+    with open(filename, mode="w", newline="") as file:
         writer = csv.writer(file)
-        
+
         # Write header
         writer.writerow(["Time", "Node", "S", "E", "I", "R"])
-        
+
         # Write data
         for t in range(timesteps):
             for n in range(nodes):
                 writer.writerow([t, n, results.S[t, n], results.E[t, n], results.I[t, n], results.R[t, n]])
-    
+
     print(f"Results saved to {filename}")
+
 
 # Example usage
 save_results_to_csv(sim.results)

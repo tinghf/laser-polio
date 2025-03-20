@@ -31,5 +31,3 @@ COPY ./data/shp_names_africa_adm2.csv /app/data/
 # Run the script when the container starts
 #CMD ["python3", "laser.py", "-p", "shared/params.json", "-o", "shared/simulation_results.csv"]
 CMD ["python3", "worker.py"]
-
-

@@ -28,6 +28,7 @@ def process_data(filename):
 
     print(f"Total Infected: {tot_infected}")
     print(f"Peak Infection Time: {peak_infection_time}")
+    """
 
     return data
 

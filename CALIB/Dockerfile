@@ -12,10 +12,11 @@ WORKDIR /app
 
 # Copy your script into the container
 RUN pip install --pre -i https://packages.idmod.org/api/pypi/pypi-production/simple laser-polio
+RUN pip install optuna pymysql
 COPY objective.py .
 COPY worker.py .
 COPY mysql_storage.py .
-COPY demo_nigeria.py .
+COPY demo_nigeria.py ./laser.py
 
 # Copy additional files into the data directory inside the container
 COPY data/init_immunity_0.5coverage_january.h5 /app/data/

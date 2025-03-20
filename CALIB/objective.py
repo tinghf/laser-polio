@@ -28,7 +28,6 @@ def process_data(filename):
 
     print(f"Total Infected: {tot_infected}")
     print(f"Peak Infection Time: {peak_infection_time}")
-    """
 
     return data
 
@@ -66,7 +65,7 @@ def compute_fit(actual, predicted, use_squared=False, normalize=False, weights=N
 # Paths to input/output files
 PARAMS_FILE = "params.json"
 RESULTS_FILE = "simulation_results.csv"
-ACTUAL_DATA_FILE = "seir_counts_r0_200.csv"
+ACTUAL_DATA_FILE = "data/seir_counts_r0_200.csv"
 
 
 def objective(trial):

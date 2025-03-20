@@ -5,7 +5,7 @@ import laser_polio as lp
 
 
 # Fixture to set up the simulation environment
-def setup_sim(dur=30):
+def setup_sim(dur=30, vx_prob_ri=0.5):
     pars = PropertySet(
         {
             "start_date": lp.date("2020-01-01"),
@@ -30,7 +30,7 @@ def setup_sim(dur=30):
             "gravity_b": 1,  # Destination population exponent
             "gravity_c": 2.0,  # Distance exponent
             "max_migr_frac": 0.01,  # Fraction of population that migrates
-            "vx_prob_ri": 0.5,  # Routine immunization probability
+            "vx_prob_ri": vx_prob_ri,  # Routine immunization probability
             "sia_schedule": [{"date": "2020-01-10", "nodes": [0], "age_range": (180, 365), "coverage": 0.6}],
             "sia_eff": [0.6, 0.8],  # SIA effectiveness per node
         }
@@ -54,14 +54,12 @@ def test_ri_initialization():
 
 def test_ri_manual():
     """Ensure that routine immunization occurs at correct intervals."""
-    sim = setup_sim(dur=365)
-    n_vx = 10
-    sim.people.ri_timer[:n_vx] = np.random.randint(0, 365 - 14, n_vx)  # Set timers to trigger vaccination
+    n_vx = 1000
+    dur = 28
+    sim = setup_sim(dur=dur, vx_prob_ri=1.0)
+    sim.people.ri_timer[:n_vx] = np.random.randint(0, dur, n_vx)  # Set timers to trigger vaccination
     sim.run()
     assert sim.results.ri_vaccinated.sum() >= n_vx, "No vaccinations occurred when expected."
-
-
-# Test step()
 
 
 def test_ri_vaccination_probability():
@@ -154,8 +152,8 @@ def test_sia_coverage_probability():
 
 
 if __name__ == "__main__":
-    test_ri_initialization()
-    test_ri_manual()
+    # test_ri_initialization()
+    # test_ri_manual()
     test_ri_vaccination_probability()
     test_ri_no_effect_on_non_susceptibles()
     test_sia_initialization()

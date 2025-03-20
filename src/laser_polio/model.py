@@ -1037,14 +1037,24 @@ class VitalDynamics_ABM:
             plt.show()
 
 
-@nb.njit(parallel=True)
+# @nb.njit(parallel=True)
 def fast_vaccination(
-    node_id, disease_state, date_of_birth, ri_timer, sim_t, vx_prob_ri, results_ri_vaccinated, results_ri_protected, rand_vals, count
+    step_size,
+    node_id,
+    disease_state,
+    date_of_birth,
+    ri_timer,
+    sim_t,
+    vx_prob_ri,
+    results_ri_vaccinated,
+    results_ri_protected,
+    rand_vals,
+    count,
 ):
     """
     Optimized vaccination step with thread-local storage and parallel execution.
     """
-    if sim_t % 14 != 0:  # Run only every 14th timestep
+    if sim_t % step_size != 0:  # Run only every 14th timestep
         return
 
     num_people = count
@@ -1054,7 +1064,8 @@ def fast_vaccination(
     local_vaccinated = np.zeros(num_nodes, dtype=np.float32)
     local_protected = np.zeros(num_nodes, dtype=np.int32)
 
-    for i in nb.prange(num_people):
+    for i in np.arange(num_people):
+        # for i in nb.prange(num_people):
         node = node_id[i]
         if disease_state[i] < 0:  # Skip dead or inactive agents
             continue
@@ -1062,8 +1073,8 @@ def fast_vaccination(
         prob_ri = vx_prob_ri if isinstance(vx_prob_ri, float) else vx_prob_ri[node]
 
         # if sim_t - 14 < date_of_birth[i] + 182 <= sim_t:
-        ri_timer[i] -= 14
-        if ri_timer[i] <= 0 and ri_timer[i] > -14:  # off-by-one?
+        ri_timer[i] -= step_size
+        if ri_timer[i] <= 0 and ri_timer[i] >= -step_size:  # off-by one?
             if disease_state[i] == 0:  # Must be susceptible
                 if rand_vals[i] < prob_ri:  # Vaccination probability
                     disease_state[i] = 3  # Move to Recovered state
@@ -1078,8 +1089,9 @@ def fast_vaccination(
 
 
 class RI_ABM:
-    def __init__(self, sim):
+    def __init__(self, sim, step_size=14):
         self.sim = sim
+        self.step_size = step_size  # Number of days between RI steps
         self.people = sim.people
         self.nodes = sim.nodes
         self.pars = sim.pars
@@ -1094,8 +1106,10 @@ class RI_ABM:
 
     def step(self):
         # Suppose we have num_people individuals
+        # TODO: should this be set to self.people.count???
         rand_vals = np.random.rand(int(1e5))  # this could be done clevererly
         fast_vaccination(
+            self.step_size,
             self.people.node_id,
             self.people.disease_state,
             self.people.date_of_birth,

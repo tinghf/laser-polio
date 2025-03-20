@@ -9,6 +9,7 @@
         "SIA_ABM",
         "Transmission_ABM"
     ]
+- Add vx efficacy by type
 - Rename variables to distinguish between exposure and infection
 - Testing
     - RI_abm

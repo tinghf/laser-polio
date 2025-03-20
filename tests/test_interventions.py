@@ -5,13 +5,17 @@ import laser_polio as lp
 
 
 # Fixture to set up the simulation environment
-def setup_sim(dur=30, vx_prob_ri=0.5):
+def setup_sim(dur=30, n_ppl=None, vx_prob_ri=0.5, cbr=None):
+    if n_ppl is None:
+        n_ppl = [50000, 50000]
+    if cbr is None:
+        cbr = np.array([30, 25])
     pars = PropertySet(
         {
             "start_date": lp.date("2020-01-01"),
             "dur": dur,
-            "n_ppl": np.array([50000, 50000]),
-            "cbr": np.array([30, 25]),  # Birth rate per 1000/year
+            "n_ppl": n_ppl,
+            "cbr": cbr,  # Birth rate per 1000/year
             "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",  # From https://www.populationpyramid.net/nigeria/2024/
             "init_immun": 0.0,  # initially immune
             "init_prev": 0.0,  # initially infected from any age
@@ -59,19 +63,24 @@ def test_ri_manual():
     sim = setup_sim(dur=dur, vx_prob_ri=1.0)
     sim.people.ri_timer[:n_vx] = np.random.randint(0, dur, n_vx)  # Set timers to trigger vaccination
     sim.run()
-    assert sim.results.ri_vaccinated.sum() >= n_vx, "No vaccinations occurred when expected."
+    assert sim.results.ri_protected.sum() >= n_vx, "No vaccinations occurred when expected."
 
 
 def test_ri_vaccination_probability():
-    """Ensure that the vaccination probability is respected."""
-    sim = setup_sim()
+    """Ensure that the vaccination probability is respected when no births are scheduled."""
+    n_ppl = np.array([500, 500])
+    n_vx = np.sum(n_ppl)
+    dur = 28
+    vx_prob_ri = 1.0
+    sim = setup_sim(n_ppl=n_ppl, dur=dur, vx_prob_ri=vx_prob_ri, cbr=np.array([0, 0]))
+    sim.people.ri_timer[:n_vx] = np.random.randint(0, dur, n_vx)  # Set timers to trigger vaccination
     sim.run()
-    sim.people.ri_timer[:100] = 0  # All eligible for vaccination
-    sim.people.disease_state[:100] = 0  # All are susceptible
-    vx_prob = sim.pars.vx_prob_ri
-    sim.step()
-    vaccinated = np.sum(sim.people.disease_state[:100] == 3)
-    assert np.isclose(vaccinated / 100, vx_prob, atol=0.1), "Vaccination rate does not match probability."
+
+    n_exp = n_vx * vx_prob_ri
+    n_vx = np.sum(sim.results.ri_vaccinated)
+    n_protected = np.sum(sim.results.ri_protected)
+    n_r = np.sum(sim.results.R[-1])
+    assert np.isclose(n_exp_vx, n_pred_vx, atol=10), "Vaccination rate does not match probability."
 
 
 def test_ri_no_effect_on_non_susceptibles():

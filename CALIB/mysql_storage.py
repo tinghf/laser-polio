@@ -8,4 +8,4 @@ def get_storage_url():
     MYSQL_PORT = "3306"
     MYSQL_DB = "optuna_db"
 
-    return f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
+    return f"mysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"

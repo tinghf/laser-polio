@@ -25,7 +25,8 @@ spec:
                 name: mysql-secrets
       containers:
         - name: study-creator
-          image: idm-docker-staging.packages.idmod.org/laser/laser_calib:latest
+          # image: idm-docker-staging.packages.idmod.org/laser/laser_calib:latest
+          image: idm-docker-staging.packages.idmod.org/laser/laser-polio:tony
           imagePullPolicy: Always
           command:
           - /bin/sh

@@ -4,14 +4,15 @@ kind: Job
 metadata:
   name: worker
 spec:
-  ttlSecondsAfterFinished: 10
-  parallelism: 16
+  ttlSecondsAfterFinished: 120
+  parallelism: 4
   template:
     spec:
       restartPolicy: OnFailure
       initContainers:
         - name: wait-for-study
-          image: idm-docker-staging.packages.idmod.org/laser/laser_calib:latest
+          # image: idm-docker-staging.packages.idmod.org/laser/laser_calib:latest
+          image: idm-docker-staging.packages.idmod.org/laser/laser-polio:tony
           imagePullPolicy: Always
           command:
           - /bin/sh
@@ -26,11 +27,12 @@ spec:
                 name: mysql-secrets
       containers:
         - name: worker
-          image: idm-docker-staging.packages.idmod.org/laser/laser_calib:latest
+          # image: idm-docker-staging.packages.idmod.org/laser/laser_calib:latest
+          image: idm-docker-staging.packages.idmod.org/laser/laser-polio:tony
           imagePullPolicy: Always
           command:
             - python3
-            - run.py
+            - worker.py
             - "${STUDY_NAME}"            
           envFrom:
             - secretRef:

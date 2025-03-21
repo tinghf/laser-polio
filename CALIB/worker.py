@@ -9,7 +9,12 @@ from objective import objective  # The objective function now runs inside the wo
 # Load the study
 # study = optuna.load_study(study_name="spatial_demo_calibr8n", storage=storage_url)
 
-storage_url = os.getenv("STORAGE_URL", "mysql://user:password@optuna-mysql/optuna_db")
+# storage_url = os.getenv("STORAGE_URL", "mysql://user:password@optuna-mysql/optuna_db")
+storage_url = "mysql://{}:{}@mysql:3306/{}".format(
+    os.environ["MYSQL_USER"],
+    os.environ["MYSQL_PASSWORD"],
+    os.environ["MYSQL_DB"]
+)
 study_name = sys.argv[1] # "spatial_demo_calib_mar14"
 
 try:

@@ -47,7 +47,8 @@ COPY ./data/compiled_cbr_pop_ri_sia_underwt_africa.csv /app/data/
 COPY ./data/age_africa.csv /app/data/
 COPY ./data/sia_historic_schedule.csv /app/data/
 COPY ./data/shp_names_africa_adm2.csv /app/data/
-# COPY ./data/seir_counts_r0_200.csv /app/data/  #TODO: wait for Jonathan, comment this out for the time being
+COPY CALIB/data/seir_counts_r0_200.csv /app/data/
+
 
 # Run the script when the container starts
 #CMD ["python3", "laser.py", "-p", "shared/params.json", "-o", "shared/simulation_results.csv"]

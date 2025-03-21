@@ -24,4 +24,5 @@ except KeyError:
     study = optuna.create_study(study_name=study_name, storage=storage_url)
 
 # Run trials (each worker runs one or more trials)
-study.optimize(objective, n_trials=15)  # Adjust per worker
+# study.optimize(objective, n_trials=15)  # Adjust per worker
+study.optimize(objective, n_trials=1)   # 1 trial to debug

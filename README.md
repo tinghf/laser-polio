@@ -38,17 +38,19 @@ The contents of the other folders is as follows:
 | Variable | Dataset | Usage |
 |----------|---------|-------|
 | n_ppl | WorldPop <5 estimates for Africa at adm2 | Used to estimate node population size. We scale this up by the u5 faction to estimate all age population size. |
-| age_pyramid_path | Age distribution for Nigeria | Used to estimate ages |
-| cbr | Crude birth rate by adm0 and year | Used to estimate number of births |
-| init_immun | Estimate fraction immune to type 2 by age, year, and adm2 | Used to initialize the fraction immune/recovered |
-| init_prev | ??? | ??? |
-| beta_spatial | ??? | ??? |
-| distances | ??? | ??? |
-| centroids | ??? | ??? |
-| vx_prob_ri | ??? | ??? |
+| age_pyramid_path | Age distribution for Nigeria | Used to estimate node ages |
+| cbr | Crude birth rate by adm0 and year | Used to estimate number of births by node node |
+| init_immun | Estimate fraction immune to type 2 by age, year, and adm2 | Used to initialize the fraction immune/recovered by node|
+| init_prev | Proportion of individuals infected by node | Used to initialize the number of infection by node. Supercedes recovery (e.g, can get infections even with 100% init_immun) |
+| beta_spatial | u5 underweight fraction | Used to estimate beta_spactial via 1 / (1 + np.exp(24 * (np.mean(underwt) - underwt))) + 0.2 |
+| distances | Matrix of distances in km between nodes | Used in gravity model |
+| centroids | Lat and lon of nodes | Used in plotting. TODO: replace with low res polygons |
+| vx_prob_ri | Estimate of RI vaccination rate from IHME DPT estimates (accounts for # of doses) | Determines the probability an individual gets vaccinated in RI at age ??? |
+| vx_efficacy | Estimated probability that a vaccine make the person immune to paralysis and infection | Used in RI & SIAs based on RI & SIA calendar | 
 | sia_schedule | ??? | ??? |
 | sia_eff | ??? | ??? |
 | life_expectancies | ??? | ??? |
+| case data | ??? | calibration |
 
 For details on data source & and curation steps, see data/curation_scripts/README.md
 

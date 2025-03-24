@@ -37,10 +37,10 @@ The contents of the other folders is as follows:
 
 | Variable | Dataset | Usage |
 |----------|---------|-------|
-| n_ppl | ??? | ??? |
-| age_pyramid_path | ??? | ??? |
-| cbr | ??? | ??? |
-| init_immun | ??? | ??? |
+| n_ppl | WorldPop <5 estimates for Africa at adm2 | Used to estimate node population size. We scale this up by the u5 faction to estimate all age population size. |
+| age_pyramid_path | Age distribution for Nigeria | Used to estimate ages |
+| cbr | Crude birth rate by adm0 and year | Used to estimate number of births |
+| init_immun | Estimate fraction immune to type 2 by age, year, and adm2 | Used to initialize the fraction immune/recovered |
 | init_prev | ??? | ??? |
 | beta_spatial | ??? | ??? |
 | distances | ??? | ??? |

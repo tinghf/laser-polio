@@ -51,6 +51,7 @@ The contents of the other folders is as follows:
 | sia_eff | Estimated SIA vaccination rates by ??? | Includes efficacy??? |
 | life_expectancies | ??? | ??? |
 | case data | ??? | calibration |
+| shp | ??? | ??? |
 
 For details on data source & and curation steps, see data/curation_scripts/README.md
 

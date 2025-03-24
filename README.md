@@ -33,6 +33,26 @@ The contents of the other folders is as follows:
 - The **scripts** folder contains code for running and calibrating the model, profiling, and demos.
 - The **tests** folder contains code for testing model functionality and benchmarking.
 
+## Required datasets 
+
+| Variable | Dataset | Usage |
+|----------|---------|-------|
+| n_ppl | ??? | ??? |
+| age_pyramid_path | ??? | ??? |
+| cbr | ??? | ??? |
+| init_immun | ??? | ??? |
+| init_prev | ??? | ??? |
+| beta_spatial | ??? | ??? |
+| distances | ??? | ??? |
+| centroids | ??? | ??? |
+| vx_prob_ri | ??? | ??? |
+| sia_schedule | ??? | ??? |
+| sia_eff | ??? | ??? |
+| life_expectancies | ??? | ??? |
+
+For details on data source & and curation steps, see data/curation_scripts/README.md
+
+
 ## Order of operations and time
 The sim records initial conditions on day 0. As such, sim.results objects will be 1 longer than the specified simulation duration (sim.par.dur). On day 0, the results are logged and the clock is advanced without running any components (e.g., step() not run).
 

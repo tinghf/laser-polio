@@ -47,8 +47,8 @@ The contents of the other folders is as follows:
 | centroids | Lat and lon of nodes | Used in plotting. TODO: replace with low res polygons |
 | vx_prob_ri | Estimate of RI vaccination rate from IHME DPT estimates (accounts for # of doses) | Determines the probability an individual gets vaccinated in RI at age ??? |
 | vx_efficacy | Estimated probability that a vaccine make the person immune to paralysis and infection | Used in RI & SIAs based on RI & SIA calendar | 
-| sia_schedule | ??? | ??? |
-| sia_eff | ??? | ??? |
+| sia_schedule | Dates and locations of planned SIAs | Used to schedule SIAs |
+| sia_eff | Estimated SIA vaccination rates by ??? | Includes efficacy??? |
 | life_expectancies | ??? | ??? |
 | case data | ??? | calibration |
 

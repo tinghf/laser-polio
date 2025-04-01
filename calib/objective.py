@@ -1,14 +1,23 @@
 import json
-import os
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-laser_script = Path("laser.py").resolve(strict=True)
+import laser_polio as lp
+
+###################################
+######### USER PARAMETERS #########
+
+model_script = Path(lp.root / "calib/demo_zamfara.py").resolve(strict=True)
+PARAMS_FILE = "params.json"
+RESULTS_FILE = lp.root / "calib/results/calib_demo_zamfara/simulation_results.csv"
+ACTUAL_DATA_FILE = lp.root / "examples/calib_demo_zamfara/synthetic_infection_counts_zamfara_250.csv"
+
+######### END OF USER PARS ########
+###################################
 
 
 def process_data(filename):
@@ -62,12 +71,6 @@ def compute_fit(actual, predicted, use_squared=False, normalize=False, weights=N
     return fit
 
 
-# Paths to input/output files
-PARAMS_FILE = "params.json"
-RESULTS_FILE = "simulation_results.csv"
-ACTUAL_DATA_FILE = "data/seir_counts_r0_200.csv"
-
-
 def objective(trial):
     """Optuna objective function that runs laser.py with trial parameters and evaluates results."""
 
@@ -86,6 +89,7 @@ def objective(trial):
     params = {"r0": r_nought}
 
     # Write parameters to JSON file
+    Path(PARAMS_FILE).parent.mkdir(parents=True, exist_ok=True)
     with Path(PARAMS_FILE).open("w") as f:
         json.dump(params, f, indent=4)
 
@@ -95,7 +99,7 @@ def objective(trial):
         return cmd.split()
 
     def get_native_runstring():
-        return [sys.executable, str(laser_script)]
+        return [sys.executable, str(model_script)]
 
     NUM_REPLICATES_PER_TRIAL = 1
     print(f"Will be looking for {RESULTS_FILE}")
@@ -108,12 +112,6 @@ def objective(trial):
             # subprocess.run(["python3", "laser.py"], check=True)
             subprocess.run(get_native_runstring(), check=True)
 
-            print(f"Waiting for output file {RESULTS_FILE}")
-            # Wait until RESULTS_FILE is written
-            while not Path(RESULTS_FILE).exists():
-                print(os.listdir("."))
-                time.sleep(0.1)
-
             print("Reference...")
             actual = process_data(ACTUAL_DATA_FILE)
             print("Simulation...")
@@ -121,6 +119,7 @@ def objective(trial):
 
             score = compute_fit(actual, predicted)  # Evaluate results
             scores.append(score)
+        Path(RESULTS_FILE).unlink()
 
         # Return the average score
         return np.mean(scores)

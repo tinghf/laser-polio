@@ -1,3 +1,6 @@
+import csv
+import json
+
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -35,7 +38,7 @@ results_path = "results/demo_zamfara"
 
 
 # Find the dot_names matching the specified string(s)
-dot_names = lp.find_matching_dot_names(regions, "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")
+dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")
 
 # Load the shape names and centroids (sans geometry)
 centroids = pd.read_csv("data/shp_names_africa_adm2.csv")
@@ -105,8 +108,7 @@ pars = PropertySet(
         "dur": n_days,  # Number of timesteps
         # Population
         "n_ppl": pop,  # np.array([30000, 10000, 15000, 20000, 25000]),
-        "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",  # From https://www.populationpyramid.net/nigeria/2024/
-        "cbr": cbr,  # np.array([37, 41, 30, 25, 33]),  # Crude birth rate per 1000 per year
+        "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",  # From https://www.populationpyramid.net/nigeria/2024/ "cbr": cbr,  # np.array([37, 41, 30, 25, 33]),  # Crude birth rate per 1000 per year
         # Disease
         "init_immun": init_immun,  # Initial immunity per node
         "init_prev": init_prevs,  # Initial prevalence per node (1% infected)
@@ -134,6 +136,10 @@ pars = PropertySet(
     }
 )
 
+with open("params.json") as params_fp:
+    params = json.load(params_fp)
+
+pars += params
 
 # Initialize the sim
 sim = lp.SEIR_ABM(pars)
@@ -143,7 +149,33 @@ sim.components = [lp.VitalDynamics_ABM, lp.DiseaseState_ABM, lp.Transmission_ABM
 sim.run()
 
 
-# # Plot results
-sim.plot(save=True, results_path=results_path)
+def save_results_to_csv(results, filename="simulation_results.csv"):
+    """
+    Save simulation results (S, E, I, R) to a CSV file with columns: Time, Node, S, E, I, R.
+
+    :param results: The results object containing numpy arrays for S, E, I, and R.
+    :param filename: The name of the CSV file to save.
+    """
+    timesteps, nodes = results.S.shape  # Get the number of timesteps and nodes
+
+    with open(filename, mode="w", newline="") as file:
+        writer = csv.writer(file)
+
+        # Write header
+        writer.writerow(["Time", "Node", "S", "E", "I", "R"])
+
+        # Write data
+        for t in range(timesteps):
+            for n in range(nodes):
+                writer.writerow([t, n, results.S[t, n], results.E[t, n], results.I[t, n], results.R[t, n]])
+
+    print(f"Results saved to {filename}")
+
+
+# Turn this on (and plotting off) for calibration.
+save_results_to_csv(sim.results)
+
+# Plot results
+# sim.plot(save=True, results_path=results_path)
 
 sc.printcyan("Done.")

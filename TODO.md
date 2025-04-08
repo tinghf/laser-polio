@@ -28,11 +28,14 @@ NEW FEATURES
 - Enable vx transmission (& add genome R0 multiplier, Sabin = 1/4; nOPV2 = 1/8)
 - Set a random number seed
 - Save results & specify frequency
-- Reactive SIAs
+- Reactive SIAs (2 campaigns per OB)
 - Add chronically missed pop. Maybe use a individual prob of participating in SIA?
 
 
 # Refinement
+- Curate the surveillance delays
+- Add surveillance delays to reactive SIAs
+- Add rule for blackouts (e.g., limiting number of campaigns / year) of maybe 1-2 years
 - Use KM's gravity model scaling approach
 - Export pars as pkl
 - Add underwt fraction back in???

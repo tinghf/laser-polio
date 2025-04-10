@@ -407,7 +407,9 @@ class DiseaseState_ABM:
             for node, prev in tqdm(enumerate(pars.init_prev), total=len(pars.init_prev), desc="Seeding infections in nodes"):
                 num_infected = int(pars.n_ppl[node] * prev)
                 alive_in_node = (node_ids == node) & (disease_states >= 0)
-                infected_indices_node = np.random.choice(np.where(alive_in_node)[0], size=num_infected, replace=False)
+                alive_in_node_indices = np.where(alive_in_node)[0]
+                num_infections_to_draw = min(num_infected, len(alive_in_node_indices))
+                infected_indices_node = np.random.choice(alive_in_node_indices, size=num_infections_to_draw, replace=False)
                 infected_indices.extend(infected_indices_node)
         num_infected = len(infected_indices)
         sim.people.disease_state[infected_indices] = 2

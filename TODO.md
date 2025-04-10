@@ -35,7 +35,7 @@ NEW FEATURES
 
 
 # Refinement
-- Calib question: Is there any appetite for making a broadly usable calibration bootstrapping function? For example, paralytic cases are a rare (1/2000) subset of Infections. So after/during calibration, we could resample the infection counts and get a bunch of new paralysis counts essentially for free. 
+- Calib question: Is there any appetite for making a broadly usable calibration bootstrapping function? For example, paralytic cases are a rare (1/2000) subset of Infections. So after/during calibration, we could resample the infection counts and get a bunch of new paralysis counts essentially for free.
 - Curate the surveillance delays
 - Add surveillance delays to reactive SIAs
 - Add rule for blackouts (e.g., limiting number of campaigns / year) of maybe 1-2 years

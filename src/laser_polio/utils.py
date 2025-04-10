@@ -357,25 +357,29 @@ def get_seasonality(sim):
     return 1 + sim.pars["seasonal_factor"] * np.cos((2 * np.pi * woy / 52) + sim.pars["seasonal_phase"])
 
 
-def save_results_to_csv(results, filename="simulation_results.csv"):
+def save_results_to_csv(sim, filename="simulation_results.csv"):
     """
     Save simulation results (S, E, I, R) to a CSV file with columns: Time, Node, S, E, I, R.
 
-    :param results: The results object containing numpy arrays for S, E, I, and R.
+    :param sim: The sim object containing a results object with numpy arrays for S, E, I, and R.
     :param filename: The name of the CSV file to save.
     """
-    timesteps, nodes = results.S.shape  # Get the number of timesteps and nodes
+
+    timesteps = sim.t
+    datevec = sim.datevec
+    nodes = len(sim.nodes)
+    results = sim.results
 
     with open(filename, mode="w", newline="") as file:
         writer = csv.writer(file)
 
         # Write header
-        writer.writerow(["Time", "Node", "S", "E", "I", "R"])
+        writer.writerow(["timestep", "date", "node", "S", "E", "I", "R"])
 
         # Write data
         for t in range(timesteps):
             for n in range(nodes):
-                writer.writerow([t, n, results.S[t, n], results.E[t, n], results.I[t, n], results.R[t, n]])
+                writer.writerow([t, datevec[t], n, results.S[t, n], results.E[t, n], results.I[t, n], results.R[t, n]])
 
     print(f"Results saved to {filename}")
 

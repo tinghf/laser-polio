@@ -1,3 +1,5 @@
+import subprocess
+
 import yaml
 from kubernetes import client
 from kubernetes import config
@@ -13,6 +15,37 @@ yaml_file = "laser-study-creator-deploy-manifests.yaml"
 
 with open(yaml_file) as f:
     manifest = yaml.safe_load(f)
+
+
+def get_laser_polio_deps():
+    try:
+        result = subprocess.run(
+            [
+                "docker",
+                "run",
+                "--rm",
+                "--entrypoint",
+                "cat",
+                "idm-docker-staging.packages.idmod.org/laser/laser-polio:latest",
+                "/app/laser_polio_deps.txt",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        deps_output = result.stdout
+        with open("laser_polio_deps.txt", "w") as f:
+            f.write(deps_output)
+        print("✅ laser_polio_deps.txt retrieved and saved locally.")
+
+    except subprocess.CalledProcessError as e:
+        print("❌ Failed to retrieve laser_polio_deps.txt:")
+        print(e.stderr)
+
+
+# Call the function before submitting the job
+get_laser_polio_deps()
 
 # Replace string variables in the manifest
 env_vars = {

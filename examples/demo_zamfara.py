@@ -24,7 +24,7 @@ The model uses the same data and setup as the EMOD model, except in the followin
 regions = ["ZAMFARA"]
 start_year = 2019
 n_days = 365
-pop_scale = 1 / 10
+pop_scale = 1 / 100
 init_region = "ANKA"
 init_prev = 0.001
 r0 = 14
@@ -146,6 +146,6 @@ sim.run()
 sim.plot(save=True, results_path=results_path)
 
 # Turn this on (and plotting off) for calibration.
-lp.save_results_to_csv(sim.results)
+lp.save_results_to_csv(sim, filename=results_path + "/simulation_results.csv")
 
 sc.printcyan("Done.")

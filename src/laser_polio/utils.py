@@ -1,5 +1,6 @@
 import csv
 import datetime as dt
+import json
 import os
 from zoneinfo import ZoneInfo  # Python 3.9+
 
@@ -15,6 +16,8 @@ __all__ = [
     "daterange",
     "find_matching_dot_names",
     "get_distance_matrix",
+    "get_epi_data",
+    "get_node_lookup",
     "get_seasonality",
     "get_tot_pop_and_cbr",
     "get_woy",
@@ -129,24 +132,6 @@ def daterange(start_date, days):
     return date_range
 
 
-def ensure_list(obj):
-    """
-    Ensure that the input object is a list. If the object is not a list, wrap it in a list.
-
-    Args:
-        obj (any): The object to ensure is a list.
-
-    Returns:
-        list: The input object wrapped in a list if it was not already a list.
-    """
-    if obj is None:
-        return []
-    elif isinstance(obj, list):
-        return obj
-    else:
-        return [obj]
-
-
 def find_matching_dot_names(patterns, ref_file):
     """
     Finds and returns dot_names from a CSV file that contain the input string patterns.
@@ -219,6 +204,30 @@ def get_distance_matrix(distance_matrix_path, name_filter):
     dist_matrix = dist_df_filtered.values
 
     return dist_matrix
+
+
+def get_node_lookup(node_lookup_path, dot_names):
+    """
+    Load the node_lookup dictionary, filter by dot_names, and assign integer node_ids.
+
+    :param node_lookup_path: Path to the JSON file containing the full node_lookup dictionary.
+    :param dot_names: List of dot_names to filter the node_lookup dictionary.
+    :return: A dictionary with integer node_ids as keys and filtered node_lookup values.
+    """
+    # Load the full node_lookup dictionary
+    full_node_lookup = json.load(open(node_lookup_path))
+
+    # Filter by dot_names
+    node_lookup = {key: full_node_lookup[key] for key in dot_names}
+
+    # Test ordering
+    keys_in_order = list(node_lookup.keys())
+    assert np.all(keys_in_order == dot_names), "Node lookup keys do not match or are not in the same order as dot_names."
+
+    # Assign integer node_ids to the node_lookup dictionary
+    node_lookup = dict(zip(range(len(dot_names)), node_lookup.values(), strict=False))
+
+    return node_lookup
 
 
 def get_tot_pop_and_cbr(file_path, regions=None, isos=None, year=None):
@@ -335,6 +344,35 @@ def process_sia_schedule_polio(df, region_names, sim_start_date):
     result = summary.to_dict(orient="records")
 
     return result
+
+
+def get_epi_data(filename, dot_names, node_lookup, start_year, n_days):
+    """Curate the epi data for a specific set of dot names."""
+
+    # Load data
+    df = pd.read_hdf(filename, key="epi")
+
+    # Filter by dot_names
+    df = df[df["dot_name"].isin(dot_names)]
+
+    # Filter by dates
+    df["date"] = pd.to_datetime(df["month_start"])
+    start_date = pd.to_datetime(f"{start_year}-01-01")
+    end_date = pd.to_datetime(start_date + pd.DateOffset(days=n_days))
+    df = df[(df["date"] >= start_date) & (df["date"] < end_date)]
+
+    # Sort by date then node
+    df = df.sort_values(by=["date", "dot_name"])
+    df = df.reset_index(drop=True)
+
+    # Assign node_ids based on the node_lookup dictionary
+    dotname_to_nodeid = {v["dot_name"]: k for k, v in node_lookup.items()}
+    df["node_id"] = df["dot_name"].map(dotname_to_nodeid)
+
+    # Ensure that the nodes are in the same order
+    assert np.all(df["dot_name"][0 : len(dot_names)].values == dot_names), "The nodes are not in the same order as the dot_names."
+
+    return df
 
 
 def get_woy(sim):

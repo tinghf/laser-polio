@@ -35,9 +35,8 @@ results_path = "results/demo_nigeria"
 # Find the dot_names matching the specified string(s)
 dot_names = lp.find_matching_dot_names(regions, "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")
 
-# Load the shape names and centroids (sans geometry)
-centroids = pd.read_csv("data/shp_names_africa_adm2.csv")
-centroids = centroids.set_index("dot_name").loc[dot_names]
+# Load the node_lookup dictionary with node_id, dot_names, centroids
+node_lookup = lp.get_node_lookup("data/node_lookup.json", dot_names)
 
 # Initial immunity
 init_immun = pd.read_hdf("data/init_immunity_0.5coverage_january.h5", key="immunity")
@@ -80,13 +79,15 @@ sia_prob = lp.calc_sia_prob_from_rand_eff(sia_re, center=0.7, scale=2.4)  # Secr
 reff_re = df_comp.set_index("dot_name").loc[dot_names, "reff_random_effect"].values  # random effects from regression model
 r0_scalars = lp.calc_r0_scalars_from_rand_eff(reff_re)  # Center and scale the random effects
 
+# Load the actual case data
+epi = lp.get_epi_data("data/epi_africa_20250408.h5", dot_names, node_lookup, start_year, n_days)
 
 # Assert that all data arrays have the same length
 assert (
     len(dot_names)
     == len(dist_matrix)
     == len(init_immun)
-    == len(centroids)
+    == len(node_lookup)
     == len(init_prevs)
     == len(pop)
     == len(cbr)
@@ -124,7 +125,7 @@ pars = PropertySet(
         "gravity_b": 1,  # Destination population exponent
         "gravity_c": 2.0,  # Distance exponent
         "max_migr_frac": 0.01,  # Fraction of population that migrates
-        "centroids": centroids,  # Centroids of the nodes
+        "node_lookup": node_lookup,  # Node info (node_id are keys, dict contains dot_name, lat, lon)
         # Interventions
         "vx_prob_ri": ri,  # Probability of routine vaccination
         "sia_schedule": sia_schedule,  # Schedule of SIAs

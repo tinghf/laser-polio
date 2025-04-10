@@ -20,9 +20,8 @@ results_path = "results/demo_zamfara"
 # Find the dot_names matching the specified string(s)
 dot_names = lp.find_matching_dot_names(regions, "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")
 
-# Load the shape names and centroids (sans geometry)
-centroids = pd.read_csv("data/shp_names_africa_adm2.csv")
-centroids = centroids.set_index("dot_name").loc[dot_names]
+# Load the node_lookup dictionary with node_id, dot_names, centroids
+node_lookup = lp.get_node_lookup("data/node_lookup.json", dot_names)
 
 # Initial immunity
 init_immun = pd.read_hdf("data/init_immunity_0.5coverage_january.h5", key="immunity")
@@ -71,7 +70,7 @@ assert (
     len(dot_names)
     == len(dist_matrix)
     == len(init_immun)
-    == len(centroids)
+    == len(node_lookup)
     == len(init_prevs)
     == len(pop)
     == len(cbr)
@@ -112,7 +111,7 @@ def setup_sim():
             "gravity_b": 1,  # Destination population exponent
             "gravity_c": 2.0,  # Distance exponent
             "max_migr_frac": 0.01,  # Fraction of population that migrates
-            "centroids": centroids,  # Centroids of the nodes
+            "node_lookup": node_lookup,  # Node info (node_id are keys, dict contains dot_name, lat, lon)
             # Interventions
             "vx_prob_ri": ri,  # Probability of routine vaccination
             "sia_schedule": sia_schedule,  # Schedule of SIAs

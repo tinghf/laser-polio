@@ -64,11 +64,16 @@ class SEIR_ABM:
         self.results = LaserFrame(capacity=1)
 
         # Setup spatial component with node IDs
-        self.nodes = np.arange(len(np.atleast_1d(pars.n_ppl)))
         self.people.add_scalar_property("node_id", dtype=np.int32, default=0)
-        node_ids = np.concatenate([np.full(count, i) for i, count in enumerate(pars.n_ppl)])
-        self.people.node_id[0 : np.sum(pars.n_ppl)] = node_ids  # Assign node IDs to initial people
-        self.results.add_array_property("node_pop", shape=(self.nt, len(self.nodes)), dtype=np.int32)
+        if pars.node_lookup is None:
+            self.nodes = np.arange(len(np.atleast_1d(pars.n_ppl)))
+            node_ids = np.concatenate([np.full(count, i) for i, count in enumerate(pars.n_ppl)])
+            self.people.node_id[0 : np.sum(pars.n_ppl)] = node_ids  # Assign node IDs to initial people
+        else:
+            ordered_node_ids = list(pars.node_lookup.keys())
+            self.nodes = np.array(ordered_node_ids)
+            node_ids = np.concatenate([np.full(count, node_id) for node_id, count in zip(ordered_node_ids, pars.n_ppl, strict=False)])
+            self.people.node_id[0 : np.sum(pars.n_ppl)] = node_ids
 
         # Components
         self.components = []
@@ -477,7 +482,11 @@ class DiseaseState_ABM:
         fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 6), sharex=True, sharey=True, constrained_layout=True)
         axs = axs.ravel()  # Flatten in case of non-square grid
         timepoints = np.linspace(0, self.pars.dur, n_panels, dtype=int)
-        lats, lons = self.pars.centroids["center_lat"], self.pars.centroids["center_lon"]
+        lats = [self.pars.node_lookup[i]["lat"] for i in self.nodes]
+        lons = [self.pars.node_lookup[i]["lon"] for i in self.nodes]
+        # Scale population for plotting (adjust scale_factor as needed)
+        scale_factor = 0.01  # tweak this number to look good visually
+        sizes = [pop * scale_factor for pop in self.pars.n_ppl]
 
         # Get global min and max for consistent color scale
         infection_min = np.min(self.results.I)
@@ -488,7 +497,7 @@ class DiseaseState_ABM:
             infection_counts = self.results.I[t, :]
 
             scatter = ax.scatter(
-                lons, lats, c=infection_counts, cmap="Reds", edgecolors=None, alpha=0.9, vmin=infection_min, vmax=infection_max
+                lons, lats, c=infection_counts, s=sizes, cmap="RdYlBu_r", edgecolors=None, alpha=0.9, vmin=infection_min, vmax=infection_max
             )
             ax.set_title(f"Timepoint {t}")
 
@@ -503,8 +512,11 @@ class DiseaseState_ABM:
             else:
                 ax.set_xticklabels([])
 
+            # ax.set_facecolor("linen")
+
         # Add a single colorbar for all plots
         fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
+        # fig.patch.set_facecolor("lightgrey")
 
         # Add title
         fig.suptitle("Infected Population by Node", fontsize=16)

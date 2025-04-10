@@ -44,7 +44,7 @@ The contents of the other folders is as follows:
 | init_prev | Proportion of individuals infected by node | Used to initialize the number of infection by node. Supercedes recovery (e.g, can get infections even with 100% init_immun) |
 | r0_scalars | R_eff random effect from regression model | Node-specific scalar on R0. |
 | distances | Matrix of distances in km between nodes | Used in gravity model |
-| centroids | Lat and lon of nodes | Used in plotting. TODO: replace with low res polygons |
+| node_lookup | Dict with dot_name, lat, & lon  | Used in plotting. |
 | vx_prob_ri | Estimate of RI vaccination rate from IHME DPT estimates (accounts for # of doses) | Determines the probability an individual gets vaccinated in RI at age ??? |
 | vx_efficacy | Estimated probability that a vaccine make the person immune to paralysis and infection | Used in RI & SIAs based on RI & SIA calendar |
 | sia_schedule | Dates and locations of planned SIAs | Used to schedule SIAs |

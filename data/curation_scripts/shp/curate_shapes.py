@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -148,9 +149,16 @@ for shapefile, columns_to_clean, adm_level in shapefiles:
 
     # Save the adm2 shape names
     if adm_level == "adm2":
-        shp_names = filtered_gdf[["who_region", "adm0_name", "adm1_name", "adm2_name", "dot_name", "guid", "center_lon", "center_lat"]]
-        shp_names.to_csv("data/shp_names_africa_adm2.csv", index=False)
+        # shp_names = filtered_gdf[["who_region", "adm0_name", "adm1_name", "adm2_name", "dot_name", "guid", "center_lon", "center_lat"]]
+        # shp_names.to_csv("data/shp_names_africa_adm2.csv", index=False)
 
+        node_lookup = {
+            row["dot_name"]: {"dot_name": row["dot_name"], "lat": float(row["center_lat"]), "lon": float(row["center_lon"])}
+            for i, row in filtered_gdf.iterrows()
+        }
+        with open("data/node_lookup.json", "w") as f:
+            json.dump(node_lookup, f, indent=2)
+            f.write("\n")  # <-- adds a clean empty newline at the end
 
 # Show result
 sc.printcyan("\n🗂 Final layers in combined GPKG:")

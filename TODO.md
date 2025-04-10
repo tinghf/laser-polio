@@ -35,6 +35,7 @@ NEW FEATURES
 
 
 # Refinement
+- Is there a way to only load data & initialize sims once during calibration? How much speedup could we get?
 - John G recommends Finite Radiation model as default assumption
 - Work with John G to put bounds on gravity model pars??
 - Calib question: Is there any appetite for making a broadly usable calibration bootstrapping function? For example, paralytic cases are a rare (1/2000) subset of Infections. So after/during calibration, we could resample the infection counts and get a bunch of new paralysis counts essentially for free.

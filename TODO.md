@@ -1,11 +1,10 @@
 # Priorities
 
 CALIBRATION
+- Add in Nigeria data & make sure it's compatible with the data processing functions
 - Targets:
     - Stretch: age distribution
 - Levers:
-    - R0
-    - Seasonality pars
     - Stretch: R0 scalar for N Nigeria
     - Stretch: risk_mult_var or corr_risk_inf
 

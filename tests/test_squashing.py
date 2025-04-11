@@ -10,10 +10,10 @@ This test is based on examples/demo_nigeria.py
 
 regions = ["ZAMFARA"]
 start_year = 2019
-n_days = 5
+n_days = 60
 pop_scale = 1 / 100
 init_region = "ANKA"
-init_prev = 0.001
+init_prev = 0.05
 r0 = 14
 results_path = "results/demo_zamfara"
 
@@ -148,14 +148,30 @@ def test_squash():
     obs_r = sim.results.R[0].sum()
     assert np.isclose(exp_r, obs_r, atol=4000), f"Expected results.R size {exp_r}, but got {obs_r}."
 
-    init_R = np.sum(sim.results.R[-1])
+    # Test that mortality is occurring in R due to squashing/EULAgizing
+    R_before_run = sim.results.R.copy()
+    assert np.all(R_before_run[-1] < R_before_run[0]), "Recovereds should decline in all nodes due to mortality."
+
+    # TODO test amount of mortality
 
     # Run the simulation
     sim.run()
 
+    # Test results shape
+    R_after_run = sim.results.R.copy()
+    assert R_after_run.shape[0] == sim.nt, "Results shape mismatch: expected number of days."
+    assert R_after_run.shape[1] == len(sim.nodes), "Results shape mismatch: expected number of nodes."
+
     # Ensure that the number of R increased due to transmission
-    end_R = np.sum(sim.results.R[-1])
-    assert end_R > init_R, "The number of recovered individuals should have increased after running the simulation."
+    assert np.sum(R_after_run[-1]) > np.sum(R_before_run[-1]), (
+        "The number of recovered individuals should have increased after running the simulation."
+    )
+
+    # Ensure that the nodes with changes in recovered counts also had infections
+    R_delta = R_after_run[-1] - R_before_run[-1]
+    nodes_with_R = np.where(R_delta > 0)[0]  # Get the indices of nodes with recoveries
+    nodes_with_I = np.where(np.sum(sim.results.I, axis=0) > 0)[0]  # Get the indices of nodes with infections
+    assert np.all(np.isin(nodes_with_R, nodes_with_I)), "Some nodes with recoveries are not within the nodes with infections."
 
 
 if __name__ == "__main__":

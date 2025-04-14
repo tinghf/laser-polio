@@ -63,6 +63,10 @@ It is strongly suggested (read REQUIRED) that the order for running components i
 
 In the DiseaseState_ABM component, individuals will progress through different disease states (SEIR) by checking their timers (e.g., exposure_timer, infection_timer). If those timers are zero at the beginning of a timestep (e.g., when running step() for DiseaseState_ABM), individuals will progress to the next state. Since transmission is the last component to run, the timers for newly exposed individuals are not decremented that day. To address this, we subtract one from dur_exp during initialization. In step_nb() in DiseaseState_ABM, exposed individuals must be updated and their timers decremented prior to updating infected individuals. Deviating from that order of operations will prevent the timers for newly infected individuals from being decremented and they'll receive and extra day of infectivity.
 
+## Design principles for performance
+- **Avoid two stage query and apply** - Rather than doing a query (e.g., alive = disease_state > 0) and subsequently cycling through that (e.g., for i in alive), query and act directly (e.g., for disease_state[i] >= 0)
+- **Use numba for big operations** - 
+
 ## Tests
 Tests can be run with `python -m pytest tests/`
 

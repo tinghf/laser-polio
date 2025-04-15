@@ -65,7 +65,7 @@ In the DiseaseState_ABM component, individuals will progress through different d
 
 ## Design principles for performance
 - **Avoid two stage query and apply** - Rather than doing a query (e.g., alive = disease_state > 0) and subsequently cycling through that (e.g., for i in alive), query and act directly (e.g., for disease_state[i] >= 0)
-- **Use numba for big operations** - 
+- **Use numba for big operations**
 
 ## Tests
 Tests can be run with `python -m pytest tests/`

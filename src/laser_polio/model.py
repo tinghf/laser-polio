@@ -1,6 +1,7 @@
 import time
 from collections import defaultdict
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -17,6 +18,7 @@ from laser_core.laserframe import LaserFrame
 from laser_core.migration import gravity
 from laser_core.migration import row_normalizer
 from laser_core.propertyset import PropertySet
+from laser_core.random import seed as set_seed
 from laser_core.utils import calc_capacity
 from tqdm import tqdm
 
@@ -34,7 +36,9 @@ class SEIR_ABM:
     """
 
     def __init__(self, pars: PropertySet = None, verbose=0.1):
+        start_time = time.perf_counter()
         sc.printcyan("Initializing simulation...")
+        self.component_times = defaultdict(float)  # Initialize component times
 
         # Load default parameters and optionally override with user-specified ones
         self.pars = deepcopy(lp.default_pars)
@@ -42,6 +46,12 @@ class SEIR_ABM:
             self.pars += pars  # override default values
         pars = self.pars
         self.verbose = verbose
+
+        if "seed" not in pars:
+            now = datetime.now()  # noqa: DTZ005
+            pars.seed = now.microsecond ^ int(now.timestamp())
+            sc.printred(f"No seed provided. Using random seed of {pars.seed}.")
+        set_seed(pars.seed)
 
         # Setup time
         self.t = 0  # Current timestep
@@ -77,7 +87,10 @@ class SEIR_ABM:
             self.people.node_id[0 : np.sum(pars.n_ppl)] = node_ids
 
         # Components
-        self.components = []
+        self._components = []
+
+        end_time = time.perf_counter()
+        self.component_times[self.__class__.__name__ + ".__init__()"] += end_time - start_time
 
     @property
     def components(self) -> list:
@@ -120,13 +133,18 @@ class SEIR_ABM:
 
         # Store and instantiate
         self._components = ordered_subset
-        self.instances = [cls(self) for cls in ordered_subset]
+
+        self.instances = []
+        for cls in ordered_subset:
+            start_time = time.perf_counter()
+            self.instances.append(cls(self))
+            end_time = time.perf_counter()
+            self.component_times[cls.__name__ + ".__init__()"] += end_time - start_time
+
         print(f"Initialized components: {self.instances}")
 
     def run(self):
         sc.printcyan("Initialization complete. Running simulation...")
-        self.component_times = defaultdict(float)  # Initialize component times
-        self.component_times["report"] = 0
         with alive_bar(self.nt, title="Simulation progress:") as bar:
             for tick in range(self.nt):
                 if tick == 0:

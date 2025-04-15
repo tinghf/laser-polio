@@ -215,7 +215,8 @@ def get_node_lookup(node_lookup_path, dot_names):
     :return: A dictionary with integer node_ids as keys and filtered node_lookup values.
     """
     # Load the full node_lookup dictionary
-    full_node_lookup = json.load(open(node_lookup_path))
+    with open(node_lookup_path) as stream:
+        full_node_lookup = json.load(stream)
 
     # Filter by dot_names
     node_lookup = {key: full_node_lookup[key] for key in dot_names}

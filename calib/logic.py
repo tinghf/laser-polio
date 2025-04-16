@@ -49,6 +49,7 @@ def calc_calib_targets_paralysis(filename, model_config_path=None):
             regional_cases.append(total)
         targets["regional_cases"] = np.array(regional_cases)
 
+    print(f"{targets=}")
     return targets
 
 
@@ -85,6 +86,7 @@ def calc_calib_targets(filename, model_config_path=None):
             regional_cases.append(total)
         targets["regional_cases"] = np.array(regional_cases)
 
+    print(f"{targets=}")
     return targets
 
 
@@ -195,7 +197,6 @@ def run_worker_main(
     """Run Optuna trials to calibrate the model via CLI or programmatically."""
 
     # 👇 Provide defaults for programmatic use
-    study_name = study_name or "calib_demo_zamfara_r0"
     num_trials = num_trials or 5
     calib_config = calib_config or lp.root / "calib/calib_configs/calib_pars_r0.yaml"
     model_config = model_config or lp.root / "calib/model_configs/config_zamfara.yaml"
@@ -206,8 +207,9 @@ def run_worker_main(
     print(f"[INFO] Running study: {study_name} with {num_trials} trials")
     storage_url = calib_db.get_storage()
 
+    # sampler = optuna.samplers.RandomSampler(seed=42)  # seed is optional for reproducibility
     try:
-        study = optuna.load_study(study_name=study_name, storage=storage_url)
+        study = optuna.load_study(study_name=study_name, storage=storage_url)  # , sampler=sampler)
     except Exception:
         print(f"[INFO] Creating new study: '{study_name}'")
         study = optuna.create_study(study_name=study_name, storage=storage_url)
@@ -230,22 +232,3 @@ def run_worker_main(
     )
 
     study.optimize(wrapped_objective, n_trials=num_trials)
-
-    best = study.best_trial
-    print("\nBest Trial:")
-    print(f"  Value: {best.value}")
-    for k, v in best.params.items():
-        print(f"    {k}: {v}")
-
-    output_dir = Path(results_path)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    df = study.trials_dataframe(attrs=("number", "value", "params", "state"))
-    df.to_csv(output_dir / "calibration_results.csv", index=False)
-
-    with open(output_dir / "best_params.json", "w") as f:
-        json.dump(best.params, f, indent=4)
-    with open(output_dir / "study_metadata.json", "w") as f:
-        json.dump(study.user_attrs, f, indent=4)
-
-    print("✅ Calibration complete. Results saved.")

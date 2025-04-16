@@ -8,6 +8,7 @@ DEBUGGING
 - Test full models with real data
 
 CALIBRATION
+- Fix the shape mismatch in calibration arrays due to wrapping into next year
 - Try comparing observed paralysis counts to infections / 2000
 - Use more pars for Nigeria
 - Likelihood fn???

@@ -1,7 +1,12 @@
 import os
+import shutil
 from pathlib import Path
 
+import calib_db
 import click
+import optuna
+from calib_report import plot_stuff
+from calib_report import save_study_results
 from logic import run_worker_main
 
 import laser_polio as lp
@@ -23,18 +28,35 @@ actual_data_file = lp.root / "calib/results/" / study_name / "actual_data.csv"
 # ---------------------------------------------------
 
 
+def main(model_config, results_path, study_name, **kwargs):
+    # Run calibration
+    run_worker_main(model_config=model_config, results_path=results_path, study_name=study_name, **kwargs)
+
+    # Save & plot the calibration results
+    shutil.copy(model_config, Path(results_path) / "model_config.yaml")
+    storage_url = calib_db.get_storage()
+    study = optuna.load_study(study_name=study_name, storage=storage_url)
+    study.results_path = results_path
+    study.storage_url = storage_url
+    save_study_results(study, Path(results_path))
+    if not os.getenv("HEADLESS"):
+        plot_stuff(study_name, storage_url)
+
+    print("✅ Calibration complete. Results saved.")
+
+
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--study-name", default=study_name, show_default=True, help="Name of the Optuna study.")
-@click.option("--num-trials", default=num_trials, show_default=True, type=int, help="Number of optimization trials.")
-@click.option("--calib-config", default=str(calib_config_path), show_default=True, help="Path to calibration parameter file.")
-@click.option("--model-config", default=str(model_config_path), show_default=True, help="Path to model base config.")
+@click.option("--study-name", default=study_name, show_default=True)
+@click.option("--num-trials", default=num_trials, show_default=True, type=int)
+@click.option("--calib-config", default=str(calib_config_path), show_default=True)
+@click.option("--model-config", default=str(model_config_path), show_default=True)
 @click.option("--results-path", default=str(results_path), show_default=True)
 @click.option("--sim-path", default=str(sim_path), show_default=True)
 @click.option("--params-file", default=str(params_file), show_default=True)
 @click.option("--actual-data-file", default=str(actual_data_file), show_default=True)
-def run_worker(**kwargs):
-    run_worker_main(**kwargs)
+def cli(**kwargs):
+    main(**kwargs)
 
 
 if __name__ == "__main__":
-    run_worker()
+    cli()

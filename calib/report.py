@@ -4,6 +4,7 @@ from pathlib import Path
 
 import optuna
 import optuna.visualization as vis
+import sciris as sc
 
 
 def save_study_results(study, output_dir: Path, csv_name: str = "trials.csv"):
@@ -20,7 +21,7 @@ def save_study_results(study, output_dir: Path, csv_name: str = "trials.csv"):
 
     # Print a brief best-trial summary
     best = study.best_trial
-    print("\nBest Trial:")
+    sc.printcyan("\nBest Trial:")
     print(f"  Value: {best.value}")
     for k, v in best.params.items():
         print(f"    {k}: {v}")
@@ -38,6 +39,7 @@ def save_study_results(study, output_dir: Path, csv_name: str = "trials.csv"):
     metadata["timestamp"] = metadata.get("timestamp") or datetime.now().isoformat()  # noqa: DTZ005
     metadata["study_name"] = study.study_name
     metadata["storage_url"] = study.storage_url
+    metadata["laser_polio_git_info"] = sc.gitinfo()
     with open(output_dir / "study_metadata.json", "w") as f:
         json.dump(metadata, f, indent=4)
 

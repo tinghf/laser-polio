@@ -1,10 +1,14 @@
 # PRIORITIES
 
 CALIBRATION
+- reduce print statements ('Results saved to' & 'targets=')
 - Seed infections after start date
 - Run calibration (with all the latest changes) on the cluster
-- Refine and simplify the calibration functions
 - Refine how regional groupings are made for N/S Nigeria
+- Are we at risk of collisions with simulation_results.csv?
+- Update README with usage instructions
+- record pkg versions
+- save best trial results & figs
 
 NEW FEATURES
 - Enable vx transmission (& add genome R0 multiplier, Sabin = 1/4; nOPV2 = 1/8)
@@ -36,6 +40,7 @@ CALIBRATION
 - Levers:
     - Stretch: R0 scalar for N Nigeria
     - Stretch: risk_mult_var or corr_risk_inf
+- Record lp version
 
 DEBUGGING
 - Ask AI why my model might deviate from KM

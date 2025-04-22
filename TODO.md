@@ -7,8 +7,7 @@ CALIBRATION
 - Refine how regional groupings are made for N/S Nigeria
 - Are we at risk of collisions with simulation_results.csv?
 - Update README with usage instructions
-- record pkg versions
-- save best trial results & figs
+- Save best trial results & figs
 
 CLOUD
 - Import ps from user config file that's in gitignore
@@ -49,6 +48,7 @@ CALIBRATION
     - Stretch: R0 scalar for N Nigeria
     - Stretch: risk_mult_var or corr_risk_inf
 - Record lp version
+- Record pkg versions
 
 DEBUGGING
 - Ask AI why my model might deviate from KM
@@ -83,6 +83,8 @@ NEW FEATURES
 - Save results & specify frequency
 - Add chronically missed pop. Maybe use a individual prob of participating in SIA?
 - Add delays to paralysis (and new_exposed) detection times
+- Enabling RI with specific vaccines & dates
+- Add IPV to RI
 
 QUALITY OF LIFE
 - Export pars as pkl

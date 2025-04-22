@@ -37,26 +37,19 @@ RUN pip3 install optuna mysqlclient
 RUN pip3 install pipdeptree && pipdeptree -p laser-polio > /app/laser_polio_deps.txt
 
 # Copy your application and data files (same as before)
-COPY calib/calib_db.py .
-COPY calib/calibrate.py .
-COPY calib/objective.py .
-COPY calib/report.py .
-COPY calib/scoring.py .
-COPY calib/targets.py .
-COPY calib/worker.py .
-COPY calib/cloud/check_study.sh .
+# COPY calib/calib_db.py .
+# COPY calib/calibrate.py .
+# COPY calib/objective.py .
+# COPY calib/report.py .
+# COPY calib/scoring.py .
+# COPY calib/targets.py .
+# COPY calib/worker.py .
+# COPY calib/cloud/check_study.sh .
+COPY calib/ .
 COPY calib/calib_configs/ ./calib/calib_configs/
 COPY calib/model_configs/ ./calib/model_configs/
-COPY data/node_lookup.json /app/data/node_lookup.json
 RUN chmod a+x ./check_study.sh
-COPY data/init_immunity_0.5coverage_january.h5 /app/data/
-COPY data/distance_matrix_africa_adm2.h5 /app/data/
-COPY ./data/Nigeria_age_pyramid_2024.csv /app/data/
-COPY ./data/sia_scenario_1.csv /app/data/
-COPY ./data/compiled_cbr_pop_ri_sia_underwt_africa.csv /app/data/
-COPY ./data/age_africa.csv /app/data/
-COPY ./data/sia_historic_schedule.csv /app/data/
-COPY ./data/epi_africa_20250421.h5 /app/data/epi_africa_20250421.h5
+COPY ./data/ /app/data/
 
 ENV POLIO_ROOT=/app
 ENV NUMBA_CPU_NAME=generic

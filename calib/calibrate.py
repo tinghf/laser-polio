@@ -18,7 +18,7 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIG -------------------
 num_trials = 2
-study_name = "calib_nigeria_smpop_r0_k_seasonality_20250421_v1"
+study_name = "calib_nigeria_smpop_r0_k_seasonality_20250421_date_fix"
 calib_config_path = lp.root / "calib/calib_configs/r0_k_seasonality.yaml"
 model_config_path = lp.root / "calib/model_configs/config_nigeria_popscale0.01.yaml"
 fit_function = "log_likelihood"  # options are "log_likelihood" or "mse"
@@ -39,7 +39,7 @@ def main(model_config, results_path, study_name, fit_function="mse", **kwargs):
     study.storage_url = storage_url
     save_study_results(study, Path(results_path))
     if not os.getenv("HEADLESS"):
-        plot_stuff(study_name, storage_url)
+        plot_stuff(study_name, storage_url, output_dir=Path(results_path))
 
     print("✅ Calibration complete. Results saved.")
 

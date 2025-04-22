@@ -1,4 +1,6 @@
+import calendar
 import csv
+import datetime
 import datetime as dt
 import json
 import os
@@ -14,6 +16,7 @@ __all__ = [
     "create_cumulative_deaths",
     "date",
     "daterange",
+    "find_latest_end_of_month",
     "find_matching_dot_names",
     "get_distance_matrix",
     "get_epi_data",
@@ -130,6 +133,25 @@ def daterange(start_date, days):
 
     date_range = np.array([start_date + dt.timedelta(days=i) for i in range(days)])
     return date_range
+
+
+def find_latest_end_of_month(dates=None):
+    """
+    Return the latest date that is the last day of its month.
+
+    Parameters:
+        dates (List[datetime.date]): A list of datetime.date objects.
+
+    Returns:
+        datetime.date or None: The most recent end-of-month date, or None if none found.
+    """
+
+    def is_end_of_month(d: datetime.date) -> bool:
+        return d.day == calendar.monthrange(d.year, d.month)[1]
+
+    end_of_month_dates = [d for d in dates if is_end_of_month(d)]
+
+    return max(end_of_month_dates) if end_of_month_dates else None
 
 
 def find_matching_dot_names(patterns, ref_file, verbose=2):
@@ -405,7 +427,7 @@ def save_results_to_csv(sim, filename="simulation_results.csv"):
     :param filename: The name of the CSV file to save.
     """
 
-    timesteps = sim.t
+    timesteps = sim.nt
     datevec = sim.datevec
     nodes = len(sim.nodes)
     results = sim.results
@@ -414,13 +436,23 @@ def save_results_to_csv(sim, filename="simulation_results.csv"):
         writer = csv.writer(file)
 
         # Write header
-        writer.writerow(["timestep", "date", "node", "S", "E", "I", "R", "P"])
+        writer.writerow(["timestep", "date", "node", "S", "E", "I", "R", "P", "new_exposed"])
 
         # Write data
         for t in range(timesteps):
             for n in range(nodes):
                 writer.writerow(
-                    [t, datevec[t], n, results.S[t, n], results.E[t, n], results.I[t, n], results.R[t, n], results.paralyzed[t, n]]
+                    [
+                        t,
+                        datevec[t],
+                        n,
+                        results.S[t, n],
+                        results.E[t, n],
+                        results.I[t, n],
+                        results.R[t, n],
+                        results.paralyzed[t, n],
+                        results.new_exposed[t, n],
+                    ]
                 )
 
     print(f"Results saved to {filename}")

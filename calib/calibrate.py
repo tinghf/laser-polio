@@ -34,6 +34,7 @@ def main(model_config, results_path, study_name, fit_function="mse", **kwargs):
     run_worker_main(study_name=study_name, model_config=model_config, results_path=results_path, fit_function=fit_function, **kwargs)
 
     # Save & plot the calibration results
+    Path(results_path).mkdir(parents=True, exist_ok=True)
     shutil.copy(model_config, Path(results_path) / "model_config.yaml")
     storage_url = calib_db.get_storage()
     study = optuna.load_study(study_name=study_name, storage=storage_url)

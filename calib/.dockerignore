@@ -1,3 +1,5 @@
-# Keep top-level files in data/, ignore everything deeper
+# Exclude all subdirectories inside data/
 data/*/
-data/*/*
+
+# Re-include top-level files only
+!data/*

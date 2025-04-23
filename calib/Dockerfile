@@ -17,7 +17,8 @@ RUN dnf install -y \
     wget \
     screen \
     procps \
-    vim && \
+    vim \
+    git && \
     dnf clean all
 
 # Set default python3 and pip3 to use 3.10 explicitly
@@ -32,19 +33,14 @@ WORKDIR /app
 
 # Install Python dependencies
 RUN pip3 install --upgrade pip
-RUN pip3 install --pre -i https://packages.idmod.org/api/pypi/pypi-production/simple laser-polio
+# Put latest laser-polio wheel link below
+RUN dnf install -y git
+RUN pip3 install https://github.com/InstituteforDiseaseModeling/laser-polio/releases/download/v0.1.1/laser_polio-0.1.1-py3-none-any.whl
+# RUN pip3 install --pre -i https://packages.idmod.org/api/pypi/pypi-production/simple laser-polio
 RUN pip3 install optuna mysqlclient
 RUN pip3 install pipdeptree && pipdeptree -p laser-polio > /app/laser_polio_deps.txt
 
 # Copy your application and data files (same as before)
-# COPY calib/calib_db.py .
-# COPY calib/calibrate.py .
-# COPY calib/objective.py .
-# COPY calib/report.py .
-# COPY calib/scoring.py .
-# COPY calib/targets.py .
-# COPY calib/worker.py .
-# COPY calib/cloud/check_study.sh .
 COPY calib/ .
 COPY calib/calib_configs/ ./calib/calib_configs/
 COPY calib/model_configs/ ./calib/model_configs/

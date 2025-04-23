@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-study_name = "calib_nigeria_20250423"
+study_name = "calib_nigeria_20250423_fullpop"
 num_trials = 1
 parallelism = 4
 completions = 20
@@ -21,5 +21,6 @@ if storage_path.exists():
     storage = yaml.safe_load(storage_path.read_text())
     storage_url = storage.get("storage_url")
 # Safety check
+print(f"Storage URL: {storage_url}")
 if storage_url is None:
     raise RuntimeError("Missing STORAGE_URL in local_storage.yaml")

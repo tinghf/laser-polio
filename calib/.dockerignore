@@ -1,2 +1,3 @@
-# data subdirectories
-data/**/
+# Keep top-level files in data/, ignore everything deeper
+data/*/
+data/*/*

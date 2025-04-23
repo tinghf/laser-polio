@@ -40,7 +40,7 @@ def main():
     threading.Timer(5, lambda: webbrowser.open("http://localhost:8080")).start()
 
     try:
-        start_optuna_dashboard("mysql+pymysql://optuna:superSecretPassword@127.0.0.1:3306/optunaDatabase")
+        start_optuna_dashboard(storage_url)
     finally:
         print("🧹 Cleaning up port forwarding...")
         pf_process.terminate()

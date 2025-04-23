@@ -3,12 +3,12 @@ from pathlib import Path
 
 import yaml
 
-study_name = "test_polio_calib_fixed"
+study_name = "calib_nigeria_20250423"
 num_trials = 1
 parallelism = 4
 completions = 20
 namespace = "default"
-job_name = "laser-polio-worker-jb"
+job_name = "laser-polio-worker-sk"
 image = "idm-docker-staging.packages.idmod.org/laser/laser-polio:latest"
 
 

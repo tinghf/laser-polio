@@ -6,7 +6,7 @@ import webbrowser
 import yaml
 
 
-def load_storage_url(yaml_path="local_storage.yaml"):
+def load_storage_url(yaml_path="calib/cloud/local_storage.yaml"):
     with open(yaml_path) as f:
         config = yaml.safe_load(f)
     return config["storage_url"]
@@ -20,11 +20,12 @@ def port_forward():
 
 def start_optuna_dashboard(storage_url):
     print("🚀 Starting Optuna dashboard...")
+    local_url = storage_url.replace("localhost", "127.0.0.1")
     subprocess.run(
         [
             r"C:\github\laser-polio\.venv\Scripts\python.exe",
             "-c",
-            "import optuna_dashboard; optuna_dashboard.run_server('{storage_url}",
+            f"import optuna_dashboard; optuna_dashboard.run_server('{local_url}')",
         ]
     )
 
@@ -39,7 +40,7 @@ def main():
     threading.Timer(5, lambda: webbrowser.open("http://localhost:8080")).start()
 
     try:
-        start_optuna_dashboard(storage_url)
+        start_optuna_dashboard("mysql+pymysql://optuna:superSecretPassword@127.0.0.1:3306/optunaDatabase")
     finally:
         print("🧹 Cleaning up port forwarding...")
         pf_process.terminate()

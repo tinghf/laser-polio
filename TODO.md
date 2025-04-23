@@ -1,6 +1,7 @@
 # PRIORITIES
 
 CALIBRATION
+- update how calib results path is passed from cloud vs to calibrate - don't think it's working. Can test it when they're unequal.
 - reduce print statements ('Results saved to' & 'targets=')
 - Seed infections after start date
 - Run calibration (with all the latest changes) on the cluster

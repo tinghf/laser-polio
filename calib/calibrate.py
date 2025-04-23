@@ -19,7 +19,7 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIG -------------------
 num_trials = 2
-study_name = "calib_nigeria_smpop_r0_k_seasonality_20250421_date_fix"
+study_name = "calib_nigeria_20250423"
 calib_config_path = lp.root / "calib/calib_configs/r0_k_ssn.yaml"
 model_config_path = lp.root / "calib/model_configs/config_nigeria_popscale0.01.yaml"
 fit_function = "log_likelihood"  # options are "log_likelihood" or "mse"

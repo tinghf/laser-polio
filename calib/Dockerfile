@@ -48,7 +48,7 @@ RUN pip3 install pipdeptree && pipdeptree -p laser-polio > /app/laser_polio_deps
 COPY calib/ .
 COPY calib/calib_configs/ ./calib/calib_configs/
 COPY calib/model_configs/ ./calib/model_configs/
-RUN chmod a+x ./check_study.sh
+RUN chmod a+x cloud/check_study.sh
 COPY ./data/ /app/data/
 
 ENV POLIO_ROOT=/app

@@ -10,6 +10,8 @@ CALIBRATION
 - Save best trial results & figs
 
 CLOUD
+- Talk to JB about mapping calib directory during Docker run (kind of like a network drive)
+- Don't copy data subdirectories
 - Import ps from user config file that's in gitignore
 - should be able to make 1 file that I could run to kickoff port forwarding & optuna dashboard (.bat file)
 - might be able to connect aks to kubernetes app in VS code so I can interact with each node
@@ -24,6 +26,7 @@ NEW FEATURES
 # REFINEMENT
 
 TESTING
+- Make stochastic tests more robust
 - Use run_sim for testing.
 - Is there a way to only load data & initialize sims once during calibration? How much speedup could we get?
 - John G recommends Finite Radiation model as default assumption

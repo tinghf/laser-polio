@@ -8,7 +8,7 @@ import laser_polio as lp
 regions = ["NIGERIA"]
 start_year = 2018
 n_days = 365
-pop_scale = 1 / 100
+pop_scale = 1 / 1
 init_region = "BIRINIWA"
 init_prev = 0.01
 r0 = 14
@@ -28,7 +28,7 @@ sim = lp.run_sim(
     r0=r0,
     results_path=results_path,
     save_plots=True,
-    save_data=False,
+    save_data=True,
     verbose=1,
     seed=1,
 )

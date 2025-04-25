@@ -1,13 +1,15 @@
 # PRIORITIES
 
+@Steve
+- Make synthetic data & send to Jonathan
+- Stochastic tests
+- New model features
+
 CALIBRATION
-- Are we at risk of collisions with simulation_results.csv?
-- how do I stop a calib that's running?
 - print number of jobs that are about to start
 - how many jobs can I run? what's the optimal setup?
 - fix report_calib_aks.py - not working says unknown databas optunaDatabase
 - update how calib results path is passed from cloud vs to calibrate - don't think it's working. Can test it when they're unequal.
-- reduce print statements ('Results saved to' & 'targets=')
 - Seed infections after start date
 - Refine how regional groupings are made for N/S Nigeria
 - Update README with usage instructions

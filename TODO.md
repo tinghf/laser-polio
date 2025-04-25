@@ -2,7 +2,7 @@
 
 CALIBRATION
 - Are we at risk of collisions with simulation_results.csv?
-- how do I stop a calib that's running? 
+- how do I stop a calib that's running?
 - print number of jobs that are about to start
 - how many jobs can I run? what's the optimal setup?
 - fix report_calib_aks.py - not working says unknown databas optunaDatabase

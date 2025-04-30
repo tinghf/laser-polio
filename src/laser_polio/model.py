@@ -667,7 +667,9 @@ class DiseaseState_ABM:
     def plot(self, save=False, results_path=None):
         self.plot_total_seir_counts(save=save, results_path=results_path)
         self.plot_infected_by_node(save=save, results_path=results_path)
-        self.plot_infected_map(save=save, results_path=results_path)
+        self.plot_infected_dot_map(save=save, results_path=results_path)
+        if self.pars.shp is not None:
+            self.plot_infected_choropleth(save=save, results_path=results_path)
 
     def plot_total_seir_counts(self, save=False, results_path=None):
         plt.figure(figsize=(10, 6))
@@ -700,7 +702,7 @@ class DiseaseState_ABM:
         if not save:
             plt.show()
 
-    def plot_infected_map(self, save=False, results_path=None, n_panels=6):
+    def plot_infected_dot_map(self, save=False, results_path=None, n_panels=6):
         rows, cols = 2, int(np.ceil(n_panels / 2))
         fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 6), sharex=True, sharey=True, constrained_layout=True)
         axs = axs.ravel()  # Flatten in case of non-square grid
@@ -708,46 +710,74 @@ class DiseaseState_ABM:
         lats = [self.pars.node_lookup[i]["lat"] for i in self.nodes]
         lons = [self.pars.node_lookup[i]["lon"] for i in self.nodes]
         # Scale population for plotting (adjust scale_factor as needed)
-        scale_factor = 0.01  # tweak this number to look good visually
-        sizes = [pop * scale_factor for pop in self.pars.n_ppl]
-
+        scale_factor = 5  # tweak this number to look good visually
+        sizes = np.array(self.pars.n_ppl)
+        sizes = np.log1p(sizes) * scale_factor
         # Get global min and max for consistent color scale
         infection_min = np.min(self.results.I)
         infection_max = np.max(self.results.I)
-
         for i, ax in enumerate(axs[:n_panels]):  # Ensure we don't go out of bounds
             t = timepoints[i]
             infection_counts = self.results.I[t, :]
-
             scatter = ax.scatter(
                 lons, lats, c=infection_counts, s=sizes, cmap="RdYlBu_r", edgecolors=None, alpha=0.9, vmin=infection_min, vmax=infection_max
             )
             ax.set_title(f"Timepoint {t}")
-
             # Show labels only on the leftmost and bottom plots
             if i % cols == 0:
                 ax.set_ylabel("Latitude")
             else:
                 ax.set_yticklabels([])
-
             if i >= n_panels - cols:
                 ax.set_xlabel("Longitude")
             else:
                 ax.set_xticklabels([])
-
-            # ax.set_facecolor("linen")
-
         # Add a single colorbar for all plots
         fig.colorbar(scatter, ax=axs, location="right", fraction=0.05, pad=0.05, label="Infection Count")
-        # fig.patch.set_facecolor("lightgrey")
-
-        # Add title
         fig.suptitle("Infected Population by Node", fontsize=16)
-
         if save:
             if results_path is None:
                 raise ValueError("Please provide a results path to save the plots.")
             plt.savefig(f"{results_path}/infected_map.png")
+        else:
+            plt.show()
+
+    def plot_infected_choropleth(self, save=False, results_path=None, n_panels=6):
+        rows, cols = 2, int(np.ceil(n_panels / 2))
+        fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 6), constrained_layout=True)
+        axs = axs.ravel()
+        timepoints = np.linspace(0, self.pars.dur, n_panels, dtype=int)
+        shp = self.pars.shp
+        # Get global min/max for consistent color scale across panels
+        infection_min = np.min(self.results.I)
+        infection_max = np.max(self.results.I)
+        # Plot choropleth
+        for i, ax in enumerate(axs[:n_panels]):
+            t = timepoints[i]
+            infection_counts = self.results.I[t, :]  # shape = (num_nodes,)
+            shp["infected"] = infection_counts
+            shp.plot(
+                column="infected",
+                ax=ax,
+                cmap="OrRd",
+                linewidth=0.5,
+                edgecolor="black",
+                legend=False,
+                vmin=infection_min,
+                vmax=infection_max,
+            )
+            ax.set_title(f"Infections at t={t}")
+            ax.set_axis_off()
+        # Add a shared colorbar
+        sm = plt.cm.ScalarMappable(cmap="OrRd", norm=plt.Normalize(vmin=infection_min, vmax=infection_max))
+        sm._A = []
+        cbar = fig.colorbar(sm, ax=axs, orientation="vertical", fraction=0.03, pad=0.01)
+        cbar.set_label("Infection Count")
+        fig.suptitle("Choropleth of Infected Population by Node", fontsize=16)
+        if save:
+            if results_path is None:
+                raise ValueError("Please provide a results path to save the plots.")
+            plt.savefig(results_path / "infected_choropleth.png")
         else:
             plt.show()
 

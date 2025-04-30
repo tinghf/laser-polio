@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import click
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -53,7 +54,12 @@ def run_sim(config=None, verbose=1, **kwargs):
     # Geography
     dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv", verbose=verbose)
     node_lookup = lp.get_node_lookup("data/node_lookup.json", dot_names)
-    dist_matrix = lp.get_distance_matrix(lp.root / "data/distance_matrix_africa_adm2.h5", dot_names)
+    # dist_matrix = lp.get_distance_matrix(lp.root / "data/distance_matrix_africa_adm2.h5", dot_names)
+    shp = gpd.read_file(filename="data/shp_africa_low_res.gpkg", layer="adm2")
+    shp = shp[shp["dot_name"].isin(dot_names)]
+    # Sort the GeoDataFrame by the order of dot_names
+    shp.set_index("dot_name", inplace=True)
+    shp = shp.loc[dot_names].reset_index()
 
     # Immunity
     init_immun = pd.read_hdf(lp.root / "data/init_immunity_0.5coverage_january.h5", key="immunity")
@@ -97,7 +103,7 @@ def run_sim(config=None, verbose=1, **kwargs):
     # print(f"{r0_scalars[-14:]}")
 
     # Validate all arrays match
-    assert all(len(arr) == len(dot_names) for arr in [dist_matrix, init_immun, node_lookup, init_prevs, pop, cbr, ri, sia_prob, r0_scalars])
+    assert all(len(arr) == len(dot_names) for arr in [shp, init_immun, node_lookup, init_prevs, pop, cbr, ri, sia_prob, r0_scalars])
 
     # Setup results path
     if results_path is None:
@@ -120,7 +126,8 @@ def run_sim(config=None, verbose=1, **kwargs):
         "init_immun": init_immun,
         "init_prev": init_prevs,
         "r0_scalars": r0_scalars,
-        "distances": dist_matrix,
+        "distances": None,
+        "shp": shp,
         "node_lookup": node_lookup,
         "vx_prob_ri": ri,
         "sia_schedule": sia_schedule,

@@ -5,6 +5,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
@@ -751,6 +752,8 @@ class DiseaseState_ABM:
         # Get global min/max for consistent color scale across panels
         infection_min = np.min(self.results.I)
         infection_max = np.max(self.results.I)
+        trunc_magma = truncate_colormap("magma", minval=0.1, maxval=0.9)  # Adjust range as needed
+        alpha = 0.9
         # Plot choropleth
         for i, ax in enumerate(axs[:n_panels]):
             t = timepoints[i]
@@ -759,9 +762,10 @@ class DiseaseState_ABM:
             shp.plot(
                 column="infected",
                 ax=ax,
-                cmap="OrRd",
-                linewidth=0.5,
-                edgecolor="black",
+                cmap=trunc_magma,  # "OrRd"
+                alpha=alpha,
+                linewidth=0.1,
+                edgecolor="white",
                 legend=False,
                 vmin=infection_min,
                 vmax=infection_max,
@@ -769,9 +773,10 @@ class DiseaseState_ABM:
             ax.set_title(f"Infections at t={t}")
             ax.set_axis_off()
         # Add a shared colorbar
-        sm = plt.cm.ScalarMappable(cmap="OrRd", norm=plt.Normalize(vmin=infection_min, vmax=infection_max))
+        sm = plt.cm.ScalarMappable(cmap=trunc_magma, norm=plt.Normalize(vmin=infection_min, vmax=infection_max))
         sm._A = []
         cbar = fig.colorbar(sm, ax=axs, orientation="vertical", fraction=0.03, pad=0.01)
+        cbar.solids.set_alpha(alpha)
         cbar.set_label("Infection Count")
         fig.suptitle("Choropleth of Infected Population by Node", fontsize=16)
         if save:
@@ -780,6 +785,12 @@ class DiseaseState_ABM:
             plt.savefig(results_path / "infected_choropleth.png")
         else:
             plt.show()
+
+
+def truncate_colormap(cmap_name, minval=0.0, maxval=1.0, n=256):
+    base_cmap = plt.get_cmap(cmap_name)
+    new_colors = base_cmap(np.linspace(minval, maxval, n))
+    return mcolors.LinearSegmentedColormap.from_list(f"{cmap_name}_trunc_{minval}_{maxval}", new_colors)
 
 
 @nb.njit(parallel=True)

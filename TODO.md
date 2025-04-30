@@ -2,7 +2,7 @@
 
 @Steve
 - Update run sim to save pop (run=T, save_pop=F)
-- report_calib_aks.py
+- report_calib_aks.py needs port forwarding
 - Look into frequency of sim logging
 - Stochastic tests
 - New model features
@@ -22,7 +22,7 @@ CALIBRATION
 
 CLOUD
 - Numba target architecture configuration (core setup for VM - JB had to add an env variable to use basic core setup, can't remember why)
-- How do I check on resource usage of cluster? 
+- How do I check on resource usage of cluster?
 - Talk to JB about mapping calib directory during Docker run (kind of like a network drive)
 - might be able to connect aks to kubernetes app in VS code so I can interact with each node
 - think there's an aks python library that might provide a link or option for inspecting nodes to see which are running

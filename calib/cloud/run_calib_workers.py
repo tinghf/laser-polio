@@ -3,7 +3,9 @@ from kubernetes import client
 from kubernetes import config
 
 # Load kubeconfig
-config.load_kube_config()
+# If you change the config_file, it's recommend you set the KUBECONFIG env var using cmd: set KUBECONFIG=C:\Users\stevekr\.kube\config
+# Then test with: kubectl config get-contexts
+config.load_kube_config(config_file="~/.kube/cditest3.yaml")  # default = "~/.kube/config"
 batch_v1 = client.BatchV1Api()
 
 # Define the container

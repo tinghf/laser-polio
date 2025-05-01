@@ -7,6 +7,7 @@ import click
 import optuna
 import sciris as sc
 from report import plot_stuff
+from report import plot_targets
 from report import save_study_results
 from worker import run_worker_main
 
@@ -19,7 +20,7 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIG -------------------
 num_trials = 2
-study_name = "calib_nigeria_radiation_20250429"
+study_name = "calib_nigeria_radiation_20250501"
 calib_config_path = lp.root / "calib/calib_configs/r0_k.yaml"
 model_config_path = lp.root / "calib/model_configs/config_nigeria.yaml"
 fit_function = "log_likelihood"  # options are "log_likelihood" or "mse"
@@ -43,6 +44,7 @@ def main(model_config, results_path, study_name, fit_function="mse", **kwargs):
     save_study_results(study, Path(results_path))
     if not os.getenv("HEADLESS"):
         plot_stuff(study_name, storage_url, output_dir=Path(results_path))
+        plot_targets(study, output_dir=Path(results_path))
 
     sc.printcyan("✅ Calibration complete. Results saved.")
 

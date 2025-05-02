@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 import geopandas as gpd
+import h5py
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -11,6 +12,7 @@ import yaml
 from laser_core.propertyset import PropertySet
 
 import laser_polio as lp
+from laser_polio.laserframeio import LaserFrameIO
 
 __all__ = ["run_sim"]
 
@@ -19,7 +21,7 @@ if os.getenv("POLIO_ROOT"):
     lp.root = Path(os.getenv("POLIO_ROOT"))
 
 
-def run_sim(config=None, verbose=1, **kwargs):
+def run_sim(config=None, init_pop_file=None, verbose=1, run=True, save_pop=False, **kwargs):
     """
     Set up simulation from config file (YAML + overrides) or kwargs.
 
@@ -41,9 +43,9 @@ def run_sim(config=None, verbose=1, **kwargs):
 
     # Extract simulation setup parameters with defaults or overrides
     regions = configs.pop("regions", ["ZAMFARA"])
-    start_year = configs.pop("start_year", 2019)
+    start_year = configs.pop("start_year", 2018)
     n_days = configs.pop("n_days", 365)
-    pop_scale = configs.pop("pop_scale", 0.01)
+    pop_scale = configs.pop("pop_scale", 1)
     init_region = configs.pop("init_region", "ANKA")
     init_prev = configs.pop("init_prev", 0.01)
     results_path = configs.pop("results_path", "results/demo")
@@ -143,23 +145,57 @@ def run_sim(config=None, verbose=1, **kwargs):
     # TODO: make this optional
     # sc.pp(pars.to_dict())
 
-    # Run sim
-    sim = lp.SEIR_ABM(pars)
-    components = [lp.VitalDynamics_ABM, lp.DiseaseState_ABM, lp.Transmission_ABM]
-    if pars.vx_prob_ri is not None:
-        components.append(lp.RI_ABM)
-    if pars.vx_prob_sia is not None:
-        components.append(lp.SIA_ABM)
-    sim.components = components
-    sim.run()
+    def from_file(init_pop_file):
+        sim = lp.SEIR_ABM.init_from_file(init_pop_file, pars)
+        disease_state = lp.DiseaseState_ABM.init_from_file(sim)
+        vd = lp.VitalDynamics_ABM.init_from_file(sim)
+        sia = lp.SIA_ABM.init_from_file(sim)
+        ri = lp.RI_ABM.init_from_file(sim)
+        tx = lp.Transmission_ABM.init_from_file(sim)
+        sim._components = [type(vd), type(disease_state), type(tx), type(ri), type(sia)]
+        sim.instances = [vd, disease_state, tx, ri, sia]
+        with h5py.File(init_pop_file, "r") as hdf:
+            sim.results.R = hdf["recovered"][:]
+        return sim
 
-    # Save results
-    if save_plots:
-        Path(results_path).mkdir(parents=True, exist_ok=True)
-        sim.plot(save=True, results_path=results_path)
-    if save_data:
-        Path(results_path).mkdir(parents=True, exist_ok=True)
-        lp.save_results_to_csv(sim, filename=results_path / "simulation_results.csv")
+    def regular():
+        sim = lp.SEIR_ABM(pars)
+        components = [lp.VitalDynamics_ABM, lp.DiseaseState_ABM, lp.Transmission_ABM]
+        if pars.vx_prob_ri is not None:
+            components.append(lp.RI_ABM)
+        if pars.vx_prob_sia is not None:
+            components.append(lp.SIA_ABM)
+        sim.components = components
+        return sim
+
+    # Either initialize the sim from file or create a sim from scratch
+    if init_pop_file:
+        if "people" not in h5py.File(init_pop_file, "r").keys() or "recovered" not in h5py.File(init_pop_file, "r").keys():
+            raise ValueError(f"Invalid init_pop_file: {init_pop_file} must contain 'people' and 'recovered' datasets.")
+        sim = from_file(init_pop_file)
+    else:
+        sim = regular()
+        if save_pop:
+            with h5py.File(results_path / "init_pop.h5", "w") as f:
+                people_group = f.create_group("people")
+                LaserFrameIO.save_to_group(sim.people, people_group)  # Save to 'people' group
+                f.create_dataset("recovered", data=sim.results.R[:])  # Save the R result array
+
+    # Safety checks
+    if verbose >= 3:
+        print(f"sim.people.count: {sim.people.count}")
+        print(f"disease state counts: {np.bincount(sim.people.disease_state[: sim.people.count])}")
+        print(f"infected: {np.where(sim.people.disease_state[: sim.people.count] == 2)}")
+
+    # Run sim
+    if run:
+        sim.run()
+        if save_plots:
+            Path(results_path).mkdir(parents=True, exist_ok=True)
+            sim.plot(save=True, results_path=results_path)
+        if save_data:
+            Path(results_path).mkdir(parents=True, exist_ok=True)
+            lp.save_results_to_csv(sim, filename=results_path / "simulation_results.csv")
 
     return sim
 
@@ -188,7 +224,13 @@ def run_sim(config=None, verbose=1, **kwargs):
 @click.option(
     "--extra-pars", type=str, default=None, help='Optional JSON string with additional parameters, e.g. \'{"r0": 14.2, "gravity_k": 1.0}\''
 )
-def main(model_config, params_file, results_path, extra_pars):
+@click.option(
+    "--init-pop-file",
+    type=click.Path(exists=True),
+    default=None,
+    help="Optional initial population file (e.g., CSV or JSON format)",
+)
+def main(model_config, params_file, results_path, extra_pars, init_pop_file):
     """Run polio LASER simulation with optional config and parameter overrides."""
 
     config = {}
@@ -216,7 +258,7 @@ def main(model_config, params_file, results_path, extra_pars):
         config.update(json.loads(extra_pars))
 
     # Run the sim
-    run_sim(config=config)
+    run_sim(config=config, init_pop_file=init_pop_file)
 
 
 # ---------------------------- CLI ENTRY ----------------------------

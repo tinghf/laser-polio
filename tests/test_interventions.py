@@ -7,7 +7,7 @@ import laser_polio as lp
 # Fixture to set up the simulation environment
 def setup_sim(dur=30, n_ppl=None, vx_prob_ri=0.5, cbr=None, r0=14, new_pars=None):
     if n_ppl is None:
-        n_ppl = [50000, 50000]
+        n_ppl = np.array([50000, 50000])
     if cbr is None:
         cbr = np.array([30, 25])
     pars = PropertySet(
@@ -157,12 +157,12 @@ def test_sia_schedule():
 
 
 if __name__ == "__main__":
-    # test_ri_initialization()
-    # test_ri_manually_seeded()
-    # test_ri_on_births()
-    # test_ri_zero()
-    # test_ri_vx_prob()
-    # test_ri_no_effect_on_non_susceptibles()
-    # test_sia_schedule()
+    test_ri_initialization()
+    test_ri_manually_seeded()
+    test_ri_on_births()
+    test_ri_zero()
+    test_ri_vx_prob()
+    test_ri_no_effect_on_non_susceptibles()
+    test_sia_schedule()
 
     print("All initialization tests passed.")

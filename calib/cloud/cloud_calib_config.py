@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-study_name = "calib_nigeria_radiation_20250501"
+study_name = "calib_nigeria_radiation_20250502"
 num_trials = 1
 parallelism = 4
 completions = 12  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"

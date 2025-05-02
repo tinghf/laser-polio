@@ -19,7 +19,7 @@ container = client.V1Container(
     command=["python3", "calibrate.py", "--study-name", cfg.study_name, "--num-trials", str(cfg.num_trials)],
     env=[client.V1EnvVar(name="NUMBA_NUM_THREADS", value="8")],
     env_from=[client.V1EnvFromSource(secret_ref=client.V1SecretEnvSource(name="mysql-secrets"))],
-    resources=client.V1ResourceRequirements(requests={"cpu": "6"}, limits={"cpu": "8"}),
+    resources=client.V1ResourceRequirements(requests={"cpu": "6"}, limits={"cpu": "7"}),
 )
 
 # Pod spec

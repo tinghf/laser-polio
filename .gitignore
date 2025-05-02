@@ -37,6 +37,7 @@ results/
 *geojson.zip
 *sia_district_rows.csv
 *WPP2024_POP_F02_1_POPULATION_5-YEAR_AGE_GROUPS_BOTH_SEXES.xlsx
+*init_pop*.h5
 
 # Python
 *.py[cod]

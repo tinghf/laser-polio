@@ -49,7 +49,7 @@ class LaserFrameIO(LaserFrame):
 
             saved_count = int(group.attrs["count"])
             saved_capacity = int(group.attrs["capacity"])
-            saved_capacity = int(1.1 * saved_count)  # hack
+            saved_capacity = int(1.5 * saved_count)  # hack
 
             # Allow user override of capacity
             final_capacity = capacity if capacity is not None else saved_capacity

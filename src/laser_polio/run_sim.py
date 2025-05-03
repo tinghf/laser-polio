@@ -52,6 +52,7 @@ def run_sim(config=None, init_pop_file=None, verbose=1, run=True, save_pop=False
     actual_data = configs.pop("actual_data", "data/epi_africa_20250421.h5")
     save_plots = configs.pop("save_plots", False)
     save_data = configs.pop("save_data", False)
+    init_pop_file = configs.pop("init_pop_file", init_pop_file)
 
     # Geography
     dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv", verbose=verbose)

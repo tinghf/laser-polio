@@ -793,10 +793,16 @@ class DiseaseState_ABM:
         # Seed infections after initialization
         t = self.sim.t
         if t in self.seed_schedule:
-            for node_id, prevalence in self.seed_schedule[t]:
+            for node_id, value in self.seed_schedule[t]:
                 node_mask = (self.people.node_id[: self.people.count] == node_id) & (self.people.disease_state[: self.people.count] >= 0)
                 candidates = np.where(node_mask)[0]
-                n_seed = int(len(candidates) * prevalence)
+                # Handle prevalence (float) or fixed count (int)
+                if isinstance(value, float):
+                    n_seed = int(len(candidates) * value)
+                elif isinstance(value, int):
+                    n_seed = min(value, len(candidates))  # Avoid oversampling
+                else:
+                    raise ValueError(f"Unsupported seed value type: {type(value)}")
                 if n_seed > 0:
                     selected = np.random.choice(candidates, size=n_seed, replace=False)
                     self.people.disease_state[selected] = 2  # Set to infectious

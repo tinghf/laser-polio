@@ -7,6 +7,6 @@ from pathlib import Path
 # from .seir_mpm import *
 from .utils import *  # noqa F403
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 root = Path(__file__).resolve().parents[2]

@@ -41,7 +41,11 @@ def calc_calib_targets_paralysis(filename, model_config_path=None, is_actual_dat
     # 3. Monthly cases
     targets["monthly_cases"] = df.groupby("month")[case_col].sum().values * scale_factor
 
-    # 4. Regional group cases
+    # 4. Monthly timeseries (sorted full date x month time series)
+    monthly_df = df.groupby([df["date"].dt.to_period("M")])[case_col].sum().sort_index().astype(float) * scale_factor
+    targets["monthly_timeseries"] = monthly_df.values
+
+    # 5. Regional group cases
     if model_config and "summary_config" in model_config:
         region_groups = model_config["summary_config"].get("region_groups", {})
         regional_cases = []

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import optuna
 import optuna.visualization as vis
+import pandas as pd
 import sciris as sc
 import yaml
 
@@ -81,7 +82,7 @@ def plot_stuff(study_name, storage_url, output_dir=None):
     fig4.write_html(output_dir / "plot_contour.html")
 
 
-def plot_targets(study, output_dir=None):
+def plot_targets(study, output_dir=None, shp=None):
     best = study.best_trial
     actual = best.user_attrs["actual"]
     preds = best.user_attrs["predicted"]
@@ -137,6 +138,21 @@ def plot_targets(study, output_dir=None):
     plt.savefig(output_dir / "plot_best_monthly_cases_comparison.png")
     # plt.show()
 
+    # Monthly Timeseries Cases
+    n_months = len(actual["monthly_timeseries"])
+    months_series = pd.date_range(start="2018-01-01", periods=n_months, freq="MS")
+    plt.figure()
+    plt.title("Monthly Timeseries")
+    plt.plot(months_series, actual["monthly_timeseries"], "o-", label="Actual", linewidth=2)
+    for i, rep in enumerate(preds):
+        plt.plot(months_series, rep["monthly_timeseries"], "o-", label=f"Rep {i + 1}")
+    plt.xlabel("Month")
+    plt.ylabel("Cases")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_dir / "plot_best_monthly_timeseries_comparison.png")
+    # plt.show()
+
     # Regional Cases (bar plot)
     x = np.arange(len(region_labels))
     width = 0.1
@@ -151,6 +167,109 @@ def plot_targets(study, output_dir=None):
     plt.tight_layout()
     plt.savefig(output_dir / "plot_best_regional_cases_comparison.png")
     # plt.show()
+
+    # import numpy as np
+    # import pandas as pd
+    # import matplotlib.pyplot as plt
+    # from matplotlib.colors import Normalize
+    # from matplotlib.cm import ScalarMappable
+    # from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+    # # Plot monthly timeseries with annual maps
+    # if shp is not None:
+    #     months_series
+    #     years = sorted(set(months_series.year))
+
+    #     # Compute yearly sum per node
+    #     months_df = pd.DataFrame(monthly_cases_per_node, index=months_series)
+    #     annual_cases_by_node = {year: months_df.loc[str(year)].sum(axis=0).values for year in years}
+
+    #     # Normalize color scale across years
+    #     global_min = min(np.min(v) for v in annual_cases_by_node.values())
+    #     global_max = max(np.max(v) for v in annual_cases_by_node.values())
+    #     norm = Normalize(vmin=global_min, vmax=global_max)
+    #     cmap = truncate_colormap(cmap_name, minval=0.1, maxval=0.9)
+
+    #     # Create figure
+    #     fig, ax = plt.subplots(figsize=(16, 6))
+    #     ax.plot(months_series, actual_timeseries, "o-", label="Actual", linewidth=2)
+    #     ax.set_title("Monthly Timeseries with Annual Maps")
+    #     ax.set_xlabel("Month")
+    #     ax.set_ylabel("Cases")
+    #     ax.legend()
+
+    #     # Plot inset maps aligned under each year
+    #     for i, year in enumerate(years):
+    #         center_date = pd.Timestamp(f"{year}-07-01")  # middle of the year
+    #         x_pos = center_date
+
+    #         # Convert data coords to figure fraction
+    #         trans = ax.transData.transform((x_pos.toordinal(), ax.get_ylim()[0]))
+    #         inv = fig.transFigure.inverted().transform(trans)
+    #         x_fig, y_fig = inv
+
+    #         # Add inset axes
+    #         axins = inset_axes(
+    #             ax,
+    #             width="5%", height="20%",  # relative to figure
+    #             bbox_to_anchor=(x_fig - 0.025, 0.02, 0.05, 0.15),
+    #             bbox_transform=fig.transFigure,
+    #             loc="lower left",
+    #             borderpad=0,
+    #         )
+
+    #         shp["cases"] = annual_cases_by_node[year]
+    #         shp.plot(
+    #             column="cases",
+    #             ax=axins,
+    #             cmap=cmap,
+    #             norm=norm,
+    #             edgecolor="white",
+    #             linewidth=0.1,
+    #             legend=False
+    #         )
+    #         axins.set_title(f"{year}", fontsize=8)
+    #         axins.set_axis_off()
+
+    #     # Shared colorbar
+    #     sm = ScalarMappable(cmap=cmap, norm=norm)
+    #     sm._A = []
+    #     cbar = fig.colorbar(sm, ax=ax, orientation="vertical", fraction=0.03, pad=0.01)
+    #     cbar.set_label("Annual Node-Level Cases")
+
+    #     plt.tight_layout()
+    #     plt.show()
+
+
+def plot_runtimes(study, output_dir=None):
+    # Collect runtimes of completed trials
+    durations = []
+    for trial in study.trials:
+        if trial.state == optuna.trial.TrialState.COMPLETE and trial.datetime_start and trial.datetime_complete:
+            duration = trial.datetime_complete - trial.datetime_start
+            durations.append(duration.total_seconds() / 60)  # Convert to minutes
+
+    # Plot histogram with mean runtime
+    if durations:
+        avg_runtime = sum(durations) / len(durations)
+
+        plt.figure(figsize=(8, 5))
+        plt.hist(durations, bins=20, edgecolor="black", alpha=0.75)
+
+        # Add vertical dashed mean line
+        plt.axvline(avg_runtime, color="red", linestyle="--", linewidth=2, label=f"Mean = {avg_runtime:.2f} min")
+
+        # Annotated title
+        plt.title("Histogram of Optuna Trial Runtimes")
+        plt.xlabel("Trial Runtime (minutes)")
+        plt.ylabel("Number of Trials")
+        plt.legend()
+        plt.grid(True, linestyle="--", alpha=0.5)
+        plt.tight_layout()
+        plt.savefig(output_dir / "plot_runtimes.png")
+        # plt.show()
+    else:
+        print("No completed trials with valid timestamps to plot.")
 
 
 def load_region_group_labels(model_config_path):

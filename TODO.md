@@ -1,6 +1,8 @@
 # PRIORITIES
 
 @Steve
+- Update default kube config file
+- Test that seed_schedule infection can infect & that seeds are infectious (timers & infectivity)
 - Stochastic tests
 - New model features
 - Run logger with radiation_k and validate

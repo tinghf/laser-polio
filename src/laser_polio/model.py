@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import ClassVar
 
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
@@ -908,7 +907,7 @@ class DiseaseState_ABM:
         # Get global min/max for consistent color scale across panels
         infection_min = np.min(self.results.I)
         infection_max = np.max(self.results.I)
-        trunc_magma = truncate_colormap("magma", minval=0.1, maxval=0.9)  # Adjust range as needed
+        trunc_magma = lp.truncate_colormap("magma", minval=0.1, maxval=0.9)  # Adjust range as needed
         alpha = 0.9
         # Plot choropleth
         for i, ax in enumerate(axs[:n_panels]):
@@ -941,12 +940,6 @@ class DiseaseState_ABM:
             plt.savefig(results_path / "infected_choropleth.png")
         else:
             plt.show()
-
-
-def truncate_colormap(cmap_name, minval=0.0, maxval=1.0, n=256):
-    base_cmap = plt.get_cmap(cmap_name)
-    new_colors = base_cmap(np.linspace(minval, maxval, n))
-    return mcolors.LinearSegmentedColormap.from_list(f"{cmap_name}_trunc_{minval}_{maxval}", new_colors)
 
 
 @nb.njit(parallel=True)

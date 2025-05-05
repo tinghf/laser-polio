@@ -8,6 +8,8 @@ from collections import defaultdict
 from time import perf_counter_ns
 from zoneinfo import ZoneInfo  # Python 3.9+
 
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
 import pandas as pd
@@ -32,6 +34,7 @@ __all__ = [
     "pbincount",
     "process_sia_schedule_polio",
     "save_results_to_csv",
+    "truncate_colormap",
 ]
 
 
@@ -461,6 +464,12 @@ def save_results_to_csv(sim, filename="simulation_results.csv"):
                 )
 
     print(f"Results saved to {filename}")
+
+
+def truncate_colormap(cmap_name, minval=0.0, maxval=1.0, n=256):
+    base_cmap = plt.get_cmap(cmap_name)
+    new_colors = base_cmap(np.linspace(minval, maxval, n))
+    return mcolors.LinearSegmentedColormap.from_list(f"{cmap_name}_trunc_{minval}_{maxval}", new_colors)
 
 
 def create_cumulative_deaths(total_population, max_age_years):

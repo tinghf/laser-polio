@@ -20,13 +20,13 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIG -------------------
 num_trials = 2
-study_name = "calib_nigeria_6y_seed_schedule_init_pop_fix_20250505"
+study_name = "calib_nigeria_6y_recovered_fix_20250506"
 calib_config_path = lp.root / "calib/calib_configs/r0_k_ssn.yaml"
 model_config_path = lp.root / "calib/model_configs/config_nigeria_6y_load_init_pop.yaml"
 fit_function = "log_likelihood"  # options are "log_likelihood" or "mse"
 results_path = lp.root / "results" / study_name
 actual_data_file = lp.root / "results" / study_name / "actual_data.csv"
-n_replicates = 2  # Number of replicates to run for each trial
+n_replicates = 1  # Number of replicates to run for each trial
 # ---------------------------------------------------
 
 

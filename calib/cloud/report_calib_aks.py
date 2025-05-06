@@ -9,6 +9,7 @@ import optuna
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from report import plot_runtimes
 from report import plot_stuff
+from report import plot_targets
 from report import save_study_results
 
 
@@ -50,7 +51,7 @@ def main():
         # except Exception as e:
         #     print(f"⚠️ Warning: Could not load shapefile for mapping: {e}")
         print("📊 Plotting target comparisons...")
-        # plot_targets(study, output_dir=results_path)
+        plot_targets(study, output_dir=results_path)
 
         print("Plotting runtimes...")
         plot_runtimes(study, output_dir=results_path)

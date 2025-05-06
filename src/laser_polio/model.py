@@ -233,7 +233,12 @@ class SEIR_ABM:
         # model.datevec = lp.daterange(model.pars["start_date"], days=model.nt)
 
         # Use LaserFrameIO to load people
-        model.people = LaserFrameIO.load(filename)
+        num_timesteps = pars.dur + 1
+        if (pars.cbr is not None) & (len(pars.cbr) == 1):
+            capacity = int(1.1 * calc_capacity(np.sum(pars.n_ppl), num_timesteps, pars.cbr[0]))
+        elif (pars.cbr is not None) & (len(pars.cbr) > 1):
+            capacity = int(1.1 * calc_capacity(np.sum(pars.n_ppl), num_timesteps, np.mean(pars.cbr)))
+        model.people = LaserFrameIO.load(filename=filename, capacity=capacity)
 
         # Setup node list
         model.nodes = np.unique(model.people.node_id[: model.people.count])
@@ -1283,6 +1288,8 @@ class Transmission_ABM:
         # Stash the R0 scaling factor
         self.r0_scalars = self.pars.r0_scalars
 
+        self.people.add_scalar_property("acq_risk_multiplier", dtype=np.float32, default=1.0)
+        self.people.add_scalar_property("daily_infectivity", dtype=np.float32, default=1.0)
         self._initialize_people_fields()
         self._initialize_common()
 
@@ -1299,27 +1306,28 @@ class Transmission_ABM:
         instance.verbose = sim.pars["verbose"] if "verbose" in sim.pars else 1
 
         # Skip sampling & property setting
+        # instance._initialize_people_fields()
+
+        new_r0 = sim.pars.r0
+        infectivity_scalar = new_r0 / sim.pars.old_r0
+        sim.people.daily_infectivity *= infectivity_scalar  # seem fast enough
+
         instance._initialize_common()
         return instance
 
     def _initialize_people_fields(self):
         """Initialize individual-level transmission properties."""
-        self.people.add_scalar_property("acq_risk_multiplier", dtype=np.float32, default=1.0)
-        self.people.add_scalar_property("daily_infectivity", dtype=np.float32, default=1.0)
 
         mean_ln = 1
         var_ln = self.pars.risk_mult_var
         mu_ln = np.log(mean_ln**2 / np.sqrt(var_ln + mean_ln**2))
         sigma_ln = np.sqrt(np.log(var_ln / mean_ln**2 + 1))
-
         mean_gamma = self.pars.r0 / np.mean(self.pars.dur_inf(1000))
         scale_gamma = max(mean_gamma / 1, 1e-10)
 
         rho = 0.8
         L = np.linalg.cholesky([[1, rho], [rho, 1]])
-        if not hasattr(self.people, "true_capacity"):
-            self.people.true_capacity = self.people.capacity
-        n = self.people.true_capacity
+        n = getattr(self.people, "true_capacity", self.people.capacity)
 
         # Record new exposure counts aka incidence
         # Pretty sure this code from after merge belongs somewhere else. This is NOT for init_from_file. Think...
@@ -1351,10 +1359,7 @@ class Transmission_ABM:
         L = np.linalg.cholesky(cov_matrix)  # Cholesky decomposition
 
         # Generate standard normal samples
-        if not hasattr(self.people, "true_capacity"):
-            self.people.true_capacity = self.people.capacity  # Ensure true_capacity is set even if we don't initialize prevalence by node
-        n_samples = self.people.true_capacity
-        z = np.random.normal(size=(n_samples, 2))
+        z = np.random.normal(size=(n, 2))
 
         z_corr = z @ L.T  # Apply Cholesky to introduce correlation
 
@@ -1363,16 +1368,14 @@ class Transmission_ABM:
         if self.pars.individual_heterogeneity:
             acq_risk_multiplier = np.exp(mu_ln + sigma_ln * z_corr[:, 0])  # Lognormal transformation
             daily_infectivity = stats.gamma.ppf(stats.norm.cdf(z_corr[:, 1]), a=shape_gamma, scale=scale_gamma)  # Gamma transformation
-            self.people.acq_risk_multiplier[: self.people.true_capacity] = acq_risk_multiplier
-            self.people.daily_infectivity[: self.people.true_capacity] = daily_infectivity
+            self.people.acq_risk_multiplier[:n] = acq_risk_multiplier
+            self.people.daily_infectivity[:n] = daily_infectivity
         else:
             sc.printyellow("Warning: manually resetting acq_risk_multiplier and daily_infectivity to 1.0 for testing")
-            self.people.acq_risk_multiplier[: self.people.true_capacity] = 1.0
-            self.people.daily_infectivity[: self.people.true_capacity] = mean_gamma
+            self.people.acq_risk_multiplier[:n] = 1.0
+            self.people.daily_infectivity[:n] = mean_gamma
 
         z = np.random.normal(size=(n, 2)) @ L.T
-        self.people.acq_risk_multiplier[:n] = np.exp(mu_ln + sigma_ln * z[:, 0])
-        self.people.daily_infectivity[:n] = stats.gamma.ppf(stats.norm.cdf(z[:, 1]), a=1, scale=scale_gamma)
 
     def _initialize_common(self):
         """Initialize shared network and timers."""

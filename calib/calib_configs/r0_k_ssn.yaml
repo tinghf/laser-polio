@@ -9,8 +9,8 @@ parameters:
     low: 0.0
     high: 0.4
   seasonal_phase:
-    low: 120
-    high: 240
+    low: 0
+    high: 364
 
 metadata:
   scoring_fn: compute_log_likelihood_fit

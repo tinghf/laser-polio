@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-study_name = "calib_nigeria_6y_timeseries_seed_schedule_20250503"
+study_name = "calib_nigeria_6y_seed_schedule_init_pop_fix_20250505"
 num_trials = 1
 parallelism = 4
 completions = 100  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"

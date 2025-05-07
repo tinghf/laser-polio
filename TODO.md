@@ -1,6 +1,11 @@
 # PRIORITIES
 
 @Steve
+- Check sus in Jigawa & Zamfara @ time of seeds
+- Check r0_scalars for above as well
+- Plot frac sus in Nigeria
+- Check SIA coverage & immunity over time in both areas
+- Try adding weights to yearly cases and timeseries
 - New model features
 - Are pops reproducible from seeds? Does pop with run seed=1 & sim seed=1 produce the same as a sim with seed of 1 without init_pop
 

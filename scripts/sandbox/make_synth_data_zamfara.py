@@ -11,12 +11,15 @@ start_year = 2018
 n_days = 365
 pop_scale = 1 / 1
 init_region = "ANKA"
-init_prev = 0.01
+init_prev = 200
 r0 = 14
 migration_method = "radiation"
 radiation_k = 0.5
 max_migr_frac = 1.0
 results_path = "results/synth_data_zamfara"
+save_plots = True
+save_data = True
+stop_if_no_cases = False
 
 ######### END OF USER PARS ########
 ###################################
@@ -34,11 +37,11 @@ sim = lp.run_sim(
     radiation_k=radiation_k,
     max_migr_frac=max_migr_frac,
     results_path=results_path,
-    save_plots=True,
-    save_data=True,
+    save_plots=save_plots,
+    save_data=save_data,
     verbose=1,
     seed=117,
-    stop_if_no_cases=True,
+    stop_if_no_cases=stop_if_no_cases,
 )
 
 

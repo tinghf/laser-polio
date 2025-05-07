@@ -3,9 +3,10 @@ from pathlib import Path
 
 import yaml
 
-study_name = "calib_nigeria_6y_recovered_fix_20250506"
+study_name = "calib_nigeria_6y_neds_config_20250507"
+
 num_trials = 1
-parallelism = 4
+parallelism = 20
 completions = 100  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
 namespace = "default"
 job_name = "laser-polio-worker-sk"

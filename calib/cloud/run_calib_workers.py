@@ -3,11 +3,6 @@ from kubernetes import client
 from kubernetes import config
 
 # Load kubeconfig
-# If you change the config_file, it's recommend you set the KUBECONFIG env var using cmd, e.g. set KUBECONFIG=C:\Users\stevekr\.kube\cditest3.yaml
-# Then test with: kubectl config get-contexts
-# # Alt is to Set the KUBECONFIG environment variable for this script (temporarily)
-# os.environ["KUBECONFIG"] = r"C:\Users\stevekr\.kube\cditest3.yaml"  # Set KUBECONFIG for this script
-# subprocess.run(["kubectl", "config", "get-contexts"])  # Run a kubectl command using that config
 config.load_kube_config(config_file="~/.kube/config")  # default = "~/.kube/config"
 batch_v1 = client.BatchV1Api()
 
@@ -17,9 +12,10 @@ container = client.V1Container(
     image=cfg.image,
     image_pull_policy="Always",
     command=["python3", "calibrate.py", "--study-name", cfg.study_name, "--num-trials", str(cfg.num_trials)],
-    env=[client.V1EnvVar(name="NUMBA_NUM_THREADS", value="4")],
+    # env=[client.V1EnvVar(name="NUMBA_NUM_THREADS", value="4")],
     env_from=[client.V1EnvFromSource(secret_ref=client.V1SecretEnvSource(name="mysql-secrets"))],
-    resources=client.V1ResourceRequirements(requests={"cpu": "6"}, limits={"cpu": "7"}),
+    # resources=client.V1ResourceRequirements(requests={"cpu": "6"}, limits={"cpu": "7"}),
+    resources=client.V1ResourceRequirements(requests={"memory": "25Gi"}),
 )
 
 # Pod spec

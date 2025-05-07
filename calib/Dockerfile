@@ -35,7 +35,6 @@ WORKDIR /app
 RUN pip3 install --upgrade pip
 # Put latest laser-polio wheel link below
 RUN dnf install -y git
-RUN pip3 install https://github.com/InstituteforDiseaseModeling/laser-polio/releases/download/v0.1.8/laser_polio-0.1.8-py3-none-any.whl
 # RUN pip3 install --pre -i https://packages.idmod.org/api/pypi/pypi-production/simple laser-polio
 RUN pip3 install optuna mysqlclient
 RUN pip3 install pipdeptree && pipdeptree -p laser-polio > /app/laser_polio_deps.txt
@@ -50,6 +49,8 @@ COPY ./data/ /app/data/
 ENV POLIO_ROOT=/app
 ENV NUMBA_CPU_NAME=generic
 ENV HEADLESS=1
+
+RUN pip3 install https://github.com/InstituteforDiseaseModeling/laser-polio/releases/download/v0.1.9/laser_polio-0.1.9-py3-none-any.whl
 
 # Final cleanup
 RUN pip3 cache purge

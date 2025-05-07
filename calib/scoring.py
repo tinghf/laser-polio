@@ -38,7 +38,7 @@ def compute_fit(actual, predicted, use_squared=False, normalize=False, weights=N
     return fit
 
 
-def compute_log_likelihood_fit(actual, predicted, method="poisson", dispersion=1.0, weights=None):
+def compute_log_likelihood_fit(actual, predicted, method="poisson", dispersion=1.0, weights=None, norm_by_n=True):
     """
     Compute log-likelihood of actual data given predicted data.
 
@@ -84,7 +84,10 @@ def compute_log_likelihood_fit(actual, predicted, method="poisson", dispersion=1
             # Sum log-likelihoods, but normalize by number of observations (e.g., total_infected has 1 value, while monthly_cases has 12)
             n = len(logp)
             weight = weights.get(key, 1)
-            log_likelihood += weight * logp.sum() / n
+            if norm_by_n:
+                log_likelihood += weight * logp.sum() / n
+            else:
+                log_likelihood += weight * logp.sum()
 
         except Exception as e:
             print(f"[ERROR] Skipping '{key}' due to: {e}")

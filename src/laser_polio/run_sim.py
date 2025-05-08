@@ -85,7 +85,7 @@ def run_sim(config=None, init_pop_file=None, verbose=1, run=True, save_pop=False
     start_date = lp.date(f"{start_year}-01-01")
     historic = pd.read_csv(lp.root / "data/sia_historic_schedule.csv")
     future = pd.read_csv(lp.root / "data/sia_scenario_1.csv")
-    sia_schedule = lp.process_sia_schedule_polio(pd.concat([historic, future]), dot_names, start_date)
+    sia_schedule = lp.process_sia_schedule_polio(pd.concat([historic, future]), dot_names, start_date, filter_to_type2=True)
 
     # Demographics and risk
     df_comp = pd.read_csv(lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")

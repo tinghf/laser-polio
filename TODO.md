@@ -1,11 +1,6 @@
 # PRIORITIES
 
 @Steve
-- Add weights
-- Streamline the cloud calib config
-- Add the configs there too?
-- Test in local docker container.
-- Try adding weights to yearly cases and timeseries
 - Try adding distance from origin as a calib target
 - Try calibrating risk_mult_var to adjust individual heterogeneity
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)

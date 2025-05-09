@@ -52,7 +52,8 @@ def objective(
             # Evaluate fit
             actual = target_fn(actual_data_file, model_config_path, is_actual_data=True)
             predicted = target_fn(results_file, model_config_path, is_actual_data=False)
-            scores = scoring_fn(actual, predicted, method="poisson")
+            weights = calib_config.get("metadata", {}).get("weights", {})
+            scores = scoring_fn(actual, predicted, method="poisson", weights=weights)
             score = scores["total_log_likelihood"]
             fit_scores.append(score)
             seeds.append(sim.pars.seed)

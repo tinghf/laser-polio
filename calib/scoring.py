@@ -55,11 +55,14 @@ def compute_log_likelihood_fit(actual, predicted, method="poisson", dispersion=1
     log_likelihoods = {}
     weights = weights or {}
 
-    for key in actual:
-        if key not in predicted:
-            print(f"[WARN] Key missing in predicted: {key}")
-            continue
+    # Validate weight keys
+    actual_keys = set(actual.keys())
+    weight_keys = set(weights.keys())
+    if not actual_keys <= weight_keys:
+        missing = actual_keys - weight_keys
+        print(f"[WARN] Missing weights for: {missing}. Defaulting to 1.0.")
 
+    for key in actual:
         try:
             v_obs = np.array(actual[key], dtype=float)
             v_sim = np.array(predicted[key], dtype=float)

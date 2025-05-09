@@ -3,15 +3,23 @@ from pathlib import Path
 
 import yaml
 
-study_name = "calib_nigeria_6y_nodecount_missedpop_siafix_20250508"
+# ------------------- USER CONFIGS -------------------
 
-num_trials = 1
-parallelism = 20
+study_name = "calib_nigeria_6y_nodecount_missedpop_siafix_20250508"
+model_config = "config_nigeria_6y_init_pop_missed_pop.yaml"
+calib_config = "r0_k_ssn.yaml"
+fit_function = "log_likelihood"
+num_trials = 1  # Number of trials to run per pod
+n_replicates = 1  # Number of replicates to run for each trial
+parallelism = 100  # The number of pods (i.e., jobs) to run in parallel
 completions = 100  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
+
+# ---------------------------------------------------
+
+# Default settings
 namespace = "default"
 job_name = "laser-polio-worker-sk"
 image = "idm-docker-staging.packages.idmod.org/laser/laser-polio:latest"
-
 
 # Define the path to the YAML file with the storage URL from the docs
 storage_path = Path("calib/cloud/local_storage.yaml")

@@ -5,7 +5,7 @@ import yaml
 import laser_polio as lp
 
 # Path to your original config
-input_config_path = Path("calib/model_configs/config_nigeria_6y_load_init_pop.yaml")
+input_config_path = Path("calib/model_configs/config_nigeria_6y_init_pop_missed_pop.yaml")
 output_dir = Path("data")
 output_dir.mkdir(parents=True, exist_ok=True)
 

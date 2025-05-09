@@ -5,27 +5,14 @@
 - Try calibrating risk_mult_var to adjust individual heterogeneity
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
 - Try calibrating the sia rand effects center and scale values
-- Try finer spatial resolution
-- Are pops reproducible from seeds? Does pop with run seed=1 & sim seed=1 produce the same as a sim with seed of 1 without init_pop
 - Try calibrating to synthetic data for Zamfara (I sent copy to Dan)
-- Sample radiation_k on log scale
 - Plot all data inputs for sanity checks
 - fix test_sia_schedule() - number of recovered inidividuals does not match expected value
 - Ajust vx coverage for non-missed agents by prob/(1-missed_frac)
 
 CALIBRATION
-- increase parallelism to 100
-- print number of jobs that are about to start
-- how many jobs can I run? what's the optimal setup?
-- update how calib results path is passed from cloud vs to calibrate - don't think it's working. Can test it when they're unequal.
 - Refine how regional groupings are made for N/S Nigeria
 - Update README with usage instructions
-
-CLOUD
-- Numba target architecture configuration (core setup for VM - JB had to add an env variable to use basic core setup, can't remember why)
-- How do I check on resource usage of cluster?
-- Talk to JB about mapping calib directory during Docker run (kind of like a network drive)
-
 
 # REFINEMENT
 
@@ -37,7 +24,6 @@ ESSENTIAL NEW FEATURES
 - Add CBR by country-year
 - Curate the surveillance delays
 - Add surveillance delays to reactive SIAs
-- Add chronically missed pop. Maybe use a individual prob of participating in SIA?
 - Add delays to paralysis (and new_exposed) detection times
 - Enabling RI with specific vaccines & dates
 - Fix death rates

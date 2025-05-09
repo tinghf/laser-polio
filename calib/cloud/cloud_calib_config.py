@@ -5,9 +5,9 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_6y_nodecount_missedpop_siafix_20250508"
+study_name = "calib_nigeria_6y_wts_20250509"
 model_config = "config_nigeria_6y_init_pop_missed_pop.yaml"
-calib_config = "r0_k_ssn.yaml"
+calib_config = "r0_k_ssn_wts.yaml"
 fit_function = "log_likelihood"
 num_trials = 1  # Number of trials to run per pod
 n_replicates = 1  # Number of replicates to run for each trial

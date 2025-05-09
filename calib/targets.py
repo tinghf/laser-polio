@@ -135,8 +135,11 @@ def calc_targets_temporal_regional_nodes(filename, model_config_path=None, is_ac
     if is_actual_data:
         has_case = df[case_col] > 0
         targets["nodes_with_cases_total"] = np.array([df.loc[has_case, "node"].nunique()])
-        all_months = df["month"].sort_values().unique()
-        monthly_node_counts = df.loc[has_case].groupby("month")["node"].nunique().sort_index()
+
+        df["month_period"] = df["date"].dt.to_period("M")
+        all_months = df["month_period"].sort_values().unique()
+        monthly_node_counts = df.loc[has_case].groupby("month_period")["node"].nunique().sort_index()
+
         monthly_node_counts = monthly_node_counts.reindex(all_months, fill_value=0)
         targets["nodes_with_cases_timeseries"] = monthly_node_counts.values
     if not is_actual_data:

@@ -159,8 +159,8 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.ylabel("Cases")
     plt.legend()
     plt.tight_layout()
-    # plt.savefig(output_dir / "plot_best_monthly_timeseries_comparison.png")
-    plt.show()
+    plt.savefig(output_dir / "plot_best_monthly_timeseries_comparison.png")
+    # plt.show()
 
     # Regional Cases (bar plot)
     x = np.arange(len(region_labels))

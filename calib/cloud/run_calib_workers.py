@@ -37,7 +37,7 @@ template = client.V1PodTemplateSpec(
         containers=[container],
         restart_policy="OnFailure",
         image_pull_secrets=[client.V1LocalObjectReference(name="idmodregcred3")],
-        node_selector={"agentpool": "highcpu"},
+        node_selector={"nodepool": "highcpu"},
         tolerations=[client.V1Toleration(key="nodepool", operator="Equal", value="highcpu", effect="NoSchedule")],
     )
 )

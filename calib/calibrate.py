@@ -38,6 +38,27 @@ actual_data_file = lp.root / "results" / study_name / "actual_data.csv"
 
 
 def main(model_config, results_path, study_name, fit_function="mse", **kwargs):
+    # Resolve paths if needed
+    model_config = Path(model_config)
+    if not model_config.is_absolute():
+        model_config = lp.root / "calib/model_configs" / model_config
+
+    calib_config = Path(kwargs.get("calib_config"))
+    if not calib_config.is_absolute():
+        calib_config = lp.root / "calib/calib_configs" / calib_config
+    kwargs["calib_config"] = calib_config  # update the reference
+
+    results_path = Path(results_path)
+    if not results_path.is_absolute():
+        results_path = lp.root / "results" / study_name
+
+    actual_data_file = kwargs.get("actual_data_file", results_path / "actual_data.csv")
+    if isinstance(actual_data_file, str) or isinstance(actual_data_file, Path):
+        actual_data_file = Path(actual_data_file)
+    if not actual_data_file.is_absolute():
+        actual_data_file = results_path / actual_data_file
+    kwargs["actual_data_file"] = actual_data_file
+
     # Run calibration
     run_worker_main(study_name=study_name, model_config=model_config, results_path=results_path, fit_function=fit_function, **kwargs)
 

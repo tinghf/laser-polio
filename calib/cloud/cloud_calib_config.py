@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-study_name = "calib_nigeria_6y_node_counts_20250508"
+study_name = "calib_nigeria_6y_nodecount_missedpop_siafix_20250508"
 
 num_trials = 1
 parallelism = 20

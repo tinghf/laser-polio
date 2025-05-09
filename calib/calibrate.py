@@ -20,8 +20,8 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_6y_node_counts_20250508"
-model_config = "config_nigeria_6y_load_init_pop.yaml"
+study_name = "calib_nigeria_6y_nodecount_missedpop_siafix_20250508"
+model_config = "config_nigeria_6y_init_pop_missed_pop.yaml"
 calib_config = "r0_k_ssn.yaml"
 fit_function = "log_likelihood"
 num_trials = 2

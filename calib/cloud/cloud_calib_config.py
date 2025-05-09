@@ -11,8 +11,8 @@ calib_config = "r0_k_ssn_wts.yaml"
 fit_function = "log_likelihood"
 num_trials = 1  # Number of trials to run per pod
 n_replicates = 1  # Number of replicates to run for each trial
-parallelism = 100  # The number of pods (i.e., jobs) to run in parallel
-completions = 100  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
+parallelism = 50  # The number of pods (i.e., jobs) to run in parallel
+completions = 1000  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
 
 # ---------------------------------------------------
 

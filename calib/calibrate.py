@@ -6,6 +6,7 @@ import calib_db
 import click
 import optuna
 import sciris as sc
+from report import plot_likelihoods
 from report import plot_stuff
 from report import plot_targets
 from report import save_study_results
@@ -20,7 +21,7 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_jigawa_6y_20250509"
+study_name = "calib_jigawa_6y_20250509_v2"
 model_config = "config_jigawa_6y.yaml"
 calib_config = "r0_k_ssn.yaml"
 fit_function = "log_likelihood"
@@ -51,6 +52,7 @@ def main(model_config, results_path, study_name, fit_function="mse", **kwargs):
     if not os.getenv("HEADLESS"):
         plot_stuff(study_name, storage_url, output_dir=Path(results_path))
         plot_targets(study, output_dir=Path(results_path))
+        plot_likelihoods(study, output_dir=Path(results_path), use_log=True)
 
     sc.printcyan("✅ Calibration complete. Results saved.")
 

@@ -206,6 +206,8 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.tight_layout()
     plt.savefig(output_dir / "plot_best_nodes_with_cases_timeseries.png")
 
+    # Plot likelihoods
+
     # import numpy as np
     # import pandas as pd
     # import matplotlib.pyplot as plt
@@ -277,6 +279,40 @@ def plot_targets(study, output_dir=None, shp=None):
 
     #     plt.tight_layout()
     #     plt.show()
+
+
+def plot_likelihoods(study, output_dir=None, use_log=True):
+    best = study.best_trial
+    likelihoods = best.user_attrs["likelihoods"]
+    exclude_keys = {"total_log_likelihood"}
+    keys = [k for k in likelihoods if k not in exclude_keys]
+    values = [likelihoods[k] for k in keys]
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    bars = ax.bar(keys, values)
+    if use_log:
+        ax.set_yscale("log")
+        ax.set_ylabel("Log Likelihood")
+    else:
+        ax.set_ylabel("Likelihood")
+    ax.set_title("Calibration Log-Likelihoods by Component")
+    ax.set_xticks(range(len(keys)))
+    ax.set_xticklabels(keys, rotation=45, ha="right")
+    # Annotate bars
+    for bar in bars:
+        height = bar.get_height()
+        label = f"{height:.1f}"
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            height,
+            label,
+            ha="center",
+            va="bottom" if not use_log else "top",
+            fontsize=9,
+        )
+    plt.tight_layout()
+    plt.savefig(output_dir / "plot_likelihoods.png")
+    # plt.show()
 
 
 def plot_runtimes(study, output_dir=None):

@@ -52,7 +52,7 @@ def compute_log_likelihood_fit(actual, predicted, method="poisson", dispersion=1
     Returns:
         float: Total log-likelihood (higher is better).
     """
-    log_likelihood = 0.0
+    log_likelihoods = {}
     weights = weights or {}
 
     for key in actual:
@@ -82,14 +82,16 @@ def compute_log_likelihood_fit(actual, predicted, method="poisson", dispersion=1
                 raise ValueError(f"Unknown method '{method}'")
 
             # Sum log-likelihoods, but normalize by number of observations (e.g., total_infected has 1 value, while monthly_cases has 12)
-            n = len(logp)
             weight = weights.get(key, 1)
-            if norm_by_n:
-                log_likelihood += weight * logp.sum() / n
-            else:
-                log_likelihood += weight * logp.sum()
+            n = len(logp)
+            normalizer = n if norm_by_n else 1
+            ll = -1.0 * weight * logp.sum() / normalizer  # NEGATE for Optuna
+            log_likelihoods[key] = ll
 
         except Exception as e:
             print(f"[ERROR] Skipping '{key}' due to: {e}")
 
-    return -log_likelihood  # NEGATE for Optuna
+    total_ll = sum(log_likelihoods.values())
+    log_likelihoods["total_log_likelihood"] = total_ll
+
+    return log_likelihoods

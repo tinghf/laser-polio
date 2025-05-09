@@ -1,6 +1,10 @@
 # PRIORITIES
 
 @Steve
+- Add weights
+- Streamline the cloud calib config
+- Add the configs there too?
+- Test in local docker container.
 - Try adding weights to yearly cases and timeseries
 - Try adding distance from origin as a calib target
 - Try calibrating risk_mult_var to adjust individual heterogeneity
@@ -12,6 +16,7 @@
 - Sample radiation_k on log scale
 - Plot all data inputs for sanity checks
 - fix test_sia_schedule() - number of recovered inidividuals does not match expected value
+- Ajust vx coverage for non-missed agents by prob/(1-missed_frac)
 
 CALIBRATION
 - increase parallelism to 100

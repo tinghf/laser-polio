@@ -52,7 +52,8 @@ def objective(
             # Evaluate fit
             actual = target_fn(actual_data_file, model_config_path, is_actual_data=True)
             predicted = target_fn(results_file, model_config_path, is_actual_data=False)
-            score = scoring_fn(actual, predicted, method="poisson")
+            scores = scoring_fn(actual, predicted, method="poisson")
+            score = scores["total_log_likelihood"]
             fit_scores.append(score)
             seeds.append(sim.pars.seed)
             predictions.append(predicted)
@@ -64,6 +65,7 @@ def objective(
     # Save per-replicate scores & seeds to Optuna
     trial.set_user_attr("actual", json_friendly(actual))
     trial.set_user_attr("predicted", [json_friendly(p) for p in predictions])
+    trial.set_user_attr("likelihoods", json_friendly(scores))
     trial.set_user_attr("n_reps", n_replicates)
     trial.set_user_attr("rep_scores", fit_scores)
     trial.set_user_attr("rand_seed", seeds)

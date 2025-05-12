@@ -1,7 +1,10 @@
 # PRIORITIES
 
 @Steve
-- Try starting calibration in 2020
+- Try dropping 2018 seed & run for 6y
+- Try starting in 2018 & calib for 3y
+- Drop 'fit_function'
+- Plot out 'bad' calib trials, get a smattering of options for each r0
 - Try calibrating risk_mult_var to adjust individual heterogeneity
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
 - Try adding distance from origin as a calib target

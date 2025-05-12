@@ -1,14 +1,15 @@
 # PRIORITIES
 
 @Steve
-- Try adding distance from origin as a calib target
+- Try starting calibration in 2020
 - Try calibrating risk_mult_var to adjust individual heterogeneity
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
+- Try adding distance from origin as a calib target
 - Try calibrating the sia rand effects center and scale values
 - Try calibrating to synthetic data for Zamfara (I sent copy to Dan)
 - Plot all data inputs for sanity checks
 - fix test_sia_schedule() - number of recovered inidividuals does not match expected value
-- Ajust vx coverage for non-missed agents by prob/(1-missed_frac)
+- Adjust vx coverage for non-missed agents by prob/(1-missed_frac)
 
 CALIBRATION
 - Refine how regional groupings are made for N/S Nigeria

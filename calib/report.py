@@ -74,9 +74,12 @@ def plot_stuff(study_name, storage_url, output_dir=None):
     except Exception as ex:
         print("[WARN] Could not plot param importances:", ex)
 
-    # Slice plot
-    fig3 = vis.plot_slice(study)
-    fig3.write_html(output_dir / "plot_slice.html")
+    # Slice plots
+    params = study.best_params.keys()
+    for param in params:  # or study.search_space.keys()
+        fig3 = vis.plot_slice(study, params=[param])
+        # fig.update_layout(width=plot_width)
+        fig3.write_html(output_dir / f"plot_slice_{param}.html")
 
     # Contour plot — feel free to customize parameters
     fig4 = vis.plot_contour(study, params=["r0", "radiation_k"])

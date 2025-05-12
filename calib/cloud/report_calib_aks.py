@@ -7,6 +7,7 @@ import cloud_calib_config as cfg
 import optuna
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+from report import plot_likelihoods
 from report import plot_runtimes
 from report import plot_stuff
 from report import plot_targets
@@ -55,6 +56,9 @@ def main():
 
         print("Plotting runtimes...")
         plot_runtimes(study, output_dir=results_path)
+
+        print("Plotting likelihoods...")
+        plot_likelihoods(study, output_dir=Path(results_path), use_log=True)
 
     finally:
         print("🧹 Cleaning up port forwarding...")

@@ -1,16 +1,16 @@
 # PRIORITIES
 
 @Steve
-- Try dropping 2018 seed & run for 6y
-- Try starting in 2018 & calib for 3y
+- Compare results from piecewise calibration. What hints does that give us? Should we boost immunity in 2018?
 - Drop 'fit_function'
-- Plot out 'bad' calib trials, get a smattering of options for each r0
+- Plot out 'bad' calib trials, get a smattering of options for each r0, both high and low likelihoods
+- Plot all data inputs for sanity checks
 - Try calibrating risk_mult_var to adjust individual heterogeneity
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
-- Try adding distance from origin as a calib target
+- Try PIM REs on r0
 - Try calibrating the sia rand effects center and scale values
+- Try adding distance from origin as a calib target
 - Try calibrating to synthetic data for Zamfara (I sent copy to Dan)
-- Plot all data inputs for sanity checks
 - fix test_sia_schedule() - number of recovered inidividuals does not match expected value
 - Adjust vx coverage for non-missed agents by prob/(1-missed_frac)
 

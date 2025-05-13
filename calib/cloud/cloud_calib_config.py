@@ -5,7 +5,7 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_3y_seed_2018_20250513"
+study_name = "calib_nigeria_3y_seed_2018_20250513_v2"
 model_config = "config_nigeria_3y_seed_2018.yaml"
 calib_config = "r0_k_ssn.yaml"
 fit_function = "log_likelihood"

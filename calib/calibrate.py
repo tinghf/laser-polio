@@ -21,8 +21,8 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_jigawa_6y_20250509_v2"
-model_config = "config_jigawa_6y.yaml"
+study_name = "calib_nigeria_4y_seed_2020_20250509"
+model_config = "config_nigeria_4y_seed_2020.yaml"
 calib_config = "r0_k_ssn.yaml"
 fit_function = "log_likelihood"
 num_trials = 2

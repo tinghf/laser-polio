@@ -78,6 +78,8 @@ def plot_stuff(study_name, storage_url, output_dir=None):
     params = study.best_params.keys()
     for param in params:  # or study.search_space.keys()
         fig3 = vis.plot_slice(study, params=[param])
+        # Set log scale on y-axis
+        fig3.update_yaxes(type="log")
         # fig.update_layout(width=plot_width)
         fig3.write_html(output_dir / f"plot_slice_{param}.html")
 

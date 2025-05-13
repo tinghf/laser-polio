@@ -63,6 +63,7 @@ def main():
     finally:
         print("🧹 Cleaning up port forwarding...")
         pf_process.terminate()
+        print("🎉Done!")
 
 
 if __name__ == "__main__":

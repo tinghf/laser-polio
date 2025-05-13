@@ -5,8 +5,8 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_4y_seed_2020_20250509"
-model_config = "config_nigeria_4y_seed_2020.yaml"
+study_name = "calib_nigeria_3y_seed_2018_20250513"
+model_config = "config_nigeria_3y_seed_2018.yaml"
 calib_config = "r0_k_ssn.yaml"
 fit_function = "log_likelihood"
 num_trials = 1  # Number of trials to run per pod

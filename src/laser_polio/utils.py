@@ -338,14 +338,17 @@ def process_sia_schedule(csv_path, start_date):
     return sia_schedule
 
 
-def process_sia_schedule_polio(df, region_names, sim_start_date, filter_to_type2=True):
+def process_sia_schedule_polio(df, region_names, sim_start_date, n_days, filter_to_type2=True):
     """
     Processes an SIA schedule into a dictionary readable by the sim.
      The output file contains a list of the unique SIA dates and corresponding region_name indices included in that campaign.
 
     Parameters:
+    - df (pd.DataFrame): DataFrame containing the SIA schedule with columns:
     - region_names (list of str): List of full region names (e.g., 'AFRO:NIGERIA:ZAMFARA:ANKA').
     - sim_start_date (str): The beginning date in 'YYYY-MM-DD' format.
+    - n_days (int): The number of days to include in the simulation.
+    - filter_to_type2 (bool): If True, filter to only type 2 campaigns.
 
     Returns:
     - List of dictionaries in the format:
@@ -378,6 +381,8 @@ def process_sia_schedule_polio(df, region_names, sim_start_date, filter_to_type2
     # Filter for start dates on or after the simulation beginning date
     summary["date"] = date(summary["date"])
     summary = summary[summary["date"] >= sim_start_date]
+    sim_end_date = sim_start_date + datetime.timedelta(days=n_days)
+    summary = summary[summary["date"] <= sim_end_date]
 
     # Convert to dictionary format
     result = summary.to_dict(orient="records")

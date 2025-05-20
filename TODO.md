@@ -1,6 +1,8 @@
 # PRIORITIES
 
 @Steve
+- Double check spatial distribution of cases in quarterly plots
+- Double check the P results - make_synth_data_zamfara is generating ~10K cases when it should generate 45
 - Try PIM REs on r0
 - Compare results from piecewise calibration. What hints does that give us? Should we boost immunity in 2018?
 - Plot out 'bad' calib trials, get a smattering of options for each r0, both high and low likelihoods

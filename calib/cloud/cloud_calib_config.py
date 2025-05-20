@@ -5,9 +5,9 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_6y_pim_r0_scalars_20250519"
-model_config = "config_nigeria_6y_pim_r0_scalars.yaml"
-calib_config = "r0_k_ssn.yaml"
+study_name = "calib_nigeria_6y_pim_background_seeding_20250520"
+model_config = "config_nigeria_6y_pim_background_seeding.yaml"
+calib_config = "r0_k_ssn_background_seeding.yaml"
 fit_function = "log_likelihood"
 num_trials = 1  # Number of trials to run per pod
 n_replicates = 1  # Number of replicates to run for each trial

@@ -26,21 +26,21 @@ epi["quarter"] = epi["date"].dt.to_period("Q")
 # --- Count infections by quarter and location ---
 quarterly_cases = epi.groupby(["quarter", "dot_name"])["cases"].sum().reset_index(name="case_count")
 
-# --- Join data and plot maps ---
-for q, shp_q in quarterly_cases.groupby("quarter"):
-    merged = shp.merge(shp_q, on="dot_name", how="left")
-    ax = merged.plot(
-        column="case_count",
-        cmap="Reds",
-        edgecolor="black",
-        legend=True,
-        figsize=(10, 8),
-        missing_kwds={"color": "lightgrey", "label": "No data"},
-    )
-    ax.set_title(f"Nigeria Case Counts - {q}", fontsize=14)
-    ax.axis("off")
-    plt.tight_layout()
-    plt.show()
+# # --- Join data and plot maps ---
+# for q, shp_q in quarterly_cases.groupby("quarter"):
+#     merged = shp.merge(shp_q, on="dot_name", how="left")
+#     ax = merged.plot(
+#         column="case_count",
+#         cmap="viridis",
+#         edgecolor="black",
+#         legend=True,
+#         figsize=(10, 8),
+#         missing_kwds={"color": "lightgrey", "label": "No data"},
+#     )
+#     ax.set_title(f"Nigeria Case Counts - {q}", fontsize=14)
+#     ax.axis("off")
+#     plt.tight_layout()
+#     plt.show()
 
 # Prepare data
 quarters = sorted(quarterly_cases["quarter"].unique())
@@ -53,7 +53,7 @@ fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows))
 axes = axes.flatten()
 
 # Custom colormap with grey for 0
-cmap = plt.cm.Reds
+cmap = plt.cm.viridis
 cmap = cmap.copy()  # avoid modifying global cmap
 cmap.set_under("lightgrey")
 

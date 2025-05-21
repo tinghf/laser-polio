@@ -13,7 +13,7 @@ ENV POLIO_ROOT=/app
 ENV NUMBA_CPU_NAME=generic
 ENV HEADLESS=1
 
-RUN pip3 install https://github.com/InstituteforDiseaseModeling/laser-polio/releases/download/v0.1.14/laser_polio-0.1.14-py3-none-any.whl
+RUN pip3 install https://github.com/InstituteforDiseaseModeling/laser-polio/releases/download/v0.1.15/laser_polio-0.1.15-py3-none-any.whl
 
 # Final cleanup
 RUN pip3 cache purge

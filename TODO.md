@@ -1,7 +1,6 @@
 # PRIORITIES
 
 @Steve
-- Scan over heterogeneity pars and see how they impact both acq risk & the sim
 - Try calibrating risk_mult_var to adjust individual heterogeneity
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
 - Try calibrating the sia rand effects center and scale values

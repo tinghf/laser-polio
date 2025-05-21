@@ -1,7 +1,8 @@
 # PRIORITIES
 
 @Steve
-- Try calibrating risk_mult_var to adjust individual heterogeneity
+- Try calibrating individual hetero with underwt R0s
+- Sweep over hetero with best pars from calib
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
 - Try calibrating the sia rand effects center and scale values
 - Double check the P results - make_synth_data_zamfara is generating ~10K cases when it should generate 45

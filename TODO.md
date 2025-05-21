@@ -1,6 +1,7 @@
 # PRIORITIES
 
 @Steve
+- Try calibrating individual hetero with pim scalars (for real this time)
 - Try calibrating individual hetero with gravity model
 - Make synthetic dataset for Nigeria
 - Sweep over hetero with best pars from calib

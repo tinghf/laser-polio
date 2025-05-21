@@ -21,7 +21,7 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_6y_pim_hetero_20250520"
+study_name = "calib_nigeria_6y_pim_hetero_for_real_20250521"
 model_config = "config_nigeria_6y_pim_r0_scalars.yaml"
 calib_config = "r0_k_ssn_hetero.yaml"
 fit_function = "log_likelihood"

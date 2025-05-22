@@ -5,10 +5,10 @@ parameters:
   radiation_k:
     low: 0.0
     high: 1.5
-  seasonal_factor:
+  seasonal_amplitude:
     low: 0.0
     high: 0.4
-  seasonal_phase:
+  seasonal_peak_doy:
     low: 0
     high: 364
   risk_mult_var:

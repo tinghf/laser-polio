@@ -24,8 +24,8 @@ default_pars = PropertySet(
         "seed_schedule": None,  # Schedule for seeding cases (list of dicts with either: 1)'date', 'dot_name', 'prevalence' or 2)'timestep', 'node_id', 'prevalence')
         "r0": 14,  # Basic reproduction number
         "r0_scalars": [0.8, 1.2],  # Spatial transmission scalar (multiplied by global rate)
-        "seasonal_factor": 0.125,  # Seasonal variation in transmission
-        "seasonal_phase": 180,  # Phase of seasonal variation
+        "seasonal_amplitude": 0.125,  # Seasonal variation in transmission
+        "seasonal_peak_doy": 180,  # Phase of seasonal variation
         "risk_mult_var": 4.0,  # Lognormal variance for the individual-level risk multiplier (risk of acquisition multiplier; mean = 1.0)
         "corr_risk_inf": 0.8,  # Correlation between individual risk multiplier and individual infectivity (daily infectivity, mean = 14/24)
         "individual_heterogeneity": True,  # Whether to use individual heterogeneity in acquisition and infectivity or set to mean values

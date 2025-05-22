@@ -1,6 +1,7 @@
 # PRIORITIES
 
 @Steve
+- Try a universal scalar for init_immunity
 - Sweep over radiation k and make a scatterplot like I did for gravity
 - Make synthetic dataset for Nigeria
 - Sweep over hetero with best pars from calib

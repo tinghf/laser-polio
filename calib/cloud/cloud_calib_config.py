@@ -5,9 +5,9 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_6y_pim_hetero_for_real_20250521"
-model_config = "config_nigeria_6y_underwt.yaml"
-calib_config = "r0_k_ssn_hetero.yaml"
+study_name = "calib_nigeria_6y_underwt_gravity_20250521"
+model_config = "config_nigeria_6y_underwt_gravity.yaml"
+calib_config = "r0_k_ssn_gravity.yaml"
 fit_function = "log_likelihood"
 num_trials = 1  # Number of trials to run per pod
 n_replicates = 1  # Number of replicates to run for each trial

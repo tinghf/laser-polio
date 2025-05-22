@@ -1,7 +1,7 @@
 # PRIORITIES
 
 @Steve
-- try run_best_trial code from JB
+- make infected choropleth 0s grey
 - Sweep over radiation k and make a scatterplot like I did for gravity
 - Make synthetic dataset for Nigeria
 - Sweep over hetero with best pars from calib

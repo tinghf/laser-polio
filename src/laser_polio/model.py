@@ -1090,9 +1090,11 @@ def tx_step_prep_nb(
             if node_seeding_zero_inflation >= 1.0:
                 new_infections[i] = 0
                 continue
-            
+
             # Adjust mean to account for expected zero inflation
-            desired_mean = exposure_by_node[i] / (1 - node_seeding_zero_inflation)  # E[X] matches Poisson on average, increased for zero-inflation
+            desired_mean = exposure_by_node[i] / (
+                1 - node_seeding_zero_inflation
+            )  # E[X] matches Poisson on average, increased for zero-inflation
             # Compute dispersion and success probability for Negative Binomial
             r_int = max(1, int(np.round(node_seeding_dispersion)))
             p = r_int / (r_int + desired_mean)

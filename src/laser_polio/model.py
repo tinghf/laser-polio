@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import ClassVar
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numba as nb
 import numpy as np
@@ -930,37 +931,45 @@ class DiseaseState_ABM:
         fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 6), constrained_layout=True)
         axs = axs.ravel()
         timepoints = np.linspace(0, self.pars.dur, n_panels, dtype=int)
-        shp = self.pars.shp
+        shp = self.pars.shp.copy()  # Don't mutate original GeoDataFrame
+
         # Get global min/max for consistent color scale across panels
-        infection_min = np.min(self.results.I)
+        infection_min = np.min(self.results.I[self.results.I > 0]) if np.any(self.results.I > 0) else 0
         infection_max = np.max(self.results.I)
-        trunc_magma = lp.truncate_colormap("magma", minval=0.1, maxval=0.9)  # Adjust range as needed
         alpha = 0.9
-        # Plot choropleth
+
+        # Use rainbow colormap and truncate if desired
+        cmap = plt.cm.get_cmap("rainbow")
+        norm = mcolors.Normalize(vmin=infection_min, vmax=infection_max)
+
         for i, ax in enumerate(axs[:n_panels]):
             t = timepoints[i]
             infection_counts = self.results.I[t, :]  # shape = (num_nodes,)
             shp["infected"] = infection_counts
+            shp["infected_masked"] = shp["infected"].replace({0: np.nan})  # Mask out zeros
+
             shp.plot(
-                column="infected",
+                column="infected_masked",
                 ax=ax,
-                cmap=trunc_magma,  # "OrRd"
+                cmap=cmap,
+                norm=norm,
                 alpha=alpha,
                 linewidth=0.1,
                 edgecolor="white",
                 legend=False,
-                vmin=infection_min,
-                vmax=infection_max,
+                missing_kwds={"color": "lightgrey", "label": "Zero infections"},
             )
             ax.set_title(f"Infections at t={t}")
             ax.set_axis_off()
+
         # Add a shared colorbar
-        sm = plt.cm.ScalarMappable(cmap=trunc_magma, norm=plt.Normalize(vmin=infection_min, vmax=infection_max))
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm._A = []
         cbar = fig.colorbar(sm, ax=axs, orientation="vertical", fraction=0.03, pad=0.01)
         cbar.solids.set_alpha(alpha)
         cbar.set_label("Infection Count")
         fig.suptitle("Choropleth of Infected Population by Node", fontsize=16)
+
         if save:
             if results_path is None:
                 raise ValueError("Please provide a results path to save the plots.")

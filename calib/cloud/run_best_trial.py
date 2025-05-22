@@ -43,7 +43,7 @@ def main():
 
         # Run sim & save plots
         print("💫Running sim with best trial parameters...")
-        sim = lp.run_sim(pars, verbose=1)
+        lp.run_sim(pars, verbose=1)
 
     finally:
         print("🧹 Cleaning up port forwarding...")

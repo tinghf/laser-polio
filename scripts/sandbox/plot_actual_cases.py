@@ -53,7 +53,7 @@ fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows))
 axes = axes.flatten()
 
 # Custom colormap with grey for 0
-cmap = plt.cm.viridis
+cmap = plt.cm.rainbow
 cmap = cmap.copy()  # avoid modifying global cmap
 cmap.set_under("lightgrey")
 

@@ -1037,6 +1037,8 @@ def tx_step_prep_nb(
     r0_scalars,  # per node R0 scaling factor
     alive_counts,  # number of alive agents per node (for scaling)
     risks,  # per agent susceptibility (heterogeneous)
+    node_seeding_dispersion,
+    node_seeding_zero_inflation,
 ):
     # Step 1: Use parallelized loop to obtain per node sums or counts of:
     #  - exposure (susceptibility/node)
@@ -1054,7 +1056,8 @@ def tx_step_prep_nb(
             tl_sus_by_node[tid, nid] += 1
         if state == 2:
             tl_beta_by_node[nb.get_thread_id(), node_ids[i]] += daily_infectivity[i]
-    beta_by_node = tl_beta_by_node.sum(axis=0)  # Sum across threads
+    beta_by_node_pre = tl_beta_by_node.sum(axis=0)  # Sum across threads
+    beta_by_node = beta_by_node_pre.copy()  # Copy to avoid modifying the original
     exposure_by_node = tl_exposure_by_node.sum(axis=0)
     sus_by_node = tl_sus_by_node.sum(axis=0)  # Sum across threads
 
@@ -1077,7 +1080,31 @@ def tx_step_prep_nb(
     # Step 5: Compute the number of new infections per node
     new_infections = np.empty(num_nodes, dtype=np.int32)
     for i in nb.prange(num_nodes):
-        new_infections[i] = np.random.poisson(exposure_by_node[i])
+        if exposure_by_node[i] == 0:
+            new_infections[i] = 0
+        elif beta_by_node_pre[i] == 0:
+            # Over-disperse seeded infections to make takeoff more challenging
+            # Apply only to nodes with zero local transmission. All infectivity is coming from neighboring nodes.
+
+            # Handle edge case where zero inflation is 100%
+            if node_seeding_zero_inflation >= 1.0:
+                new_infections[i] = 0
+                continue
+            
+            # Adjust mean to account for expected zero inflation
+            desired_mean = exposure_by_node[i] / (1 - node_seeding_zero_inflation)  # E[X] matches Poisson on average, increased for zero-inflation
+            # Compute dispersion and success probability for Negative Binomial
+            r_int = max(1, int(np.round(node_seeding_dispersion)))
+            p = r_int / (r_int + desired_mean)
+
+            # Apply zero inflation
+            if np.random.rand() < node_seeding_zero_inflation:
+                new_infections[i] = 0
+            else:
+                new_infections[i] = np.random.negative_binomial(r_int, p)
+        else:
+            # Nodes with pre-existing local transmission sample should have business as usual and sample from standard Poisson
+            new_infections[i] = np.random.poisson(exposure_by_node[i])
 
     return beta_by_node, base_prob_inf, exposure_by_node, new_infections, sus_by_node
 
@@ -1386,6 +1413,8 @@ class Transmission_ABM:
                 self.r0_scalars,
                 alive_counts,
                 risk,
+                self.sim.pars.node_seeding_dispersion,
+                self.sim.pars.node_seeding_zero_inflation,
             )
 
             # Manual validation

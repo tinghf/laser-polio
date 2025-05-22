@@ -38,6 +38,8 @@ default_pars = PropertySet(
         "node_lookup": None,  # Node info (node_id are keys, dict contains dot_name, lat, lon)
         "distances": np.array([[0, 100], [100, 0]]),  # Distance in km between nodes
         # Migration
+        "node_seeding_dispersion": 1000,  # INTEGER (or will round) - negative binomial "k" parameter for the first importation into each node. Larger values -> Poisson.
+        "node_seeding_zero_inflation": 0.0,  # Fraction of node seeding events to zero out, float value between 0 and 1; 0.0 -> no zero inflation.
         "migration_method": "radiation",  # Migration method: "gravity" or "radiation"
         "radiation_k": 0.5,  # Radiation model scaling constant. Based on testing, this value should be between 0.0 and ~3 for Nigeria.
         "gravity_k": 1.0,  # Gravity scaling constant

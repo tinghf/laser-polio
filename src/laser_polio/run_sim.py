@@ -62,6 +62,7 @@ def run_sim(config=None, init_pop_file=None, verbose=1, run=True, save_pop=False
     actual_data = configs.pop("actual_data", "data/epi_africa_20250421.h5")
     save_plots = configs.pop("save_plots", False)
     save_data = configs.pop("save_data", False)
+    plot_pars = configs.pop("plot_pars", plot_pars)
     init_pop_file = configs.pop("init_pop_file", init_pop_file)
     background_seeding = configs.pop("background_seeding", False)
     background_seeding_freq = configs.pop("background_seeding_freq", 30)

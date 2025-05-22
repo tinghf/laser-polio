@@ -39,7 +39,7 @@ def main():
         best_idx = np.where(rep_scores == np.min(rep_scores))
         rand_seeds = study.best_trial.user_attrs["rand_seed"]
         rand_seed = rand_seeds[best_idx[0][0]]
-        pars["rand_seed"] = rand_seed
+        pars["seed"] = rand_seed
 
         # Run sim & save plots
         print("💫Running sim with best trial parameters...")

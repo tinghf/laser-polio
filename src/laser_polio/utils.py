@@ -480,7 +480,7 @@ def get_woy(sim):
 
 def get_seasonality(sim):
     woy = get_woy(sim)
-    return 1 + sim.pars["seasonal_factor"] * np.cos((2 * np.pi * woy / 52) + sim.pars["seasonal_phase"])
+    return 1 + sim.pars["seasonal_amplitude"] * np.cos((2 * np.pi * woy / 52) + (2 * np.pi * sim.pars["seasonal_peak_doy"] / 365))
 
 
 def save_results_to_csv(sim, filename="simulation_results.csv"):

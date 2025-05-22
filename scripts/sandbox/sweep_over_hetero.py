@@ -18,8 +18,8 @@ init_region = "ANKA"
 init_prev = 200
 r0 = 19.57
 radiation_k = 0.049
-seasonal_factor = 0.195
-seasonal_phase = 268
+seasonal_amplitude = 0.195
+seasonal_peak_doy = 268
 use_pim_scalars = True
 results_path = "results/scan_over_heterogeneity"
 # Define the range of par values to sweep
@@ -58,8 +58,8 @@ for i, risk_mult_var in enumerate(risk_mult_var_values):
             r0=r0,
             radiation_k=radiation_k,
             use_pim_scalars=use_pim_scalars,
-            seasonal_factor=seasonal_factor,
-            seasonal_phase=seasonal_phase,
+            seasonal_amplitude=seasonal_amplitude,
+            seasonal_peak_doy=seasonal_peak_doy,
             risk_mult_var=risk_mult_var,
             results_path=results_path,
             save_plots=False,

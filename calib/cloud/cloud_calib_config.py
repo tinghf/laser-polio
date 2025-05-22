@@ -5,8 +5,8 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_6y_underwt_gravity_20250521"
-model_config = "config_nigeria_6y_underwt_gravity.yaml"
+study_name = "calib_nigeria_3y_underwt_gravity_2018_20250522"
+model_config = "config_nigeria_3y_underwt_gravity_2018.yaml"
 calib_config = "r0_k_ssn_gravity.yaml"
 fit_function = "log_likelihood"
 num_trials = 1  # Number of trials to run per pod

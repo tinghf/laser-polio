@@ -21,9 +21,9 @@ if os.getenv("POLIO_ROOT"):
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_6y_underwt_gravity_20250521"
-model_config = "config_nigeria_6y_underwt_gravity.yaml"
-calib_config = "r0_k_ssn_gravity.yaml"
+study_name = "calib_nigeria_6y_pim_gravity_zinb_20250523"
+model_config = "config_nigeria_6y_pim_gravity_zinb.yaml"
+calib_config = "r0_k_ssn_gravity_zinb.yaml"
 fit_function = "log_likelihood"
 num_trials = 2
 n_replicates = 1  # Number of replicates to run for each trial

@@ -3,6 +3,7 @@
 @Steve
 - Try a universal scalar for init_immunity
 - Try individ hetero
+- Try calibrating to first 3 years, then run a sim for another 3 y
 - Sweep over radiation k and make a scatterplot like I did for gravity
 - Make synthetic dataset for Nigeria
 - Sweep over hetero with best pars from calib

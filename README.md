@@ -21,6 +21,11 @@ Download the repo, then install with uv:
 uv pip install -e .
 ```
 
+To upgrade to latest laser-core: 
+```
+uv pip install --upgrade laser-core
+```
+
 ## Usage
 You can run a simple demo with `examples/demo_nigeria.py`
 

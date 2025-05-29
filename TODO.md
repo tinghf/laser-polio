@@ -1,13 +1,14 @@
 # PRIORITIES
 
 @Steve
-- Plot monthly cases likelihood component against phase  
+- Try building dockerfile - does it get the correct version???
+- Plot monthly cases likelihood component against phase
 - Consider age distribution of cases as a calibration target, which would help parameterize R0
 - Double check that the seasonality phase is correct based on latest calibration results
 - Get cursor
 - Calibrate with missed pop
 - Calibrate with individ hetero
-- Plot top 10 trial
+- Plot top 10 trials
 - Try calibrating the timing of seeds???
 - Try a universal scalar for init_immunity
 - Try calibrating to first 3 years, then run a sim for another 3 y

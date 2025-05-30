@@ -119,6 +119,56 @@ def fmt(arr, precision=2):
     )
 
 
+# This utility function is called from two different places; doesn't need to be member of
+# a class
+def populate_heterogeneous_values(start, end, acq_risk_out, infectivity_out, pars):
+    """
+    Populates acq_risk_out and infectivity_out arrays in-place using the specified
+    correlation structure and parameter set.
+
+    Parameters
+    ----------
+    start : int
+        Start index (inclusive).
+    end : int
+        End index (exclusive).
+    acq_risk_out : np.ndarray
+        Pre-allocated array to store acquisition risk multipliers.
+    infectivity_out : np.ndarray
+        Pre-allocated array to store daily infectivity values.
+    pars : PropertySet
+        LASER parameter set with keys:
+            - risk_mult_var
+            - r0
+            - dur_inf
+            - corr_risk_inf
+    """
+    n = end - start
+
+    mean_ln = 1
+    var_ln = pars.risk_mult_var
+    mu_ln = np.log(mean_ln**2 / np.sqrt(var_ln + mean_ln**2))
+    sigma_ln = np.sqrt(np.log(var_ln / mean_ln**2 + 1))
+    mean_gamma = pars.r0 / np.mean(pars.dur_inf(1000))
+    shape_gamma = 1
+    scale_gamma = max(mean_gamma / shape_gamma, 1e-10)
+
+    rho = pars.corr_risk_inf
+    cov_matrix = np.array([[1, rho], [rho, 1]])
+    L = np.linalg.cholesky(cov_matrix)
+
+    z = np.random.normal(size=(n, 2))
+    z_corr = z @ L.T
+
+    if pars.individual_heterogeneity:
+        acq_risk_out[start:end] = np.exp(mu_ln + sigma_ln * z_corr[:, 0])
+        infectivity_out[start:end] = stats.gamma.ppf(stats.norm.cdf(z_corr[:, 1]), a=shape_gamma, scale=scale_gamma)
+    else:
+        sc.printyellow("Warning: manually resetting acq_risk_multiplier and daily_infectivity to 1.0 for testing")
+        acq_risk_out[start:end] = 1.0
+        infectivity_out[start:end] = mean_gamma
+
+
 # SEIR Model
 class SEIR_ABM:
     """
@@ -249,6 +299,8 @@ class SEIR_ABM:
         elif (pars.cbr is not None) & (len(pars.cbr) > 1):
             capacity = int(1.1 * calc_capacity(np.sum(pars.n_ppl), num_timesteps, np.mean(pars.cbr)))
         model.people = LaserFrameIO.load(filename=filename, capacity=capacity)
+
+        # We need to set daily_infectivity and acq_risk_multiplier for count:capacity
 
         # Setup node list
         model.nodes = np.unique(model.people.node_id[: model.people.count])
@@ -410,7 +462,6 @@ class SEIR_ABM:
     def plot_node_pop(self, save=False, results_path=None):
         plt.figure(figsize=(10, 6))
         for node in self.nodes:
-            # pop = self.results.S[:, node] + self.results.E[:, node] + self.results.I[:, node] + self.results.R[:, node]
             pop = self.results.pop[:, node]
             plt.plot(pop, label=f"Node {node}")
         plt.title("Node Population")
@@ -521,6 +572,13 @@ class DiseaseState_ABM:
         self._common_init(sim)
         # Only set up results arrays if needed
         self._initialize_results_arrays()
+
+        cap = getattr(self.people, "true_capacity", self.people.capacity)
+        count = self.people.count
+        # We need to set daily_infectivity and acq_risk_multiplier for count:capacity
+        populate_heterogeneous_values(count, cap, self.people.acq_risk_multiplier, self.people.daily_infectivity, self.pars)
+        sim.people.exposure_timer[count:cap] = self.pars.dur_exp(cap - count) - 1
+        sim.people.infection_timer[count:cap] = self.pars.dur_inf(cap - count)
         return self
 
     def _common_init(self, sim):
@@ -1047,8 +1105,8 @@ def tx_step_prep_nb(
     #  - exposure (susceptibility/node)
     #  - susceptible individuals (count/node)
     #  - beta (infectivity/node)
-    tl_beta_by_node = np.zeros((nb.get_num_threads(), num_nodes), dtype=np.float64)
-    tl_exposure_by_node = np.zeros((nb.get_num_threads(), num_nodes), dtype=np.float64)
+    tl_beta_by_node = np.zeros((nb.get_num_threads(), num_nodes), dtype=np.float32)
+    tl_exposure_by_node = np.zeros((nb.get_num_threads(), num_nodes), dtype=np.float32)
     tl_sus_by_node = np.zeros((nb.get_num_threads(), num_nodes), dtype=np.int32)
     for i in nb.prange(num_people):
         state = disease_states[i]
@@ -1247,8 +1305,9 @@ class Transmission_ABM:
         # instance._initialize_people_fields()
 
         new_r0 = sim.pars.r0
-        infectivity_scalar = new_r0 / sim.pars.old_r0
-        sim.people.daily_infectivity *= infectivity_scalar  # seem fast enough
+        if new_r0 != sim.pars.old_r0:
+            infectivity_scalar = new_r0 / sim.pars.old_r0
+            sim.people.daily_infectivity *= infectivity_scalar  # seem fast enough
 
         instance._initialize_common()
         return instance
@@ -1256,16 +1315,7 @@ class Transmission_ABM:
     def _initialize_people_fields(self):
         """Initialize individual-level transmission properties."""
 
-        mean_ln = 1
-        var_ln = self.pars.risk_mult_var
-        mu_ln = np.log(mean_ln**2 / np.sqrt(var_ln + mean_ln**2))
-        sigma_ln = np.sqrt(np.log(var_ln / mean_ln**2 + 1))
-        mean_gamma = self.pars.r0 / np.mean(self.pars.dur_inf(1000))
-        scale_gamma = max(mean_gamma / 1, 1e-10)
-
-        rho = 0.8
-        L = np.linalg.cholesky([[1, rho], [rho, 1]])
-        n = getattr(self.people, "true_capacity", self.people.capacity)
+        count = getattr(self.people, "true_capacity", self.people.capacity)
 
         # Record new exposure counts aka incidence
         # Pretty sure this code from after merge belongs somewhere else. This is NOT for init_from_file. Think...
@@ -1280,40 +1330,10 @@ class Transmission_ABM:
             "daily_infectivity", dtype=np.float32, default=1.0
         )  # Individual daily infectivity (e.g., number of infections generated per day in a fully susceptible population; mean = R0/dur_inf = 14/24)
 
-        # Step 1: Define parameters for Lognormal & convert to log-space parameters
-        mean_lognormal = 1
-        variance_lognormal = self.pars.risk_mult_var
-        mu_ln = np.log(mean_lognormal**2 / np.sqrt(variance_lognormal + mean_lognormal**2))
-        sigma_ln = np.sqrt(np.log(variance_lognormal / mean_lognormal**2 + 1))
-        # Step 2: Define parameters for daily_infectivity (Gamma distribution)
-        mean_gamma = self.pars.r0 / np.mean(self.pars.dur_inf(1000))  # mean_gamma = R0 / mean(dur_inf)
-        shape_gamma = 1  # makes this equivalent to an exponential distribution
-        scale_gamma = mean_gamma / shape_gamma
-        scale_gamma = max(scale_gamma, 1e-10)  # Ensure scale is never exactly 0 since gamma is undefined for scale_gamma=0
-        # Step 3: Generate correlated normal samples
-        rho = self.pars.corr_risk_inf  # Desired correlation
-        cov_matrix = np.array([[1, rho], [rho, 1]])  # Create covariance matrix
-
-        L = np.linalg.cholesky(cov_matrix)  # Cholesky decomposition
-
-        # Generate standard normal samples
-        z = np.random.normal(size=(n, 2))
-
-        z_corr = z @ L.T  # Apply Cholesky to introduce correlation
-
         # Step 4: Transform normal variables into target distributions
         # Set individual heterogeneity properties
-        if self.pars.individual_heterogeneity:
-            acq_risk_multiplier = np.exp(mu_ln + sigma_ln * z_corr[:, 0])  # Lognormal transformation
-            daily_infectivity = stats.gamma.ppf(stats.norm.cdf(z_corr[:, 1]), a=shape_gamma, scale=scale_gamma)  # Gamma transformation
-            self.people.acq_risk_multiplier[:n] = acq_risk_multiplier
-            self.people.daily_infectivity[:n] = daily_infectivity
-        else:
-            sc.printyellow("Warning: manually resetting acq_risk_multiplier and daily_infectivity to 1.0 for testing")
-            self.people.acq_risk_multiplier[:n] = 1.0
-            self.people.daily_infectivity[:n] = mean_gamma
-
-        z = np.random.normal(size=(n, 2)) @ L.T
+        populate_heterogeneous_values(0, count, self.people.acq_risk_multiplier, self.people.daily_infectivity, self.pars)
+        # z = np.random.normal(size=(n, 2)) @ L.T
 
     def _initialize_common(self):
         """Initialize shared network and timers."""
@@ -1501,7 +1521,7 @@ def sample_dobs(samples, bin_min_age_days, bin_max_age_days, dobs):
 
 
 def pbincounts(bins, num_nodes, weights):
-    tl_weights = np.zeros((nb.get_num_threads(), num_nodes), dtype=np.float32)  # np.float64)
+    tl_weights = np.zeros((nb.get_num_threads(), num_nodes), dtype=np.float32)
     tl_counts = np.zeros((nb.get_num_threads(), num_nodes), dtype=np.int32)
     nb_bincounts(bins, len(bins), weights, tl_counts, tl_weights)
 
@@ -1695,6 +1715,17 @@ class VitalDynamics_ABM:
                 self.people.ri_timer[start:end] = 182
 
             self.results.births[t] = births
+
+            """
+            # This was really useful for troubleshooting newborns
+            import pandas as pd
+            df = pd.DataFrame({
+                key: val[start:end]
+                for key, val in self.people.__dict__.items()
+                if isinstance(val, np.ndarray) and val.shape[0] >= end
+            })
+            df.to_csv(f"newborns_t{t}.csv", index=False)
+            """
 
         # 3) Store the death counts
         # Actual "death" handled in get_vital_statistics() as we count newly deceased

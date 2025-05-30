@@ -6,9 +6,9 @@ import yaml
 # ------------------- USER CONFIGS -------------------
 
 job_name = "laser-polio-worker-sk"
-study_name = "calib_nigeria_6y_pim_gravity_zinb_birth_fix_20250528"
+study_name = "calib_nigeria_6y_pim_gravity_zinb_birth_fix_hetero_20250530"
 model_config = "config_nigeria_6y_pim_gravity_zinb.yaml"
-calib_config = "r0_k_ssn_gravity_zinb.yaml"
+calib_config = "r0_k_ssn_gravity_zinb_hetero.yaml"
 
 # job_name = "laser-polio-worker-sk"
 # study_name = "calib_nigeria_6y_pim_gravity_zinb_initimmunscalar_20250523"

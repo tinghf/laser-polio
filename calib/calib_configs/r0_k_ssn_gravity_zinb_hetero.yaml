@@ -6,8 +6,8 @@ parameters:
     low: 0.0
     high: 0.4
   seasonal_peak_doy:
-    low: 0
-    high: 364
+    low: 120
+    high: 300
   gravity_k_exponent:
     low: -20.0
     high: 0.0

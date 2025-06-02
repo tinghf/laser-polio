@@ -59,7 +59,7 @@ def save_study_results(study, output_dir: Path, csv_name: str = "trials.csv"):
     print(f"Study results saved to '{output_dir}'")
 
 
-def plot_stuff(study_name, storage_url, output_dir=None):
+def plot_optuna(study_name, storage_url, output_dir=None):
     study = optuna.load_study(study_name=study_name, storage=storage_url)
 
     # Default output directory to current working dir if not provided

@@ -7,7 +7,7 @@ import click
 import optuna
 import sciris as sc
 from report import plot_likelihoods
-from report import plot_stuff
+from report import plot_optuna
 from report import plot_targets
 from report import save_study_results
 from worker import run_worker_main
@@ -93,7 +93,7 @@ def main(study_name, model_config, calib_config, fit_function, n_replicates, n_t
     save_study_results(study, results_path)
 
     if not os.getenv("HEADLESS"):
-        plot_stuff(study_name, storage_url, output_dir=results_path)
+        plot_optuna(study_name, storage_url, output_dir=results_path)
         plot_targets(study, output_dir=results_path)
         plot_likelihoods(study, output_dir=results_path, use_log=True)
 

@@ -8,8 +8,8 @@ import optuna
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from report import plot_likelihoods
+from report import plot_optuna
 from report import plot_runtimes
-from report import plot_stuff
 from report import plot_targets
 from report import save_study_results
 
@@ -35,8 +35,8 @@ def main():
         print("💾 Saving results...")
         save_study_results(study, output_dir=results_path)
 
-        print("📈 Plotting results...")
-        plot_stuff(cfg.study_name, study.storage_url, output_dir=results_path)
+        print("📈 Plotting optuna results...")
+        plot_optuna(cfg.study_name, study.storage_url, output_dir=results_path)
 
         print("📊 Plotting target comparisons...")
         plot_targets(study, output_dir=results_path)

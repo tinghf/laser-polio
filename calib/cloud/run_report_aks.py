@@ -41,16 +41,16 @@ def main():
         print("📊 Plotting target comparisons...")
         plot_targets(study, output_dir=results_path)
 
-        print("Plotting runtimes...")
+        print("📊 Plotting runtimes...")
         plot_runtimes(study, output_dir=results_path)
 
-        print("Plotting likelihoods...")
+        print("📊 Plotting likelihoods...")
         plot_likelihoods(study, output_dir=Path(results_path), use_log=True)
 
     finally:
         print("🧹 Cleaning up port forwarding...")
         pf_process.terminate()
-        print("🎉Done!")
+        print("🎉 Done!")
 
 
 if __name__ == "__main__":

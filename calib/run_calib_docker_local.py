@@ -107,7 +107,7 @@ def get_laser_polio_deps(study_name):
         print(e.stderr)
 
 
-def run_docker_calibration(study_name, num_trials=2):
+def run_docker_calibration(study_name, n_trials=2):
     """Run the docker container to perform the calibration with a study."""
     model_config, calib_config = get_default_config_values()
 
@@ -129,8 +129,8 @@ def run_docker_calibration(study_name, num_trials=2):
         "idm-docker-staging.packages.idmod.org/laser/laser-polio:latest",
         "--study-name",
         study_name,
-        "--num-trials",
-        str(num_trials),
+        "--n-trials",
+        str(n_trials),
     ]
 
     result = subprocess.run(docker_command, capture_output=True, text=True)
@@ -143,7 +143,7 @@ def run_docker_calibration(study_name, num_trials=2):
 
 if __name__ == "__main__":
     study_name = "calib_demo_nigeria2"
-    run_docker_calibration(study_name, num_trials=1)
+    run_docker_calibration(study_name, n_trials=1)
 
     # Step 3: Post-execution study reporting
     from calib.report import plot_stuff

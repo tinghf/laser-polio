@@ -378,7 +378,7 @@ def plot_targets(study, output_dir=None, shp=None):
         plt.ylabel("Cases")
         plt.legend()
         plt.tight_layout()
-        plt.savefig(output_dir / "plot_adm01_cases.png")
+        plt.savefig(output_dir / "plot_best_adm01_cases.png")
 
     # Plot choropleth of case count differences for each replicate
     if shp is not None and "adm01_cases" in actual:
@@ -389,7 +389,7 @@ def plot_targets(study, output_dir=None, shp=None):
                     node_lookup=node_lookup,
                     actual_cases=actual["adm01_cases"],
                     pred_cases=rep["adm01_cases"],
-                    output_path=output_dir / f"plot_case_diff_choropleth_rep{i + 1}.png",
+                    output_path=output_dir / f"plot_best_case_diff_choropleth_rep{i + 1}.png",
                     title=f"Case Count Difference (Actual - Predicted) - Rep {i + 1}",
                 )
 

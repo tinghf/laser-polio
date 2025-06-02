@@ -584,50 +584,74 @@ def load_region_group_labels(model_config_path):
     return list(region_groups.keys())
 
 
-def get_distinct_colors(n):
+def plot_multiple_choropleths(shp, node_lookup, actual_cases, trial_predictions, output_path, n_cols=5, legend_position="bottom"):
     """
-    Generate n visually distinct colors by combining multiple colormaps.
+    Plot multiple choropleths in a grid layout showing differences between actual and predicted cases.
 
     Args:
-        n (int): Number of colors needed
-
-    Returns:
-        list: List of RGB colors
+        shp (GeoDataFrame): The shapefile GeoDataFrame
+        node_lookup (dict): Dictionary mapping dot_names to administrative regions
+        actual_cases (dict): Dictionary of actual case counts by region
+        trial_predictions (list): List of (trial_number, value, predictions) tuples
+        output_path (Path): Path to save the plot
+        n_cols (int): Number of columns in the grid
+        legend_position (str): Position of the legend ("bottom" or "right")
     """
-    # Start with qualitative colormaps that have distinct colors
-    colors = []
+    n_trials = len(trial_predictions)
+    n_rows = (n_trials + n_cols - 1) // n_cols  # Ceiling division
 
-    # Add colors from Set3 (12 colors)
-    colors.extend(plt.cm.Set3(np.linspace(0, 1, 12)))
+    # Create figure with extra space at the bottom for the colorbar
+    fig = plt.figure(figsize=(4 * n_cols, 4 * n_rows + 1))
 
-    # Add colors from Set2 (8 colors)
-    colors.extend(plt.cm.Set2(np.linspace(0, 1, 8)))
+    # Calculate global min/max for consistent color scale
+    all_diffs = []
+    for _, _, pred_cases in trial_predictions:
+        diffs = [actual_cases.get(region, 0) - pred_cases.get(region, 0) for region in set(actual_cases.keys()) | set(pred_cases.keys())]
+        all_diffs.extend(diffs)
 
-    # Add colors from Set1 (9 colors)
-    colors.extend(plt.cm.Set1(np.linspace(0, 1, 9)))
+    max_abs_diff = max(abs(min(all_diffs)), abs(max(all_diffs)))
+    vmin, vmax = -max_abs_diff, max_abs_diff
 
-    # Add colors from Paired (12 colors)
-    colors.extend(plt.cm.Paired(np.linspace(0, 1, 12)))
+    # Create subplot grid that leaves space for the colorbar
+    gs = fig.add_gridspec(n_rows + 1, n_cols, height_ratios=[*[1] * n_rows, 0.1])
 
-    # If we still need more colors, add from tab20 (20 colors)
-    if n > len(colors):
-        colors.extend(plt.cm.tab20(np.linspace(0, 1, 20)))
+    for idx, (trial_number, value, pred_cases) in enumerate(trial_predictions):
+        row = idx // n_cols
+        col = idx % n_cols
+        ax = fig.add_subplot(gs[row, col])
 
-    # If we still need more colors, add from tab20b (20 more colors)
-    if n > len(colors):
-        colors.extend(plt.cm.tab20b(np.linspace(0, 1, 20)))
+        # Calculate differences for this trial
+        shp_copy = shp.copy()
+        differences = {
+            region: actual_cases.get(region, 0) - pred_cases.get(region, 0) for region in set(actual_cases.keys()) | set(pred_cases.keys())
+        }
+        shp_copy["case_diff"] = shp_copy["adm01_name"].map(differences)
 
-    # Remove any duplicate colors
-    unique_colors = list(dict.fromkeys(map(tuple, colors)))
+        # Plot the map
+        shp_copy.plot(column="case_diff", ax=ax, cmap="RdBu", vmin=vmin, vmax=vmax, legend=False)
 
-    # Ensure we have enough colors
-    if n > len(unique_colors):
-        raise ValueError(f"Cannot generate {n} distinct colors. Maximum available: {len(unique_colors)}")
+        ax.set_title(f"Trial {trial_number}\nValue: {value:.2f}")
+        ax.axis("off")
 
-    return unique_colors[:n]
+    # Add a single colorbar at the bottom
+    cbar_ax = fig.add_subplot(gs[-1, :])
+    cbar_ax.axis("off")
+
+    norm = Normalize(vmin=vmin, vmax=vmax)
+    sm = ScalarMappable(norm=norm, cmap="RdBu")
+    sm.set_array([])
+    cbar = fig.colorbar(sm, cax=cbar_ax, orientation="horizontal")
+
+    # Add annotations to the left and right of the colorbar
+    cbar.ax.text(-0.1, 0.5, "Obs < pred", ha="right", va="center", transform=cbar.ax.transAxes)
+    cbar.ax.text(1.1, 0.5, "Obs > pred", ha="left", va="center", transform=cbar.ax.transAxes)
+
+    plt.tight_layout()
+    plt.savefig(output_path, bbox_inches="tight", dpi=300)
+    plt.close()
 
 
-def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results"):
+def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results", shp=None, node_lookup=None):
     """
     Plot the top n best calibration trials using the same visualizations as plot_targets.
 
@@ -636,6 +660,8 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
         output_dir (Path): Directory to save plots
         n_best (int): Number of best trials to plot
         title (str): Title for the plot
+        shp (GeoDataFrame, optional): Shapefile for choropleth plots
+        node_lookup (dict, optional): Dictionary mapping dot_names to administrative regions
     """
     # Get trials sorted by value (ascending)
     trials = sorted(study.trials, key=lambda t: t.value if t.value is not None else float("inf"))
@@ -648,6 +674,15 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
     with open(metadata_path) as f:
         metadata = json.load(f)
     model_config = metadata.get("model_config", {})
+
+    # Generate shapefile if not provided
+    if shp is None:
+        try:
+            shp, node_lookup = get_shapefile_from_config(model_config)
+            print("[INFO] Generated shapefile from model config")
+        except Exception as e:
+            print(f"[WARN] Could not generate shapefile: {e}")
+            shp = None
 
     # Define consistent colors for trials
     cmap = cm.get_cmap("tab20")
@@ -831,3 +866,18 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
     plt.tight_layout()
     plt.savefig(top_trials_dir / "nodes_with_cases_timeseries_comparison.png", bbox_inches="tight")
     plt.close()
+
+    # Plot choropleth of case count differences for all trials in one figure
+    if shp is not None and node_lookup is not None:
+        actual = top_trials[0].user_attrs["actual"]
+        if "adm01_cases" in actual:
+            trial_predictions = [(trial.number, trial.value, trial.user_attrs["predicted"][0]["adm01_cases"]) for trial in top_trials]
+            plot_multiple_choropleths(
+                shp=shp,
+                node_lookup=node_lookup,
+                actual_cases=actual["adm01_cases"],
+                trial_predictions=trial_predictions,
+                output_path=top_trials_dir / "case_diff_choropleths.png",
+                legend_position="bottom",  # Add parameter to control legend position
+                legend_pad=0.1,  # Add parameter to control spacing between plots and legend
+            )

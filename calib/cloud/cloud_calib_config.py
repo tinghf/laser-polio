@@ -6,9 +6,14 @@ import yaml
 # ------------------- USER CONFIGS -------------------
 
 job_name = "laser-polio-worker-sk"
-study_name = "calib_nigeria_3y_2018_underwt_gravitykabc_zinb_birth_fix_hetero_20250602"
-model_config = "config_nigeria_3y_2018_underwt_gravity_zinb.yaml"
+study_name = "calib_nigeria_3y_2018_pim_gravitykabc_zinb_birth_fix_hetero_20250601"
+model_config = "config_nigeria_3y_2018_pim_gravity_zinb.yaml"
 calib_config = "r0_k_ssn_gravitykabc_zinb_hetero.yaml"
+
+# job_name = "laser-polio-worker-sk"
+# study_name = "calib_nigeria_3y_2018_underwt_gravitykabc_zinb_birth_fix_hetero_20250602"
+# model_config = "config_nigeria_3y_2018_underwt_gravity_zinb.yaml"
+# calib_config = "r0_k_ssn_gravitykabc_zinb_hetero.yaml"
 
 # job_name = "laser-polio-worker-sk2"
 # study_name = "calib_nigeria_4y_2020_underwt_gravitykabc_zinb_birth_fix_hetero_20250602"

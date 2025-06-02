@@ -16,9 +16,14 @@ import laser_polio as lp
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_kano_jigawa_test_20250530"
-model_config = "config_kano_jigawa.yaml"
-calib_config = "r0_k_ssn_gravity_zinb.yaml"
+study_name = "calib_nigeria_3y_2018_pim_gravitykabc_zinb_birth_fix_hetero_20250601"
+model_config = "config_nigeria_3y_2018_pim_gravity_zinb.yaml"
+calib_config = "r0_k_ssn_gravitykabc_zinb_hetero.yaml"
+
+# study_name = "calib_kano_jigawa_test_20250530"
+# model_config = "config_kano_jigawa.yaml"
+# calib_config = "r0_k_ssn_gravity_zinb.yaml"
+
 fit_function = "log_likelihood"
 n_trials = 2
 n_replicates = 1  # Number of replicates to run for each trial

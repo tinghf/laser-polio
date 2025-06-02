@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+import geopandas as gpd
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,6 +11,10 @@ import optuna.visualization as vis
 import pandas as pd
 import sciris as sc
 import yaml
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
+
+import laser_polio as lp
 
 
 def save_study_results(study, output_dir: Path, csv_name: str = "trials.csv"):
@@ -65,6 +70,7 @@ def plot_stuff(study_name, storage_url, output_dir=None):
 
     # Optimization history
     fig1 = vis.plot_optimization_history(study)
+    fig1.update_yaxes(type="log")
     fig1.write_html(output_dir / "plot_opt_history.html")
 
     # # Param importances - WARNING! Can be slow for large studies
@@ -114,18 +120,139 @@ def plot_stuff(study_name, storage_url, output_dir=None):
     # print("done with countour plots")
 
 
+def plot_case_diff_choropleth(shp, node_lookup, actual_cases, pred_cases, output_path, title="Case Count Difference"):
+    """
+    Plot a choropleth map showing the difference between actual and predicted case counts.
+
+    Args:
+        shp (GeoDataFrame): The shapefile GeoDataFrame
+        node_lookup (dict): Dictionary mapping dot_names to administrative regions
+        actual_cases (dict): Dictionary of actual case counts by region
+        pred_cases (dict): Dictionary of predicted case counts by region
+        output_path (Path): Path to save the plot
+        title (str): Title for the plot
+    """
+
+    # Calculate differences
+    regions = set(actual_cases.keys()) | set(pred_cases.keys())
+    differences = {region: actual_cases.get(region, 0) - pred_cases.get(region, 0) for region in regions}
+
+    # Create a copy of the shapefile and add the differences
+    shp_copy = shp.copy()
+
+    # Map the differences using adm01_name
+    shp_copy["case_diff"] = shp_copy["adm01_name"].map(differences)
+
+    # Create diverging colormap centered at 0
+    max_abs_diff = max(abs(min(differences.values())), abs(max(differences.values())))
+    vmin, vmax = -max_abs_diff, max_abs_diff
+
+    # Create the plot
+    fig = plt.figure(figsize=(12, 8))
+    gs = fig.add_gridspec(2, 1, height_ratios=[3, 1], hspace=0.3)
+
+    # Plot choropleth
+    ax_map = fig.add_subplot(gs[0])
+
+    # Create mappable for custom colorbar
+    norm = Normalize(vmin=vmin, vmax=vmax)
+    cmap = plt.get_cmap("RdBu")
+    sm = ScalarMappable(norm=norm, cmap=cmap)
+    sm.set_array([])
+
+    # Plot the map
+    shp_copy.plot(
+        column="case_diff",
+        ax=ax_map,
+        cmap="RdBu",  # Red-Blue diverging colormap
+        vmin=vmin,
+        vmax=vmax,
+    )
+
+    # Add colorbar with custom labels
+    cbar = plt.colorbar(sm, ax=ax_map)
+    cbar.ax.text(0.5, 1.05, "Obs > pred", ha="center", va="bottom", transform=cbar.ax.transAxes)
+    cbar.ax.text(0.5, -0.05, "Obs < pred", ha="center", va="top", transform=cbar.ax.transAxes)
+
+    ax_map.set_title(title)
+    ax_map.axis("off")
+
+    # Plot histogram
+    ax_hist = fig.add_subplot(gs[1])
+    ax_hist.hist(list(differences.values()), bins=20, color="gray", edgecolor="black")
+    ax_hist.axvline(x=0, color="black", linestyle="--", alpha=0.5)
+    ax_hist.set_xlabel("Case Count Difference (Actual - Predicted)")
+    ax_hist.set_ylabel("Count")
+
+    plt.tight_layout()
+    plt.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)
+
+
+def get_shapefile_from_config(model_config):
+    """
+    Generate a shapefile from the model configuration.
+
+    Args:
+        model_config (dict): Model configuration dictionary containing region information
+
+    Returns:
+        tuple: (GeoDataFrame, dict) The generated shapefile and node lookup dictionary mapping dot_names to adm01 names
+    """
+    # Extract region information from config
+    regions = model_config.get("regions", [])
+    if not regions:
+        raise ValueError("No regions specified in model config")
+
+    # Get dot names for the regions
+    dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")
+
+    # Load node lookup and create dot_name to adm01 mapping
+    node_lookup_full = lp.get_node_lookup("data/node_lookup.json", dot_names)
+    # Convert from index-based to dot_name-based dictionary
+    node_lookup = {entry["dot_name"]: entry["adm01"] for entry in node_lookup_full.values()}
+
+    # Load and filter shapefile
+    shp = gpd.read_file("data/shp_africa_low_res.gpkg", layer="adm2")
+    shp = shp[shp["dot_name"].isin(dot_names)]
+
+    # Ensure correct ordering if needed
+    shp = shp.set_index("dot_name").loc[dot_names].reset_index()
+
+    # Add administrative region names from node_lookup
+    shp["adm01_name"] = shp["dot_name"].map(node_lookup)
+
+    # Verify we have all mappings
+    missing_mappings = shp[shp["adm01_name"].isna()]["dot_name"].tolist()
+    if missing_mappings:
+        print(f"[WARN] Missing node_lookup mappings for: {missing_mappings}")
+
+    return shp, node_lookup
+
+
 def plot_targets(study, output_dir=None, shp=None):
     best = study.best_trial
     actual = best.user_attrs["actual"]
     preds = best.user_attrs["predicted"]
 
-    # Load region group labels from study_metadata.json
+    # Load metadata and model config
     metadata_path = Path(output_dir) / "study_metadata.json"
     if not metadata_path.exists():
         raise FileNotFoundError(f"study_metadata.json not found at {metadata_path}")
     with open(metadata_path) as f:
         metadata = json.load(f)
     model_config = metadata.get("model_config", {})
+
+    # Generate shapefile if not provided
+    if shp is None and "adm01_cases" in actual:
+        try:
+            shp, node_lookup = get_shapefile_from_config(model_config)
+            print("[INFO] Generated shapefile from model config")
+        except Exception as e:
+            print(f"[WARN] Could not generate shapefile: {e}")
+            shp = None
+
+    # Load region group labels from study_metadata.json
     region_groups = model_config.get("summary_config", {}).get("region_groups", {})
     region_labels = list(region_groups.keys())
 
@@ -196,10 +323,10 @@ def plot_targets(study, output_dir=None, shp=None):
     # adm0_cases (bar plot)
     adm0_actual = actual.get("adm0_cases")
     if adm0_actual:
-        region_labels = sorted(actual["adm0_cases"].keys())
-        x = np.arange(len(region_labels))
+        adm_labels = sorted(actual["adm0_cases"].keys())
+        x = np.arange(len(adm_labels))
         # Get actual values
-        actual_vals = [actual["adm0_cases"].get(region, 0) for region in region_labels]
+        actual_vals = [actual["adm0_cases"].get(adm, 0) for adm in adm_labels]
         plt.figure(figsize=(10, 6))
         plt.title("ADM0 Cases")
         # Plot actual as outlined bar
@@ -207,7 +334,7 @@ def plot_targets(study, output_dir=None, shp=None):
         # Plot predicted reps as colored dots
         for i, rep in enumerate(preds):
             label = f"Rep {i + 1}"
-            rep_vals = [rep["adm0_cases"].get(region, 0) for region in region_labels]
+            rep_vals = [rep["adm0_cases"].get(adm, 0) for adm in adm_labels]
             plt.scatter(
                 x,
                 rep_vals,
@@ -217,7 +344,7 @@ def plot_targets(study, output_dir=None, shp=None):
                 s=50,
             )
         # Axis formatting
-        plt.xticks(x, region_labels, rotation=45, ha="right")
+        plt.xticks(x, adm_labels, rotation=45, ha="right")
         plt.ylabel("Cases")
         plt.legend()
         plt.tight_layout()
@@ -226,10 +353,10 @@ def plot_targets(study, output_dir=None, shp=None):
     # adm01_cases (bar plot)
     adm01_actual = actual.get("adm01_cases")
     if adm01_actual:
-        region_labels = sorted(actual["adm01_cases"].keys())
-        x = np.arange(len(region_labels))
+        adm_labels = sorted(actual["adm01_cases"].keys())
+        x = np.arange(len(adm_labels))
         # Get actual values
-        actual_vals = [actual["adm01_cases"].get(region, 0) for region in region_labels]
+        actual_vals = [actual["adm01_cases"].get(adm, 0) for adm in adm_labels]
         plt.figure(figsize=(10, 6))
         plt.title("ADM01 Regional Cases")
         # Plot actual as outlined bar
@@ -237,7 +364,7 @@ def plot_targets(study, output_dir=None, shp=None):
         # Plot predicted reps as colored dots
         for i, rep in enumerate(preds):
             label = f"Rep {i + 1}"
-            rep_vals = [rep["adm01_cases"].get(region, 0) for region in region_labels]
+            rep_vals = [rep["adm01_cases"].get(adm, 0) for adm in adm_labels]
             plt.scatter(
                 x,
                 rep_vals,
@@ -247,11 +374,24 @@ def plot_targets(study, output_dir=None, shp=None):
                 s=50,
             )
         # Axis formatting
-        plt.xticks(x, region_labels, rotation=45, ha="right")
+        plt.xticks(x, adm_labels, rotation=45, ha="right")
         plt.ylabel("Cases")
         plt.legend()
         plt.tight_layout()
         plt.savefig(output_dir / "plot_adm01_cases.png")
+
+    # Plot choropleth of case count differences for each replicate
+    if shp is not None and "adm01_cases" in actual:
+        for i, rep in enumerate(preds):
+            if "adm01_cases" in rep:
+                plot_case_diff_choropleth(
+                    shp=shp,
+                    node_lookup=node_lookup,
+                    actual_cases=actual["adm01_cases"],
+                    pred_cases=rep["adm01_cases"],
+                    output_path=output_dir / f"plot_case_diff_choropleth_rep{i + 1}.png",
+                    title=f"Case Count Difference (Actual - Predicted) - Rep {i + 1}",
+                )
 
     # Regional Cases (bar plot)
     x = np.arange(len(region_labels))

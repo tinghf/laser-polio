@@ -582,3 +582,252 @@ def load_region_group_labels(model_config_path):
         config = yaml.safe_load(f)
     region_groups = config.get("summary_config", {}).get("region_groups", {})
     return list(region_groups.keys())
+
+
+def get_distinct_colors(n):
+    """
+    Generate n visually distinct colors by combining multiple colormaps.
+
+    Args:
+        n (int): Number of colors needed
+
+    Returns:
+        list: List of RGB colors
+    """
+    # Start with qualitative colormaps that have distinct colors
+    colors = []
+
+    # Add colors from Set3 (12 colors)
+    colors.extend(plt.cm.Set3(np.linspace(0, 1, 12)))
+
+    # Add colors from Set2 (8 colors)
+    colors.extend(plt.cm.Set2(np.linspace(0, 1, 8)))
+
+    # Add colors from Set1 (9 colors)
+    colors.extend(plt.cm.Set1(np.linspace(0, 1, 9)))
+
+    # Add colors from Paired (12 colors)
+    colors.extend(plt.cm.Paired(np.linspace(0, 1, 12)))
+
+    # If we still need more colors, add from tab20 (20 colors)
+    if n > len(colors):
+        colors.extend(plt.cm.tab20(np.linspace(0, 1, 20)))
+
+    # If we still need more colors, add from tab20b (20 more colors)
+    if n > len(colors):
+        colors.extend(plt.cm.tab20b(np.linspace(0, 1, 20)))
+
+    # Remove any duplicate colors
+    unique_colors = list(dict.fromkeys(map(tuple, colors)))
+
+    # Ensure we have enough colors
+    if n > len(unique_colors):
+        raise ValueError(f"Cannot generate {n} distinct colors. Maximum available: {len(unique_colors)}")
+
+    return unique_colors[:n]
+
+
+def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results"):
+    """
+    Plot the top n best calibration trials using the same visualizations as plot_targets.
+
+    Args:
+        study (optuna.Study): The Optuna study containing trials
+        output_dir (Path): Directory to save plots
+        n_best (int): Number of best trials to plot
+        title (str): Title for the plot
+    """
+    # Get trials sorted by value (ascending)
+    trials = sorted(study.trials, key=lambda t: t.value if t.value is not None else float("inf"))
+    top_trials = trials[:n_best]
+
+    # Load metadata and model config
+    metadata_path = Path(output_dir) / "study_metadata.json"
+    if not metadata_path.exists():
+        raise FileNotFoundError(f"study_metadata.json not found at {metadata_path}")
+    with open(metadata_path) as f:
+        metadata = json.load(f)
+    model_config = metadata.get("model_config", {})
+
+    # Define consistent colors for trials
+    cmap = cm.get_cmap("tab20")
+    color_map = {f"Trial {trial.number}": cmap(i) for i, trial in enumerate(top_trials)}
+
+    # Create output directory for top trials plots
+    top_trials_dir = Path(output_dir) / "top_trials"
+    top_trials_dir.mkdir(exist_ok=True)
+
+    # Get actual data from first trial (should be same for all)
+    actual = top_trials[0].user_attrs["actual"]
+
+    # Total Infected
+    plt.figure()
+    plt.title(f"Total Infected - Top {n_best} Trials")
+    width = 0.8 / (n_best + 1)  # Adjust bar width based on number of trials
+    x = np.arange(2)  # Just two bars: Actual and Predicted
+    plt.bar(x[0], actual["total_infected"][0], width, label="Actual", color="black")
+    for i, trial in enumerate(top_trials):
+        pred = trial.user_attrs["predicted"][0]  # Get first replicate
+        label = f"Trial {trial.number} (value={trial.value:.2f})"
+        plt.bar(x[1] + (i - n_best / 2) * width, pred["total_infected"][0], width, label=label, color=color_map[f"Trial {trial.number}"])
+    plt.xticks(x, ["Actual", "Predicted"])
+    plt.ylabel("Cases")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    plt.savefig(top_trials_dir / "total_infected_comparison.png", bbox_inches="tight")
+    plt.close()
+
+    # Yearly Cases
+    years = list(range(2018, 2018 + len(actual["yearly_cases"])))
+    plt.figure(figsize=(10, 6))
+    plt.title(f"Yearly Cases - Top {n_best} Trials")
+    plt.plot(years, actual["yearly_cases"], "o-", label="Actual", color="black", linewidth=2)
+    for trial in top_trials:
+        pred = trial.user_attrs["predicted"][0]
+        label = f"Trial {trial.number} (value={trial.value:.2f})"
+        plt.plot(years, pred["yearly_cases"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
+    plt.xlabel("Year")
+    plt.ylabel("Cases")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    plt.savefig(top_trials_dir / "yearly_cases_comparison.png", bbox_inches="tight")
+    plt.close()
+
+    # Monthly Cases
+    months = list(range(1, 1 + len(actual["monthly_cases"])))
+    plt.figure(figsize=(10, 6))
+    plt.title(f"Monthly Cases - Top {n_best} Trials")
+    plt.plot(months, actual["monthly_cases"], "o-", label="Actual", color="black", linewidth=2)
+    for trial in top_trials:
+        pred = trial.user_attrs["predicted"][0]
+        label = f"Trial {trial.number} (value={trial.value:.2f})"
+        plt.plot(months, pred["monthly_cases"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
+    plt.xlabel("Month")
+    plt.ylabel("Cases")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    plt.savefig(top_trials_dir / "monthly_cases_comparison.png", bbox_inches="tight")
+    plt.close()
+
+    # Monthly Timeseries
+    n_months = len(actual["monthly_timeseries"])
+    months_series = pd.date_range(start="2018-01-01", periods=n_months, freq="MS")
+    plt.figure(figsize=(10, 6))
+    plt.title(f"Monthly Timeseries - Top {n_best} Trials")
+    plt.plot(months_series, actual["monthly_timeseries"], "o-", label="Actual", color="black", linewidth=2)
+    for trial in top_trials:
+        pred = trial.user_attrs["predicted"][0]
+        label = f"Trial {trial.number} (value={trial.value:.2f})"
+        plt.plot(months_series, pred["monthly_timeseries"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
+    plt.xlabel("Month")
+    plt.ylabel("Cases")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    plt.savefig(top_trials_dir / "monthly_timeseries_comparison.png", bbox_inches="tight")
+    plt.close()
+
+    # ADM0 Cases if available
+    adm0_actual = actual.get("adm0_cases")
+    if adm0_actual:
+        adm_labels = sorted(actual["adm0_cases"].keys())
+        x = np.arange(len(adm_labels))
+        actual_vals = [actual["adm0_cases"].get(adm, 0) for adm in adm_labels]
+
+        plt.figure(figsize=(12, 6))
+        plt.title(f"ADM0 Cases - Top {n_best} Trials")
+        plt.bar(x, actual_vals, width=0.6, edgecolor="gray", facecolor="none", linewidth=1.5, label="Actual")
+
+        for trial in top_trials:
+            pred = trial.user_attrs["predicted"][0]
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            pred_vals = [pred["adm0_cases"].get(adm, 0) for adm in adm_labels]
+            plt.scatter(x, pred_vals, label=label, color=color_map[f"Trial {trial.number}"], marker="o", s=50)
+
+        plt.xticks(x, adm_labels, rotation=45, ha="right")
+        plt.ylabel("Cases")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "adm0_cases_comparison.png", bbox_inches="tight")
+        plt.close()
+
+    # ADM01 Cases if available
+    adm01_actual = actual.get("adm01_cases")
+    if adm01_actual:
+        adm_labels = sorted(actual["adm01_cases"].keys())
+        x = np.arange(len(adm_labels))
+        actual_vals = [actual["adm01_cases"].get(adm, 0) for adm in adm_labels]
+
+        plt.figure(figsize=(12, 6))
+        plt.title(f"ADM01 Regional Cases - Top {n_best} Trials")
+        plt.bar(x, actual_vals, width=0.6, edgecolor="black", facecolor="none", linewidth=1.5, label="Actual")
+
+        for trial in top_trials:
+            pred = trial.user_attrs["predicted"][0]
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            pred_vals = [pred["adm01_cases"].get(adm, 0) for adm in adm_labels]
+            plt.scatter(x, pred_vals, label=label, color=color_map[f"Trial {trial.number}"], marker="o", s=50)
+
+        plt.xticks(x, adm_labels, rotation=45, ha="right")
+        plt.ylabel("Cases")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "adm01_cases_comparison.png", bbox_inches="tight")
+        plt.close()
+
+    # Regional Cases
+    region_labels = list(model_config.get("summary_config", {}).get("region_groups", {}).keys())
+    if region_labels:
+        x = np.arange(len(region_labels))
+        width = 0.8 / (n_best + 1)
+
+        plt.figure(figsize=(12, 6))
+        plt.title(f"Regional Cases - Top {n_best} Trials")
+        plt.bar(x, actual["regional_cases"], width, label="Actual", color="black")
+
+        for i, trial in enumerate(top_trials):
+            pred = trial.user_attrs["predicted"][0]
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            plt.bar(x + (i + 1) * width, pred["regional_cases"], width, label=label, color=color_map[f"Trial {trial.number}"])
+
+        plt.xticks(x + width * (n_best / 2), region_labels)
+        plt.ylabel("Cases")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "regional_cases_comparison.png", bbox_inches="tight")
+        plt.close()
+
+    # Total Nodes with Cases
+    plt.figure()
+    plt.title(f"Total Nodes with Cases - Top {n_best} Trials")
+    width = 0.8 / (n_best + 1)
+    x = np.arange(2)  # Just two categories: Actual and Predicted
+    plt.bar(x[0], actual["nodes_with_cases_total"][0], width, label="Actual", color="black")
+    for i, trial in enumerate(top_trials):
+        pred = trial.user_attrs["predicted"][0]
+        label = f"Trial {trial.number} (value={trial.value:.2f})"
+        plt.bar(
+            x[1] + (i - n_best / 2) * width, pred["nodes_with_cases_total"][0], width, label=label, color=color_map[f"Trial {trial.number}"]
+        )
+    plt.xticks(x, ["Actual", "Predicted"])
+    plt.ylabel("Nodes")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    plt.savefig(top_trials_dir / "nodes_with_cases_total_comparison.png", bbox_inches="tight")
+    plt.close()
+
+    # Monthly Nodes with Cases
+    n_months = len(actual["nodes_with_cases_timeseries"])
+    months = list(range(1, n_months + 1))
+    plt.figure(figsize=(10, 6))
+    plt.title(f"Monthly Nodes with Cases - Top {n_best} Trials")
+    plt.plot(months, actual["nodes_with_cases_timeseries"], "o-", label="Actual", color="black", linewidth=2)
+    for trial in top_trials:
+        pred = trial.user_attrs["predicted"][0]
+        label = f"Trial {trial.number} (value={trial.value:.2f})"
+        plt.plot(months, pred["nodes_with_cases_timeseries"], "o-", label=label, color=color_map[f"Trial {trial.number}"])
+    plt.xlabel("Month")
+    plt.ylabel("Number of Nodes with ≥1 Case")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    plt.savefig(top_trials_dir / "nodes_with_cases_timeseries_comparison.png", bbox_inches="tight")
+    plt.close()

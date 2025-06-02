@@ -11,6 +11,7 @@ from report import plot_likelihoods
 from report import plot_optuna
 from report import plot_runtimes
 from report import plot_targets
+from report import plot_top_trials
 from report import save_study_results
 
 
@@ -40,6 +41,9 @@ def main():
 
         print("📊 Plotting target comparisons...")
         plot_targets(study, output_dir=results_path)
+
+        print("📊 Plotting top trials...")
+        plot_top_trials(study, output_dir=results_path, n_best=10)
 
         print("📊 Plotting runtimes...")
         plot_runtimes(study, output_dir=results_path)

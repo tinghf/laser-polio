@@ -3,21 +3,24 @@
 @Steve
 - Gravity pars
 - Go back to two time periods
-- Shift timing of seeding
+- Calibrate with individ hetero
 - Plot spatial mismatch
-- Take notes in Obsidian
 - Try building dockerfile - does it get the correct version???
+- Plot map of case count diff
+- Try calibrating with underwt
+
+- Plot top 10 trials
+- Run sim for top 1-10 calibrations
+- Take notes in Obsidian
 - Debug seasonality
+- Double check that the seasonality phase is correct based on latest calibration results
 - Plot monthly cases likelihood component against phase
 - Consider age distribution of cases as a calibration target, which would help parameterize R0
-- Double check that the seasonality phase is correct based on latest calibration results
-- Get cursor
+- Try a missed pop frac scalar based on X (immunity, underwt, sia_coverage)
 - Calibrate with missed pop
-- Calibrate with individ hetero
-- Plot top 10 trials
+- Shift timing of seeding
 - Try calibrating the timing of seeds???
 - Try a universal scalar for init_immunity
-- Try calibrating to first 3 years, then run a sim for another 3 y
 - Sweep over radiation k and make a scatterplot like I did for gravity
 - Sweep over hetero with best pars from calib
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
@@ -33,9 +36,7 @@ CALIBRATION
 
 STRETCH
 - Dirchlet multi for likelihood on counts: https://github.com/starsimhub/starsim/blob/a253336142f499d0afc93693614830bce9c30a6d/starsim/calib_components.py#L431
-- sia_re_center
-- sia_re_scale
-- init_immun_scalar
+- Try adding pop density as another r0_scalar
 
 # REFINEMENT
 

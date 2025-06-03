@@ -879,5 +879,4 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
                 trial_predictions=trial_predictions,
                 output_path=top_trials_dir / "case_diff_choropleths.png",
                 legend_position="bottom",  # Add parameter to control legend position
-                legend_pad=0.1,  # Add parameter to control spacing between plots and legend
             )

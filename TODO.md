@@ -1,19 +1,12 @@
 # PRIORITIES
 
 @Steve
-- Gravity pars
-- Go back to two time periods
-- Calibrate with individ hetero
-- Plot spatial mismatch
-- Try building dockerfile - does it get the correct version???
-- Plot map of case count diff
 - Try calibrating with underwt
-
-- Plot top 10 trials
-- Run sim for top 1-10 calibrations
+- Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
 - Take notes in Obsidian
-- Debug seasonality
-- Double check that the seasonality phase is correct based on latest calibration results
+
+- Run sim for top 1-10 calibrations
+- Debug seasonality & double check that the seasonality phase is correct based on latest calibration results
 - Plot monthly cases likelihood component against phase
 - Consider age distribution of cases as a calibration target, which would help parameterize R0
 - Try a missed pop frac scalar based on X (immunity, underwt, sia_coverage)
@@ -23,10 +16,8 @@
 - Try a universal scalar for init_immunity
 - Sweep over radiation k and make a scatterplot like I did for gravity
 - Sweep over hetero with best pars from calib
-- Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
 - Try calibrating the sia rand effects center and scale values
 - Plot out 'bad' calib trials, get a smattering of options for each r0, both high and low likelihoods
-- Try adding distance from origin as a calib target
 - Fix test_sia_schedule() - number of recovered inidividuals does not match expected value
 - Adjust vx coverage for non-missed agents by prob/(1-missed_frac)
 

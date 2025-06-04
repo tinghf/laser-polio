@@ -63,7 +63,7 @@ def plot_optuna(study_name, storage_url, output_dir=None):
     study = optuna.load_study(study_name=study_name, storage=storage_url)
 
     # Default output directory to current working dir if not provided
-    output_dir = Path(output_dir) if output_dir else Path.cwd()
+    output_dir = Path(output_dir) / "optuna_plots" if output_dir else Path.cwd()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"[INFO] Saving Optuna plots to: {output_dir.resolve()}")
@@ -243,6 +243,10 @@ def plot_targets(study, output_dir=None, shp=None):
         metadata = json.load(f)
     model_config = metadata.get("model_config", {})
 
+    # Create output directory for top trials plots
+    best_dir = Path(output_dir) / "best_trial_plots"
+    best_dir.mkdir(exist_ok=True)
+
     # Generate shapefile if not provided
     if shp is None and "adm01_cases" in actual:
         try:
@@ -272,7 +276,7 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.xticks(x, labels, rotation=45)
     plt.ylabel("Cases")
     plt.tight_layout()
-    plt.savefig(output_dir / "plot_best_total_infected_comparison.png")
+    plt.savefig(best_dir / "plot_best_total_infected_comparison.png")
 
     # Yearly Cases
     years = list(range(2018, 2018 + len(actual["yearly_cases"])))
@@ -286,7 +290,7 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.ylabel("Cases")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(output_dir / "plot_best_yearly_cases_comparison.png")
+    plt.savefig(best_dir / "plot_best_yearly_cases_comparison.png")
     # plt.show()
 
     # Monthly Cases
@@ -301,7 +305,7 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.ylabel("Cases")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(output_dir / "plot_best_monthly_cases_comparison.png")
+    plt.savefig(best_dir / "plot_best_monthly_cases_comparison.png")
     # plt.show()
 
     # Monthly Timeseries Cases
@@ -317,7 +321,7 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.ylabel("Cases")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(output_dir / "plot_best_monthly_timeseries_comparison.png")
+    plt.savefig(best_dir / "plot_best_monthly_timeseries_comparison.png")
     # plt.show()
 
     # adm0_cases (bar plot)
@@ -348,7 +352,7 @@ def plot_targets(study, output_dir=None, shp=None):
         plt.ylabel("Cases")
         plt.legend()
         plt.tight_layout()
-        plt.savefig(output_dir / "plot_adm0_cases.png")
+        plt.savefig(best_dir / "plot_adm0_cases.png")
 
     # adm01_cases (bar plot)
     adm01_actual = actual.get("adm01_cases")
@@ -378,7 +382,7 @@ def plot_targets(study, output_dir=None, shp=None):
         plt.ylabel("Cases")
         plt.legend()
         plt.tight_layout()
-        plt.savefig(output_dir / "plot_best_adm01_cases.png")
+        plt.savefig(best_dir / "plot_best_adm01_cases.png")
 
     # Plot choropleth of case count differences for each replicate
     if shp is not None and "adm01_cases" in actual:
@@ -389,7 +393,7 @@ def plot_targets(study, output_dir=None, shp=None):
                     node_lookup=node_lookup,
                     actual_cases=actual["adm01_cases"],
                     pred_cases=rep["adm01_cases"],
-                    output_path=output_dir / f"plot_best_case_diff_choropleth_rep{i + 1}.png",
+                    output_path=best_dir / f"plot_best_case_diff_choropleth_rep{i + 1}.png",
                     title=f"Case Count Difference (Actual - Predicted) - Rep {i + 1}",
                 )
 
@@ -406,7 +410,7 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.ylabel("Cases")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(output_dir / "plot_best_regional_cases_comparison.png")
+    plt.savefig(best_dir / "plot_best_regional_cases_comparison.png")
     # plt.show()
 
     # Total Nodes with Cases
@@ -420,7 +424,7 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.xticks(x, labels, rotation=45)
     plt.ylabel("Nodes")
     plt.tight_layout()
-    plt.savefig(output_dir / "plot_best_nodes_with_cases_total.png")
+    plt.savefig(best_dir / "plot_best_nodes_with_cases_total.png")
 
     # Monthly Nodes with Cases
     n_months = len(actual["nodes_with_cases_timeseries"])
@@ -435,7 +439,7 @@ def plot_targets(study, output_dir=None, shp=None):
     plt.ylabel("Number of Nodes with ≥1 Case")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(output_dir / "plot_best_nodes_with_cases_timeseries.png")
+    plt.savefig(best_dir / "plot_best_nodes_with_cases_timeseries.png")
 
     # Plot likelihoods
 
@@ -513,6 +517,10 @@ def plot_targets(study, output_dir=None, shp=None):
 
 
 def plot_likelihoods(study, output_dir=None, use_log=True):
+    # Default output directory to current working dir if not provided
+    output_dir = Path(output_dir) / "optuna_plots" if output_dir else Path.cwd()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     best = study.best_trial
     likelihoods = best.user_attrs["likelihoods"]
     exclude_keys = {"total_log_likelihood"}
@@ -547,6 +555,10 @@ def plot_likelihoods(study, output_dir=None, use_log=True):
 
 
 def plot_runtimes(study, output_dir=None):
+    # Default output directory to current working dir if not provided
+    output_dir = Path(output_dir) / "optuna_plots" if output_dir else Path.cwd()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     # Collect runtimes of completed trials
     durations = []
     for trial in study.trials:
@@ -689,7 +701,7 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
     color_map = {f"Trial {trial.number}": cmap(i) for i, trial in enumerate(top_trials)}
 
     # Create output directory for top trials plots
-    top_trials_dir = Path(output_dir) / "top_trials"
+    top_trials_dir = Path(output_dir) / "top_10_trial_plots"
     top_trials_dir.mkdir(exist_ok=True)
 
     # Get actual data from first trial (should be same for all)

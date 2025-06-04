@@ -5,25 +5,30 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-# job_name = "laser-polio-worker-sk"
-# study_name = "calib_nigeria_3y_2018_pim_gravitykabc_zinb_birth_fix_hetero_20250601"
-# model_config = "config_nigeria_3y_2018_pim_gravity_zinb.yaml"
-# calib_config = "r0_k_ssn_gravitykabc_zinb_hetero.yaml"
-
 job_name = "laser-polio-worker-sk"
-study_name = "calib_nigeria_3y_2018_underwt_gravitykabc_zinb_birth_fix_hetero_20250603"
-model_config = "config_nigeria_3y_2018_underwt_gravity_zinb.yaml"
-calib_config = "r0_k_ssn_gravitykabc_zinb_hetero.yaml"
+study_name = "calib_nigeria_3y_2018_pim_gravity_zinb_20250603"
+model_config = "config_nigeria_3y_2018_pim_gravity_zinb.yaml"
+calib_config = "r0_k_ssn_gravitykabc_zinb.yaml"
 
 # job_name = "laser-polio-worker-sk2"
-# study_name = "calib_nigeria_4y_2020_underwt_gravitykabc_zinb_birth_fix_hetero_20250603"
+# study_name = "calib_nigeria_4y_2020_pim_gravity_zinb_20250603"
+# model_config = "config_nigeria_4y_2020_pim_gravity_zinb.yaml"
+# calib_config = "r0_k_ssn_gravitykabc_zinb.yaml"
+
+# job_name = "laser-polio-worker-sk3"
+# study_name = "calib_nigeria_3y_2018_underwt_gravity_zinb_20250603"
+# model_config = "config_nigeria_3y_2018_underwt_gravity_zinb.yaml"
+# calib_config = "r0_k_ssn_gravitykabc_zinb_r0wtscalars.yaml"
+
+# job_name = "laser-polio-worker-sk4"
+# study_name = "calib_nigeria_4y_2020_underwt_gravity_zinb_20250603"
 # model_config = "config_nigeria_4y_2020_underwt_gravity_zinb.yaml"
-# calib_config = "r0_k_ssn_gravitykabc_zinb_hetero.yaml"
+# calib_config = "r0_k_ssn_gravitykabc_zinb_r0wtscalars.yaml"
 
 fit_function = "log_likelihood"
 n_trials = 1  # Number of trials to run per pod
 n_replicates = 1  # Number of replicates to run for each trial
-parallelism = 50  # The number of pods (i.e., jobs) to run in parallel
+parallelism = 25  # The number of pods (i.e., jobs) to run in parallel
 completions = 10000  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
 
 # ---------------------------------------------------

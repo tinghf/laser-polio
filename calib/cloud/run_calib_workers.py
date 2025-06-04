@@ -43,7 +43,13 @@ template = client.V1PodTemplateSpec(
 )
 
 # Job spec
-job_spec = client.V1JobSpec(template=template, parallelism=cfg.parallelism, completions=cfg.completions, ttl_seconds_after_finished=1200)
+job_spec = client.V1JobSpec(
+    template=template,
+    parallelism=cfg.parallelism,
+    completions=cfg.completions,
+    ttl_seconds_after_finished=1200,
+    backoff_limit=1000,
+)
 
 # Job object
 job = client.V1Job(api_version="batch/v1", kind="Job", metadata=client.V1ObjectMeta(name=cfg.job_name), spec=job_spec)

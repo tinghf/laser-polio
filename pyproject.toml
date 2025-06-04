@@ -120,6 +120,7 @@ ignore = [
     "PTH208",
     "DTZ002", # I want to be able to just call a today() function.
     "UP038", # due to be deprecated
+    "W291",  # Never again do I want to think about trailing whitespace
 ]
 select = [
     "B", # flake8-bugbear

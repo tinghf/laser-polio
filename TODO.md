@@ -4,6 +4,7 @@
 - Try calibrating with underwt
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
 - Take notes in Obsidian
+- Does pod takedown time prevent new pods from spinning up? 
 
 - Run sim for top 1-10 calibrations
 - Plot monthly cases likelihood component against phase

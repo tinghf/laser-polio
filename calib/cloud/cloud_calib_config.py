@@ -5,10 +5,10 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-job_name = "laser-polio-worker-sk"
-study_name = "calib_nigeria_3y_2018_pim_gravity_zinb_20250603"
-model_config = "config_nigeria_3y_2018_pim_gravity_zinb.yaml"
-calib_config = "r0_k_ssn_gravitykabc_zinb.yaml"
+# job_name = "laser-polio-worker-sk"
+# study_name = "calib_nigeria_3y_2018_pim_gravity_zinb_20250603"
+# model_config = "config_nigeria_3y_2018_pim_gravity_zinb.yaml"
+# calib_config = "r0_k_ssn_gravitykabc_zinb.yaml"
 
 # job_name = "laser-polio-worker-sk2"
 # study_name = "calib_nigeria_4y_2020_pim_gravity_zinb_20250603"
@@ -20,10 +20,10 @@ calib_config = "r0_k_ssn_gravitykabc_zinb.yaml"
 # model_config = "config_nigeria_3y_2018_underwt_gravity_zinb.yaml"
 # calib_config = "r0_k_ssn_gravitykabc_zinb_r0wtscalars.yaml"
 
-# job_name = "laser-polio-worker-sk4"
-# study_name = "calib_nigeria_4y_2020_underwt_gravity_zinb_20250603"
-# model_config = "config_nigeria_4y_2020_underwt_gravity_zinb.yaml"
-# calib_config = "r0_k_ssn_gravitykabc_zinb_r0wtscalars.yaml"
+job_name = "laser-polio-worker-sk4"
+study_name = "calib_nigeria_4y_2020_underwt_gravity_zinb_20250603"
+model_config = "config_nigeria_4y_2020_underwt_gravity_zinb.yaml"
+calib_config = "r0_k_ssn_gravitykabc_zinb_r0wtscalars.yaml"
 
 fit_function = "log_likelihood"
 n_trials = 1  # Number of trials to run per pod

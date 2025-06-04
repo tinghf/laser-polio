@@ -1,10 +1,10 @@
-# PRIORITIES
+# --- PRIORITIES ---
 1) Running the top 1-10 calibration sims on aks and downloading the results.
 2) Enable vx transmission (& add genome R0 multiplier, Sabin = 1/4; nOPV2 = 1/8)
 3) Add age pyramid by country (cuz we're getting close to running beyond Nigeria!)
 4) Double check deaths. For some, I thought I saw on of my sims plot that no deaths were happening so we gotta check that.
 
-@Steve
+CALIBRATION
 - Try calibrating with underwt
 - Try calibrating the r0_scalar parameters in run_sim (24 and 0.2)
 - Take notes in Obsidian
@@ -22,20 +22,8 @@
 - Sweep over hetero with best pars from calib
 - Try calibrating the sia rand effects center and scale values
 - Plot out 'bad' calib trials, get a smattering of options for each r0, both high and low likelihoods
-- Fix test_sia_schedule() - number of recovered inidividuals does not match expected value
-- Adjust vx coverage for non-missed agents by prob/(1-missed_frac)
 
-CALIBRATION
-- Refine how regional groupings are made for N/S Nigeria
-- Update README with usage instructions
-
-STRETCH
-- Dirchlet multi for likelihood on counts: https://github.com/starsimhub/starsim/blob/a253336142f499d0afc93693614830bce9c30a6d/starsim/calib_components.py#L431
-- Try adding pop density as another r0_scalar
-
-# REFINEMENT
-
-ESSENTIAL NEW FEATURES
+NEW FEATURES
 - Enable vx transmission (& add genome R0 multiplier, Sabin = 1/4; nOPV2 = 1/8)
 - Add age pyramid by country
 - Reactive SIAs (2 campaigns per OB)
@@ -47,7 +35,10 @@ ESSENTIAL NEW FEATURES
 - Enabling RI with specific vaccines & dates
 - Fix death rates
 
-STRETCH NEW FEATURES
+
+# --- REFINEMENT/STRETCH ---
+
+ NEW FEATURES
 - Add rule for blackouts (e.g., limiting number of campaigns / year) of maybe 1-2 years
 - Count number of Sabin2 or nOPV2 transmissions
 - Count number of exportations for calibration
@@ -56,8 +47,13 @@ STRETCH NEW FEATURES
 - Look into age-specific death rates
 - Save results & specify frequency
 - Add IPV to RI
+- Try adding pop density as another r0_scalar
+- Adjust vx coverage for non-missed agents by prob/(1-missed_frac)
+- Add correlation in vx coverage so it's not random???
+- Age-specific R0???
 
 CALIBRATION
+- Dirchlet multi for likelihood on counts: https://github.com/starsimhub/starsim/blob/a253336142f499d0afc93693614830bce9c30a6d/starsim/calib_components.py#L431
 - Chat with Jeremy about databricks
 - Calibrate the m (scalar) parameter on the R0 random effect
 - Calibration parameter:
@@ -70,6 +66,7 @@ CALIBRATION
     - Stretch: risk_mult_var or corr_risk_inf
 - Record lp version
 - Record pkg versions
+- Refine how regional groupings are made for N/S Nigeria
 
 DEBUGGING
 - Check why RI seems to stop after certain date
@@ -92,10 +89,7 @@ CLEANUP
 - Change terminology from SIA efficacy to SIA coverage spatial heterogeneity
 - Rename variables to distinguish between exposure and infection
 - Drop ABM term from components
-
-STRETCH
-- Add correlation in vx coverage so it's not random???
-- Age-specific R0???
+- Update README with usage instructions
 - Try running calibration on a variety of resources/methods (aks, COMPS, databricks) & write up report
 
 TESTING

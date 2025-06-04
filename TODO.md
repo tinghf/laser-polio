@@ -1,4 +1,8 @@
 # PRIORITIES
+1) Running the top 1-10 calibration sims on aks and downloading the results.
+2) Enable vx transmission (& add genome R0 multiplier, Sabin = 1/4; nOPV2 = 1/8)
+3) Add age pyramid by country (cuz we're getting close to running beyond Nigeria!)
+4) Double check deaths. For some, I thought I saw on of my sims plot that no deaths were happening so we gotta check that.
 
 @Steve
 - Try calibrating with underwt

@@ -523,7 +523,7 @@ def disease_state_step_nb(
     return
 
 
-@nb.njit(parallel=True, cache=True)
+@nb.njit(parallel=True, cache=False)
 def set_recovered_by_dob(num_people, dob, disease_state, threshold_dob):
     for i in nb.prange(num_people):
         if dob[i] < threshold_dob:
@@ -532,7 +532,7 @@ def set_recovered_by_dob(num_people, dob, disease_state, threshold_dob):
     return
 
 
-@nb.njit([(nb.int32, nb.int32[:], nb.boolean[:]), (nb.int64, nb.int32[:], nb.boolean[:])], parallel=True, cache=True)
+@nb.njit([(nb.int32, nb.int32[:], nb.boolean[:]), (nb.int64, nb.int32[:], nb.boolean[:])], parallel=True, cache=False)
 def set_filter_mask(num_people, disease_state, filter_mask):
     for i in nb.prange(num_people):
         select = (disease_state[i] >= 0) and (disease_state[i] < 3)
@@ -573,7 +573,7 @@ def get_eligible_by_node(num_nodes, num_people, eligible, node_ids):
     return tls_counts.sum(axis=0)  # Sum across threads to get the final counts
 
 
-@nb.njit(parallel=True, cache=True)
+@nb.njit(parallel=True, cache=False)
 def set_recovered_by_probability(num_people, eligible, recovery_probs, node_ids, disease_state):
     for i in nb.prange(num_people):
         if eligible[i]:
@@ -584,7 +584,7 @@ def set_recovered_by_probability(num_people, eligible, recovery_probs, node_ids,
     return
 
 
-@nb.njit(parallel=True, cache=True)
+@nb.njit(parallel=True, cache=False)
 def set_eligible_mask(num_people, alive_mask, age, age_min, age_max, eligible_mask):
     for i in nb.prange(num_people):
         eligible_mask[i] = alive_mask[i] and (age[i] >= age_min) and (age[i] < age_max)
@@ -1128,7 +1128,7 @@ class DiseaseState_ABM:
             plt.show()
 
 
-@nb.njit((nb.int32[:], nb.int32[:], nb.int32[:], nb.int32[:], nb.int32, nb.int32), nogil=True)  # , cache=True)
+@nb.njit((nb.int32[:], nb.int32[:], nb.int32[:], nb.int32[:], nb.int32, nb.int32), nogil=True)
 def count_SEIRP(node_id, disease_state, potentially_paralyzed, paralyzed, n_nodes, n_people):
     """
     Go through each person exactly once and increment counters for their node.
@@ -1570,7 +1570,7 @@ class Transmission_ABM:
         """
 
 
-@nb.njit(parallel=True, cache=True)
+@nb.njit(parallel=True, cache=False)
 def sample_dobs(samples, bin_min_age_days, bin_max_age_days, dobs):
     for i in nb.prange(len(samples)):
         dobs[i] = -np.random.randint(bin_min_age_days[samples[i]], bin_max_age_days[samples[i]])
@@ -1587,7 +1587,7 @@ def pbincounts(bins, num_nodes, weights):
 
 
 # Version of utils.bincount the does two bincounts at once
-@nb.njit(parallel=True, cache=True)
+@nb.njit(parallel=True, cache=False)
 def nb_bincounts(bins, num_indices, weights, tl_counts, tl_weights):
     for i in nb.prange(num_indices):
         bidx = bins[i]
@@ -1861,7 +1861,7 @@ class VitalDynamics_ABM:
 @nb.njit(
     (nb.int32, nb.int32, nb.int32[:], nb.int32[:], nb.int32[:], nb.int32, nb.int32[:, :], nb.int32[:]),
     parallel=True,
-    cache=True,
+    cache=False,
 )
 def get_deaths(num_nodes, num_people, disease_state, node_id, date_of_death, t, tl_dying, num_dying):
     # Iterate in parallel over all people
@@ -1892,7 +1892,7 @@ def get_deaths(num_nodes, num_people, disease_state, node_id, date_of_death, t, 
         nb.int32[:],
     ),
     parallel=True,
-    cache=True,
+    cache=False,
 )
 def fast_ri(
     step_size,

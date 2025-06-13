@@ -1,5 +1,7 @@
 import subprocess
 
+import sciris as sc
+
 
 def run_docker_commands():
     image_tag = "idm-docker-staging.packages.idmod.org/laser/laser-polio:latest"
@@ -12,6 +14,14 @@ def run_docker_commands():
     push_cmd = ["docker", "push", image_tag]
 
     try:
+        # Check if Docker is running
+        try:
+            subprocess.run(["docker", "info"], check=True, capture_output=True)
+        except subprocess.CalledProcessError:
+            sc.printred("\nERROR: Docker Desktop is not running!")
+            sc.printred("Please start Docker Desktop and try again.")
+            return
+
         # Build image
         subprocess.run(build_cmd, check=True)
         print("Docker image built successfully.")
@@ -46,4 +56,5 @@ def run_docker_commands():
 
 
 if __name__ == "__main__":
+    print("Starting Docker build and push process...")
     run_docker_commands()

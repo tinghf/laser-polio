@@ -4,7 +4,6 @@
 5) Double check deaths. For some, I thought I saw on of my sims plot that no deaths were happening so we gotta check that.
 6) Try playing with links between N & S Nigeria in network (maybe a scalar???)
 7) Double check timing of E, I, & P states when normal transmission is occurring - I'm worried we're off by 1 after initialization
-8) add warning to open docker desktop
 9) add warning if the docker image version doesn't match local
 
 CALIBRATION

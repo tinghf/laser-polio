@@ -22,7 +22,7 @@ import laser_polio as lp
 # calib_config = "r0_k_ssn.yaml"
 # job_name = "laser-polio-worker-sk"
 
-study_name = "calib_nigeria_3y_2018_pim_gravity_zinb_ipv_20250612"
+study_name = "calib_nigeria_3y_2018_pim_gravity_zinb_ipv_20250613"
 model_config = "config_nigeria_3y_2018_pim_gravity_zinb_ipv.yaml"
 calib_config = "r0_k_ssn_gravitykabc_zinb.yaml"
 

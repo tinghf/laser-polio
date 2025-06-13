@@ -1,6 +1,19 @@
+import sys
+from pathlib import Path
+
 import cloud_calib_config as cfg
 from kubernetes import client
 from kubernetes import config
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from get_lp_module_versions import check_version_match
+
+# Compare the version of laser_polio in the Docker image with the version in the GitHub repository
+check_version_match(
+    repo="InstituteforDiseaseModeling/laser-polio",
+    image_name="idm-docker-staging.packages.idmod.org/laser/laser-polio:latest",
+    container_path="/app/laser_polio_deps.txt",
+)
 
 # Load kubeconfig
 config.load_kube_config(config_file="~/.kube/config")  # default = "~/.kube/config"

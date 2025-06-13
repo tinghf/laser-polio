@@ -47,7 +47,7 @@ job_spec = client.V1JobSpec(
     template=template,
     parallelism=cfg.parallelism,
     completions=cfg.completions,
-    ttl_seconds_after_finished=1200,
+    ttl_seconds_after_finished=120,
     backoff_limit=1000,
 )
 

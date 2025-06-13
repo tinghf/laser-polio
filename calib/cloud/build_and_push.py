@@ -17,9 +17,17 @@ def run_docker_commands():
         # Check if Docker is running
         try:
             subprocess.run(["docker", "info"], check=True, capture_output=True)
-        except subprocess.CalledProcessError:
-            sc.printred("\nERROR: Docker Desktop is not running!")
-            sc.printred("Please start Docker Desktop and try again.")
+        except subprocess.CalledProcessError as e:
+            if "The system cannot find the file specified" in str(e):
+                sc.printred("\nERROR: Docker Desktop is not running!")
+                sc.printred("Please start Docker Desktop and try again.")
+                sc.printred("You can start Docker Desktop from the Start menu or system tray.")
+            else:
+                sc.printred(f"\nERROR: Docker is not accessible: {e!s}")
+                sc.printred("Please ensure Docker Desktop is installed and running.")
+            return
+        except Exception as e:
+            sc.printred(f"\nERROR: Unexpected error checking Docker status: {e!s}")
             return
 
         # Build image
@@ -52,7 +60,7 @@ def run_docker_commands():
         print("Docker image pushed successfully.")
 
     except subprocess.CalledProcessError as e:
-        print(f"Error: {e}")
+        sc.printred(f"Error: {e}")
 
 
 if __name__ == "__main__":

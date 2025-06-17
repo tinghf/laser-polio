@@ -53,7 +53,7 @@ calib_config = "r0_k_ssn_gravitykabc_zinb_r0wtscalars_immunscalars.yaml"
 fit_function = "log_likelihood"
 n_trials = 1  # Number of trials to run per pod
 n_replicates = 1  # Number of replicates to run for each trial
-parallelism = 50  # The number of pods (i.e., jobs) to run in parallel
+parallelism = 100  # The number of pods (i.e., jobs) to run in parallel
 completions = 20000  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
 
 # ---------------------------------------------------

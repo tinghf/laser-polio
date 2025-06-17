@@ -14,10 +14,7 @@ import yaml
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 
-import laser_polio as lp
-
-
-def run_top_n_on_comps(study, n=10, output_dir: Path = "results"):
+try:
     import cloud_calib_config as cfg
     from idmtools.assets import Asset
     from idmtools.assets import AssetCollection
@@ -28,11 +25,65 @@ def run_top_n_on_comps(study, n=10, output_dir: Path = "results"):
     from idmtools.entities.simulation import Simulation
     from idmtools_platform_comps.utils.scheduling import add_schedule_config
 
+    HAS_IDMTOOLS = True
+except Exception:
+    HAS_IDMTOOLS = False
+
+import laser_polio as lp
+
+
+def sweep_seed_best_comps(study, output_dir: Path = "results"):
+    if not HAS_IDMTOOLS:
+        raise ImportError("idmtools is not installed.")
+
+    # Sort trials by best objective value (lower is better)
+    top_trial = study.best_trial
+
+    Platform("Idm", endpoint="https://comps.idmod.org", environment="CALCULON", type="COMPS")
+    experiment = Experiment(name=f"laser-polio Best Trial from {study.study_name}", tags={"source": "optuna", "mode": "top-n"})
+
+    for seed in range(10):
+        overrides = top_trial.params.copy()
+        overrides["save_plots"] = True
+        overrides["seed"] = seed
+        # You can include trial.number or trial.value as well
+
+        # Write overrides file with trial-specific filename
+        command = CommandLine(
+            f"singularity exec --no-mount /app Assets/laser-polio_latest.sif "
+            f"python3 -m laser_polio.run_sim "
+            f"--model-config /app/calib/model_configs/{cfg.model_config} "
+            f"--params-file overrides.json "
+            # f"--init-pop-file=Assets/init_pop_nigeria_4y_2020_underwt_gravity_zinb_ipv.h5"
+        )
+
+        task = CommandTask(command=command)
+        task.common_assets.add_assets(AssetCollection.from_id_file("calib/comps/laser.id"))
+        # task.common_assets.add_directory("inputs")
+        task.transient_assets.add_asset(Asset(filename="overrides.json", content=json.dumps(overrides)))
+
+        # Wrap task in Simulation and add to experiment
+        simulation = Simulation(task=task)
+        simulation.tags.update({"description": "LASER-Polio"})  # , ".trial_rank": str(rank), ".trial_value": str(trial.value)})
+        experiment.add_simulation(simulation)
+
+        add_schedule_config(
+            simulation, command=command, NumNodes=1, NumCores=12, NodeGroupName="idm_abcd", Environment={"NUMBA_NUM_THREADS": str(12)}
+        )
+    experiment.run(wait_until_done=True)
+    exp_id_filepath = output_dir / "comps_exp.id"
+    experiment.to_id_file(exp_id_filepath)
+
+
+def run_top_n_on_comps(study, n=10, output_dir: Path = "results"):
+    if not HAS_IDMTOOLS:
+        raise ImportError("idmtools is not installed.")
+
     # Sort trials by best objective value (lower is better)
     top_trials = sorted([t for t in study.trials if t.state.name == "COMPLETE"], key=lambda t: t.value)[:n]
 
     Platform("Idm", endpoint="https://comps.idmod.org", environment="CALCULON", type="COMPS")
-    experiment = Experiment(name="laser-polio top N from Optuna", tags={"source": "optuna", "mode": "top-n"})
+    experiment = Experiment(name=f"laser-polio top {n} from {study.study_name}", tags={"source": "optuna", "mode": "top-n"})
 
     for rank, trial in enumerate(top_trials, start=1):
         overrides = trial.params.copy()
@@ -44,11 +95,13 @@ def run_top_n_on_comps(study, n=10, output_dir: Path = "results"):
             f"singularity exec --no-mount /app Assets/laser-polio_latest.sif "
             f"python3 -m laser_polio.run_sim "
             f"--model-config /app/calib/model_configs/{cfg.model_config} "
-            f"--params-file overrides.json"
+            f"--params-file overrides.json "
+            # f"--init-pop-file=Assets/init_pop_nigeria_6y_2018_underwt_gravity_zinb_ipv.h5"
         )
 
         task = CommandTask(command=command)
         task.common_assets.add_assets(AssetCollection.from_id_file("calib/comps/laser.id"))
+        # task.common_assets.add_directory("inputs")
         task.transient_assets.add_asset(Asset(filename="overrides.json", content=json.dumps(overrides)))
 
         # Wrap task in Simulation and add to experiment

@@ -336,7 +336,7 @@ def main(model_config, params_file, results_path, extra_pars, init_pop_file, sav
     if extra_pars:
         config.update(json.loads(extra_pars))
 
-    # Run the sim: save_pop and init_pop_file are mutually exclusive, not yet enforced
+    # Run the sim: save_init_pop and init_pop_file are mutually exclusive, not yet enforced
     run_sim(config=config, init_pop_file=init_pop_file, save_init_pop=save_init_pop, save_final_pop=save_final_pop)
 
 

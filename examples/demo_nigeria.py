@@ -49,7 +49,7 @@ sim = lp.run_sim(
     save_data=True,
     verbose=1,
     seed=1,
-    save_pop=False,
+    save_init_pop=False,
     plot_pars=True,
 )
 

@@ -103,14 +103,31 @@ def run_sim(
     immunity_cols = [col for col in init_immun.columns if col.startswith("immunity_")]
     init_immun[immunity_cols] = init_immun[immunity_cols].clip(lower=0.0, upper=1.0) * init_immun_scalar
     # Apply geographic scalars if specified in configs
+    if "immun_scalar_borno" in configs:
+        borno_scalar = configs.pop("immun_scalar_borno")
+        borno_mask = init_immun.index.str.contains("NIGERIA:BORNO")
+        init_immun.loc[borno_mask, immunity_cols] *= borno_scalar
+    if "immun_scalar_jigawa" in configs:
+        jigawa_scalar = configs.pop("immun_scalar_jigawa")
+        jigawa_mask = init_immun.index.str.contains("NIGERIA:JIGAWA")
+        init_immun.loc[jigawa_mask, immunity_cols] *= jigawa_scalar
     if "immun_scalar_kano" in configs:
         kano_scalar = configs.pop("immun_scalar_kano")
         kano_mask = init_immun.index.str.contains("NIGERIA:KANO")
         init_immun.loc[kano_mask, immunity_cols] *= kano_scalar
+    if "immun_scalar_katsina" in configs:
+        katsina_scalar = configs.pop("immun_scalar_katsina")
+        katsina_mask = init_immun.index.str.contains("NIGERIA:KATSINA")
+        init_immun.loc[katsina_mask, immunity_cols] *= katsina_scalar
     if "immun_scalar_kebbi" in configs:
         kebbi_scalar = configs.pop("immun_scalar_kebbi")
         kebbi_mask = init_immun.index.str.contains("NIGERIA:KEBBI")
         init_immun.loc[kebbi_mask, immunity_cols] *= kebbi_scalar
+    if "immun_scalar_kwara" in configs:
+        kwasu_scalar = configs.pop("immun_scalar_kwara")
+        kwasu_mask = init_immun.index.str.contains("NIGERIA:KWARA")
+        init_immun.loc[kwasu_mask, immunity_cols] *= kwasu_scalar
+
     init_immun[immunity_cols] = init_immun[immunity_cols].clip(upper=1.0, lower=0.0)
 
     # Initial infection seeding

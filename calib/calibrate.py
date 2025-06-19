@@ -17,10 +17,13 @@ import laser_polio as lp
 
 # ------------------- USER CONFIGS -------------------
 
-study_name = "calib_nigeria_6y_20250618"
-model_config = "config_nigeria_6y.yaml"
+study_name = "calib_kano_jigawa_ipv_6y_20250619_v2"
+model_config = "config_kano_jigawa_ipv.yaml"
 calib_config = "r0_k_ssn_period.yaml"
-job_name = "laser-polio-worker-sk"
+
+# study_name = "calib_nigeria_6y_20250618"
+# model_config = "config_nigeria_6y.yaml"
+# calib_config = "r0_k_ssn_period.yaml"
 
 fit_function = "log_likelihood"
 n_trials = 2

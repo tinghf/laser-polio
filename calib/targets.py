@@ -216,7 +216,7 @@ def calc_targets_simplified_temporal(filename, model_config_path=None, is_actual
     """Load simulation results and extract simplified features for comparison.
 
     Only uses total_infected, monthly_timeseries, and adm01_cases.
-    Splits total_infected and adm01_cases by time period: before 2020-01-01 and on/after 2020-01-01.
+    Splits total_infected and adm01_cases by time period: 2018-2019, 2020-2021, and 2022-2023.
     """
     # Load the data & config
     df = pd.read_csv(filename)
@@ -236,9 +236,16 @@ def calc_targets_simplified_temporal(filename, model_config_path=None, is_actual
         max_date = lp.find_latest_end_of_month(df["date"])
         df = df[df["date"] <= max_date]
 
-    # Add time period column
-    cutoff_date = pd.to_datetime("2020-01-01")
-    df["time_period"] = df["date"].apply(lambda x: "before_2020" if x < cutoff_date else "after_2020")
+    # Add time period column with three periods
+    def assign_time_period(date):
+        if date < pd.to_datetime("2020-01-01"):
+            return "2018-2019"
+        elif date < pd.to_datetime("2022-01-01"):
+            return "2020-2021"
+        else:
+            return "2022-2023"
+
+    df["time_period"] = df["date"].apply(assign_time_period)
 
     targets = {}
 

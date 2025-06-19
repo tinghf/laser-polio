@@ -224,8 +224,8 @@ def plot_case_diff_choropleth_temporal(
     shp, node_lookup, actual_cases_by_period, pred_cases_by_period, output_path, title="Case Count Difference by Period"
 ):
     """
-    Plot side-by-side choropleth maps showing the difference between actual and predicted case counts
-    for before and after 2020 periods.
+    Plot choropleth maps showing the difference between actual and predicted case counts
+    for multiple time periods (2018-2019, 2020-2021, 2022-2023 or before_2020, after_2020).
 
     Args:
         shp (GeoDataFrame): The shapefile GeoDataFrame
@@ -236,47 +236,58 @@ def plot_case_diff_choropleth_temporal(
         title (str): Title for the plot
     """
 
-    # Extract data for each period
-    before_2020_actual = {}
-    after_2020_actual = {}
-    before_2020_pred = {}
-    after_2020_pred = {}
+    # Determine which periods we have and extract data
+    periods = []
+    period_actual = {}
+    period_pred = {}
 
     # Parse actual cases by period
     for key, value in actual_cases_by_period.items():
-        if "'before_2020'" in key:
-            adm01_name = key.split("', '")[0].split("('")[1]
-            before_2020_actual[adm01_name] = value
-        elif "'after_2020'" in key:
-            adm01_name = key.split("', '")[0].split("('")[1]
-            after_2020_actual[adm01_name] = value
+        # Parse the tuple key format: "('NIGERIA:JIGAWA', '2018-2019')"
+        parts = key.strip("()").split("', '")
+        if len(parts) == 2:
+            adm01_name = parts[0].strip("'")
+            period = parts[1].strip("'")
+
+            if period not in periods:
+                periods.append(period)
+                period_actual[period] = {}
+                period_pred[period] = {}
+
+            period_actual[period][adm01_name] = value
 
     # Parse predicted cases by period
     for key, value in pred_cases_by_period.items():
-        if "'before_2020'" in key:
-            adm01_name = key.split("', '")[0].split("('")[1]
-            before_2020_pred[adm01_name] = value
-        elif "'after_2020'" in key:
-            adm01_name = key.split("', '")[0].split("('")[1]
-            after_2020_pred[adm01_name] = value
+        # Parse the tuple key format: "('NIGERIA:JIGAWA', '2018-2019')"
+        parts = key.strip("()").split("', '")
+        if len(parts) == 2:
+            adm01_name = parts[0].strip("'")
+            period = parts[1].strip("'")
 
-    # Create figure with side-by-side subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+            if period in period_pred:
+                period_pred[period][adm01_name] = value
+
+    # Use periods in the order they appear in the dictionary
+    # Create figure with subplots
+    n_periods = len(periods)
+    fig, axes = plt.subplots(1, n_periods, figsize=(8 * n_periods, 8))
+    if n_periods == 1:
+        axes = [axes]
 
     # Calculate global min/max for consistent color scale
     all_diffs = []
+    period_diffs = {}
 
-    # Before 2020 differences
-    if before_2020_actual and before_2020_pred:
-        regions_before = set(before_2020_actual.keys()) | set(before_2020_pred.keys())
-        diffs_before = {region: before_2020_actual.get(region, 0) - before_2020_pred.get(region, 0) for region in regions_before}
-        all_diffs.extend(diffs_before.values())
+    # Calculate differences for each period
+    for period in periods:
+        actual_data = period_actual.get(period, {})
+        pred_data = period_pred.get(period, {})
 
-    # After 2020 differences
-    if after_2020_actual and after_2020_pred:
-        regions_after = set(after_2020_actual.keys()) | set(after_2020_pred.keys())
-        diffs_after = {region: after_2020_actual.get(region, 0) - after_2020_pred.get(region, 0) for region in regions_after}
-        all_diffs.extend(diffs_after.values())
+        if actual_data and pred_data:
+            regions = set(actual_data.keys()) | set(pred_data.keys())
+            diffs = {region: actual_data.get(region, 0) - pred_data.get(region, 0) for region in regions}
+            period_diffs[period] = diffs
+            all_diffs.extend(diffs.values())
 
     if not all_diffs:
         print("[WARN] No data available for choropleth plots")
@@ -293,34 +304,25 @@ def plot_case_diff_choropleth_temporal(
     sm = ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
 
-    # Plot Before 2020 (left subplot)
-    if before_2020_actual and before_2020_pred:
-        shp_copy_before = shp.copy()
-        shp_copy_before["case_diff"] = shp_copy_before["adm01_name"].map(diffs_before)
+    # Plot each period
+    for i, period in enumerate(periods):
+        ax = axes[i]
+        diffs = period_diffs.get(period, {})
 
-        shp_copy_before.plot(column="case_diff", ax=ax1, cmap="RdBu", vmin=vmin, vmax=vmax, legend=False)
-        ax1.set_title("Before 2020")
-        ax1.axis("off")
-    else:
-        ax1.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax1.transAxes)
-        ax1.set_title("Before 2020")
-        ax1.axis("off")
+        if diffs:
+            shp_copy = shp.copy()
+            shp_copy["case_diff"] = shp_copy["adm01_name"].map(diffs)
 
-    # Plot After 2020 (right subplot)
-    if after_2020_actual and after_2020_pred:
-        shp_copy_after = shp.copy()
-        shp_copy_after["case_diff"] = shp_copy_after["adm01_name"].map(diffs_after)
-
-        shp_copy_after.plot(column="case_diff", ax=ax2, cmap="RdBu", vmin=vmin, vmax=vmax, legend=False)
-        ax2.set_title("After 2020")
-        ax2.axis("off")
-    else:
-        ax2.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax2.transAxes)
-        ax2.set_title("After 2020")
-        ax2.axis("off")
+            shp_copy.plot(column="case_diff", ax=ax, cmap="RdBu", vmin=vmin, vmax=vmax, legend=False)
+            ax.set_title(period)
+            ax.axis("off")
+        else:
+            ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
+            ax.set_title(period)
+            ax.axis("off")
 
     # Add shared colorbar below the plots
-    cbar = fig.colorbar(sm, ax=[ax1, ax2], shrink=0.8, aspect=30, location="bottom", pad=0.15)
+    cbar = fig.colorbar(sm, ax=axes, shrink=0.8, aspect=30, location="bottom", pad=0.15)
     cbar.ax.text(-0.1, 0.5, "Obs < pred", ha="right", va="center", transform=cbar.ax.transAxes)
     cbar.ax.text(1.1, 0.5, "Obs > pred", ha="left", va="center", transform=cbar.ax.transAxes)
 
@@ -674,111 +676,94 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.savefig(best_dir / "plot_best_nodes_with_cases_timeseries.png")
 
     if "total_by_period" in actual:
-        # Custom ordering to put 'before_2020' first
-        period_labels = (
-            ["before_2020", "after_2020"] if "before_2020" in actual["total_by_period"] else sorted(actual["total_by_period"].keys())
-        )
+        # Use the keys from the dictionary in their natural order
+        period_labels = list(actual["total_by_period"].keys())
         x = np.arange(len(period_labels))
-        actual_vals = [actual["total_by_period"].get(period, 0) for period in period_labels]
+        actual_vals = [actual["total_by_period"][period] for period in period_labels]
+
         plt.figure(figsize=(10, 6))
-        plt.title("Total Cases by Period")
-        # Plot actual as outlined bar
+        plt.title(f"Total Cases by Period - Top {n_reps} Trials")
         plt.bar(x, actual_vals, width=0.6, edgecolor=color_map["Actual"], facecolor="none", linewidth=1.5, label="Actual")
-        # Plot predicted reps as colored dots
+
         for i, rep in enumerate(preds):
+            pred = rep["total_by_period"]
             label = f"Rep {i + 1}"
-            rep_vals = [rep["total_by_period"].get(period, 0) for period in period_labels]
-            plt.scatter(
-                x,
-                rep_vals,
-                label=label,
-                color=color_map[label],
-                marker="o",
-                s=50,
-            )
-        # Axis formatting
+            pred_vals = [pred.get(period, 0) for period in period_labels]
+            plt.scatter(x, pred_vals, label=label, color=color_map[f"Rep {i + 1}"], marker="o", s=50)
+
         plt.xticks(x, period_labels, rotation=45, ha="right")
         plt.ylabel("Cases")
-        plt.legend()
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
         plt.tight_layout()
-        plt.savefig(best_dir / "plot_best_total_by_period.png")
+        plt.savefig(best_dir / "plot_best_total_by_period.png", bbox_inches="tight")
+        plt.close()
 
     if "adm01_by_period" in actual:
         adm01_by_period_actual = actual.get("adm01_by_period")
-        # Create figure with two subplots stacked vertically
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
-        # Extract data for each period
-        before_2020_data = {}
-        after_2020_data = {}
+        # Extract periods and regions from the dictionary keys
+        periods = []
+        period_data = {}
 
         for key, value in adm01_by_period_actual.items():
-            # Parse the tuple key format: "('NIGERIA:JIGAWA', 'before_2020')"
-            if "'before_2020'" in key:
-                # Extract the adm01 name from the tuple string
-                adm01_name = key.split("', '")[0].split("('")[1]
-                before_2020_data[adm01_name] = value
-            elif "'after_2020'" in key:
-                adm01_name = key.split("', '")[0].split("('")[1]
-                after_2020_data[adm01_name] = value
+            # Parse the tuple key format: "('NIGERIA:JIGAWA', '2018-2019')"
+            # Extract both the region and period from the tuple-like string
+            parts = key.strip("()").split("', '")
+            if len(parts) == 2:
+                adm01_name = parts[0].strip("'")
+                period = parts[1].strip("'")
 
-        # Plot before_2020 (top subplot)
-        if before_2020_data:
-            adm_labels_before = sorted(before_2020_data.keys())
-            x_before = np.arange(len(adm_labels_before))
-            actual_vals_before = [before_2020_data.get(adm, 0) for adm in adm_labels_before]
+                if period not in periods:
+                    periods.append(period)
+                    period_data[period] = {}
 
-            # Plot actual as outlined bar
-            ax1.bar(x_before, actual_vals_before, width=0.6, edgecolor=color_map["Actual"], facecolor="none", linewidth=1.5, label="Actual")
+                period_data[period][adm01_name] = value
 
-            # Plot predicted reps as colored dots
-            for i, rep in enumerate(preds):
-                label = f"Rep {i + 1}"
-                rep_before_data = {}
-                for key, value in rep.get("adm01_by_period", {}).items():
-                    if "'before_2020'" in key:
-                        adm01_name = key.split("', '")[0].split("('")[1]
-                        rep_before_data[adm01_name] = value
+        # Use the periods in the order they appear in the dictionary
+        # Create figure with subplots stacked vertically
+        n_periods = len(periods)
+        if n_periods > 0:
+            fig, axes = plt.subplots(n_periods, 1, figsize=(12, 4 * n_periods))
+            if n_periods == 1:
+                axes = [axes]
 
-                rep_vals_before = [rep_before_data.get(adm, 0) for adm in adm_labels_before]
-                ax1.scatter(x_before, rep_vals_before, label=label, color=color_map[label], marker="o", s=50)
+            for i, period in enumerate(periods):
+                ax = axes[i]
+                data = period_data.get(period, {})
 
-            ax1.set_title("ADM01 Regional Cases - Before 2020")
-            ax1.set_xticks(x_before)
-            ax1.set_xticklabels(adm_labels_before, rotation=45, ha="right")
-            ax1.set_ylabel("Cases")
-            ax1.legend()
+                if data:
+                    adm_labels = sorted(data.keys())
+                    x = np.arange(len(adm_labels))
+                    actual_vals = [data.get(adm, 0) for adm in adm_labels]
 
-        # Plot after_2020 (bottom subplot)
-        if after_2020_data:
-            adm_labels_after = sorted(after_2020_data.keys())
-            x_after = np.arange(len(adm_labels_after))
-            actual_vals_after = [after_2020_data.get(adm, 0) for adm in adm_labels_after]
+                    # Plot actual as outlined bar
+                    ax.bar(x, actual_vals, width=0.6, edgecolor=color_map["Actual"], facecolor="none", linewidth=1.5, label="Actual")
 
-            # Plot actual as outlined bar
-            ax2.bar(x_after, actual_vals_after, width=0.6, edgecolor=color_map["Actual"], facecolor="none", linewidth=1.5, label="Actual")
+                    # Plot predicted reps as colored dots
+                    for j, rep in enumerate(preds):
+                        label = f"Rep {j + 1}"
+                        rep_data = {}
+                        for key, value in rep.get("adm01_by_period", {}).items():
+                            # Parse the same way to extract period
+                            parts = key.strip("()").split("', '")
+                            if len(parts) == 2:
+                                rep_adm01_name = parts[0].strip("'")
+                                rep_period = parts[1].strip("'")
+                                if rep_period == period:
+                                    rep_data[rep_adm01_name] = value
 
-            # Plot predicted reps as colored dots
-            for i, rep in enumerate(preds):
-                label = f"Rep {i + 1}"
-                rep_after_data = {}
-                for key, value in rep.get("adm01_by_period", {}).items():
-                    if "'after_2020'" in key:
-                        adm01_name = key.split("', '")[0].split("('")[1]
-                        rep_after_data[adm01_name] = value
+                        rep_vals = [rep_data.get(adm, 0) for adm in adm_labels]
+                        ax.scatter(x, rep_vals, label=label, color=color_map[label], marker="o", s=50)
 
-                rep_vals_after = [rep_after_data.get(adm, 0) for adm in adm_labels_after]
-                ax2.scatter(x_after, rep_vals_after, label=label, color=color_map[label], marker="o", s=50)
+                    ax.set_title(f"ADM01 Regional Cases - {period}")
+                    ax.set_xticks(x)
+                    ax.set_xticklabels(adm_labels, rotation=45, ha="right")
+                    ax.set_ylabel("Cases")
+                    ax.legend()
 
-            ax2.set_title("ADM01 Regional Cases - After 2020")
-            ax2.set_xticks(x_after)
-            ax2.set_xticklabels(adm_labels_after, rotation=45, ha="right")
-            ax2.set_ylabel("Cases")
-            ax2.legend()
-
-        plt.tight_layout()
-        plt.savefig(best_dir / "plot_best_adm01_by_period.png")
-        plt.close()
+            plt.tight_layout()
+            plt.savefig(best_dir / "plot_best_adm01_by_period.png")
+            plt.close()
 
 
 def plot_likelihoods(study, output_dir=None, use_log=True):
@@ -1047,12 +1032,10 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
     # Total by Period if available
     total_by_period_actual = actual.get("total_by_period")
     if total_by_period_actual:
-        # Custom ordering to put 'before_2020' first
-        period_labels = (
-            ["before_2020", "after_2020"] if "before_2020" in actual["total_by_period"] else sorted(actual["total_by_period"].keys())
-        )
+        # Use the keys from the dictionary in their natural order
+        period_labels = list(actual["total_by_period"].keys())
         x = np.arange(len(period_labels))
-        actual_vals = [actual["total_by_period"].get(period, 0) for period in period_labels]
+        actual_vals = [actual["total_by_period"][period] for period in period_labels]
 
         plt.figure(figsize=(10, 6))
         plt.title(f"Total Cases by Period - Top {n_best} Trials")

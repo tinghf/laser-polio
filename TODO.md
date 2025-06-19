@@ -1,5 +1,5 @@
 # --- PRIORITIES ---
-- Double check timing of E, I, & P states when normal transmission is occurring - I'm worried we're off by 1 after initialization
+- Add third period
 - Check the likelihoods from the Dirichlet. Consider adding weights
 - Write out spec to enable vx transmission (& add genome R0 multiplier, Sabin = 1/4; nOPV2 = 1/8)
 - Add age pyramid by country (cuz we're getting close to running beyond Nigeria!)

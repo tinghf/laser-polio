@@ -220,6 +220,119 @@ def plot_optuna(study_name, storage_url, output_dir=None):
     # print("done with countour plots")
 
 
+def plot_case_diff_choropleth_temporal(
+    shp, node_lookup, actual_cases_by_period, pred_cases_by_period, output_path, title="Case Count Difference by Period"
+):
+    """
+    Plot side-by-side choropleth maps showing the difference between actual and predicted case counts
+    for before and after 2020 periods.
+
+    Args:
+        shp (GeoDataFrame): The shapefile GeoDataFrame
+        node_lookup (dict): Dictionary mapping dot_names to administrative regions
+        actual_cases_by_period (dict): Dictionary of actual case counts by region and period
+        pred_cases_by_period (dict): Dictionary of predicted case counts by region and period
+        output_path (Path): Path to save the plot
+        title (str): Title for the plot
+    """
+
+    # Extract data for each period
+    before_2020_actual = {}
+    after_2020_actual = {}
+    before_2020_pred = {}
+    after_2020_pred = {}
+
+    # Parse actual cases by period
+    for key, value in actual_cases_by_period.items():
+        if "'before_2020'" in key:
+            adm01_name = key.split("', '")[0].split("('")[1]
+            before_2020_actual[adm01_name] = value
+        elif "'after_2020'" in key:
+            adm01_name = key.split("', '")[0].split("('")[1]
+            after_2020_actual[adm01_name] = value
+
+    # Parse predicted cases by period
+    for key, value in pred_cases_by_period.items():
+        if "'before_2020'" in key:
+            adm01_name = key.split("', '")[0].split("('")[1]
+            before_2020_pred[adm01_name] = value
+        elif "'after_2020'" in key:
+            adm01_name = key.split("', '")[0].split("('")[1]
+            after_2020_pred[adm01_name] = value
+
+    # Create figure with side-by-side subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+
+    # Calculate global min/max for consistent color scale
+    all_diffs = []
+
+    # Before 2020 differences
+    if before_2020_actual and before_2020_pred:
+        regions_before = set(before_2020_actual.keys()) | set(before_2020_pred.keys())
+        diffs_before = {region: before_2020_actual.get(region, 0) - before_2020_pred.get(region, 0) for region in regions_before}
+        all_diffs.extend(diffs_before.values())
+
+    # After 2020 differences
+    if after_2020_actual and after_2020_pred:
+        regions_after = set(after_2020_actual.keys()) | set(after_2020_pred.keys())
+        diffs_after = {region: after_2020_actual.get(region, 0) - after_2020_pred.get(region, 0) for region in regions_after}
+        all_diffs.extend(diffs_after.values())
+
+    if not all_diffs:
+        print("[WARN] No data available for choropleth plots")
+        plt.close(fig)
+        return
+
+    # Create consistent color scale
+    max_abs_diff = max(abs(min(all_diffs)), abs(max(all_diffs)))
+    vmin, vmax = -max_abs_diff, max_abs_diff
+
+    # Create mappable for colorbar
+    norm = Normalize(vmin=vmin, vmax=vmax)
+    cmap = plt.get_cmap("RdBu")
+    sm = ScalarMappable(norm=norm, cmap=cmap)
+    sm.set_array([])
+
+    # Plot Before 2020 (left subplot)
+    if before_2020_actual and before_2020_pred:
+        shp_copy_before = shp.copy()
+        shp_copy_before["case_diff"] = shp_copy_before["adm01_name"].map(diffs_before)
+
+        shp_copy_before.plot(column="case_diff", ax=ax1, cmap="RdBu", vmin=vmin, vmax=vmax, legend=False)
+        ax1.set_title("Before 2020")
+        ax1.axis("off")
+    else:
+        ax1.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax1.transAxes)
+        ax1.set_title("Before 2020")
+        ax1.axis("off")
+
+    # Plot After 2020 (right subplot)
+    if after_2020_actual and after_2020_pred:
+        shp_copy_after = shp.copy()
+        shp_copy_after["case_diff"] = shp_copy_after["adm01_name"].map(diffs_after)
+
+        shp_copy_after.plot(column="case_diff", ax=ax2, cmap="RdBu", vmin=vmin, vmax=vmax, legend=False)
+        ax2.set_title("After 2020")
+        ax2.axis("off")
+    else:
+        ax2.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax2.transAxes)
+        ax2.set_title("After 2020")
+        ax2.axis("off")
+
+    # Add shared colorbar below the plots
+    cbar = fig.colorbar(sm, ax=[ax1, ax2], shrink=0.8, aspect=30, location="bottom", pad=0.15)
+    cbar.ax.text(-0.1, 0.5, "Obs < pred", ha="right", va="center", transform=cbar.ax.transAxes)
+    cbar.ax.text(1.1, 0.5, "Obs > pred", ha="left", va="center", transform=cbar.ax.transAxes)
+
+    # Add overall title
+    fig.suptitle(title, fontsize=16, y=0.95)
+
+    # Adjust layout to make room for the colorbar
+    plt.subplots_adjust(bottom=0.25)
+    plt.savefig(output_path, bbox_inches="tight", dpi=300)
+    plt.close(fig)
+
+
 def plot_case_diff_choropleth(shp, node_lookup, actual_cases, pred_cases, output_path, title="Case Count Difference"):
     """
     Plot a choropleth map showing the difference between actual and predicted case counts.
@@ -348,7 +461,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
     best_dir.mkdir(exist_ok=True)
 
     # Generate shapefile if not provided
-    if shp is None and "adm01_cases" in actual:
+    if shp is None and ("adm01_cases" in actual or "adm01_by_period" in actual):
         try:
             shp, node_lookup = get_shapefile_from_config(model_config)
             print("[INFO] Generated shapefile from model config")
@@ -498,6 +611,19 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
                     pred_cases=rep["adm01_cases"],
                     output_path=best_dir / f"plot_best_case_diff_choropleth_rep{i + 1}.png",
                     title=f"Case Count Difference (Actual - Predicted) - Rep {i + 1}",
+                )
+
+    # Plot temporal choropleth of case count differences for each replicate
+    if shp is not None and "adm01_by_period" in actual:
+        for i, rep in enumerate(preds):
+            if "adm01_by_period" in rep:
+                plot_case_diff_choropleth_temporal(
+                    shp=shp,
+                    node_lookup=node_lookup,
+                    actual_cases_by_period=actual["adm01_by_period"],
+                    pred_cases_by_period=rep["adm01_by_period"],
+                    output_path=best_dir / f"plot_best_case_diff_choropleth_temporal_rep{i + 1}.png",
+                    title=f"Case Count Difference by Period (Actual - Predicted) - Rep {i + 1}",
                 )
 
     # Regional Cases (bar plot)
@@ -847,70 +973,76 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
     actual = top_trials[0].user_attrs["actual"]
 
     # Total Infected
-    plt.figure()
-    plt.title(f"Total Infected - Top {n_best} Trials")
-    width = 0.8 / (n_best + 1)  # Adjust bar width based on number of trials
-    x = np.arange(2)  # Just two bars: Actual and Predicted
-    plt.bar(x[0], actual["total_infected"][0], width, label="Actual", color="black")
-    for i, trial in enumerate(top_trials):
-        pred = trial.user_attrs["predicted"][0]  # Get first replicate
-        label = f"Trial {trial.number} (value={trial.value:.2f})"
-        plt.bar(x[1] + (i - n_best / 2) * width, pred["total_infected"][0], width, label=label, color=color_map[f"Trial {trial.number}"])
-    plt.xticks(x, ["Actual", "Predicted"])
-    plt.ylabel("Cases")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(top_trials_dir / "total_infected_comparison.png", bbox_inches="tight")
-    plt.close()
+    if "total_infected" in actual:
+        plt.figure()
+        plt.title(f"Total Infected - Top {n_best} Trials")
+        width = 0.8 / (n_best + 1)  # Adjust bar width based on number of trials
+        x = np.arange(2)  # Just two bars: Actual and Predicted
+        plt.bar(x[0], actual["total_infected"][0], width, label="Actual", color="black")
+        for i, trial in enumerate(top_trials):
+            pred = trial.user_attrs["predicted"][0]  # Get first replicate
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            plt.bar(
+                x[1] + (i - n_best / 2) * width, pred["total_infected"][0], width, label=label, color=color_map[f"Trial {trial.number}"]
+            )
+        plt.xticks(x, ["Actual", "Predicted"])
+        plt.ylabel("Cases")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "total_infected_comparison.png", bbox_inches="tight")
+        plt.close()
 
     # Yearly Cases
-    years = list(range(start_year, start_year + len(actual["yearly_cases"])))
-    plt.figure(figsize=(10, 6))
-    plt.title(f"Yearly Cases - Top {n_best} Trials")
-    plt.plot(years, actual["yearly_cases"], "o-", label="Actual", color="black", linewidth=2)
-    for trial in top_trials:
-        pred = trial.user_attrs["predicted"][0]
-        label = f"Trial {trial.number} (value={trial.value:.2f})"
-        plt.plot(years, pred["yearly_cases"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
-    plt.xlabel("Year")
-    plt.ylabel("Cases")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(top_trials_dir / "yearly_cases_comparison.png", bbox_inches="tight")
-    plt.close()
+    if "yearly_cases" in actual:
+        years = list(range(start_year, start_year + len(actual["yearly_cases"])))
+        plt.figure(figsize=(10, 6))
+        plt.title(f"Yearly Cases - Top {n_best} Trials")
+        plt.plot(years, actual["yearly_cases"], "o-", label="Actual", color="black", linewidth=2)
+        for trial in top_trials:
+            pred = trial.user_attrs["predicted"][0]
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            plt.plot(years, pred["yearly_cases"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
+        plt.xlabel("Year")
+        plt.ylabel("Cases")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "yearly_cases_comparison.png", bbox_inches="tight")
+        plt.close()
 
     # Monthly Cases
-    months = list(range(1, 1 + len(actual["monthly_cases"])))
-    plt.figure(figsize=(10, 6))
-    plt.title(f"Monthly Cases - Top {n_best} Trials")
-    plt.plot(months, actual["monthly_cases"], "o-", label="Actual", color="black", linewidth=2)
-    for trial in top_trials:
-        pred = trial.user_attrs["predicted"][0]
-        label = f"Trial {trial.number} (value={trial.value:.2f})"
-        plt.plot(months, pred["monthly_cases"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
-    plt.xlabel("Month")
-    plt.ylabel("Cases")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(top_trials_dir / "monthly_cases_comparison.png", bbox_inches="tight")
-    plt.close()
+    if "monthly_cases" in actual:
+        months = list(range(1, 1 + len(actual["monthly_cases"])))
+        plt.figure(figsize=(10, 6))
+        plt.title(f"Monthly Cases - Top {n_best} Trials")
+        plt.plot(months, actual["monthly_cases"], "o-", label="Actual", color="black", linewidth=2)
+        for trial in top_trials:
+            pred = trial.user_attrs["predicted"][0]
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            plt.plot(months, pred["monthly_cases"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
+        plt.xlabel("Month")
+        plt.ylabel("Cases")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "monthly_cases_comparison.png", bbox_inches="tight")
+        plt.close()
 
     # Monthly Timeseries
-    n_months = len(actual["monthly_timeseries"])
-    months_series = pd.date_range(start=f"{start_year}-01-01", periods=n_months, freq="MS")
-    plt.figure(figsize=(10, 6))
-    plt.title(f"Monthly Timeseries - Top {n_best} Trials")
-    plt.plot(months_series, actual["monthly_timeseries"], "o-", label="Actual", color="black", linewidth=2)
-    for trial in top_trials:
-        pred = trial.user_attrs["predicted"][0]
-        label = f"Trial {trial.number} (value={trial.value:.2f})"
-        plt.plot(months_series, pred["monthly_timeseries"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
-    plt.xlabel("Month")
-    plt.ylabel("Cases")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(top_trials_dir / "monthly_timeseries_comparison.png", bbox_inches="tight")
-    plt.close()
+    if "monthly_timeseries" in actual:
+        n_months = len(actual["monthly_timeseries"])
+        months_series = pd.date_range(start=f"{start_year}-01-01", periods=n_months, freq="MS")
+        plt.figure(figsize=(10, 6))
+        plt.title(f"Monthly Timeseries - Top {n_best} Trials")
+        plt.plot(months_series, actual["monthly_timeseries"], "o-", label="Actual", color="black", linewidth=2)
+        for trial in top_trials:
+            pred = trial.user_attrs["predicted"][0]
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            plt.plot(months_series, pred["monthly_timeseries"], "o--", label=label, color=color_map[f"Trial {trial.number}"])
+        plt.xlabel("Month")
+        plt.ylabel("Cases")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "monthly_timeseries_comparison.png", bbox_inches="tight")
+        plt.close()
 
     # Total by Period if available
     total_by_period_actual = actual.get("total_by_period")
@@ -988,8 +1120,8 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
         plt.close()
 
     # Regional Cases
-    region_labels = list(model_config.get("summary_config", {}).get("region_groups", {}).keys())
-    if region_labels:
+    if "regional_cases" in actual:
+        region_labels = list(model_config.get("summary_config", {}).get("region_groups", {}).keys())
         x = np.arange(len(region_labels))
         width = 0.8 / (n_best + 1)
 
@@ -1010,40 +1142,46 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
         plt.close()
 
     # Total Nodes with Cases
-    plt.figure()
-    plt.title(f"Total Nodes with Cases - Top {n_best} Trials")
-    width = 0.8 / (n_best + 1)
-    x = np.arange(2)  # Just two categories: Actual and Predicted
-    plt.bar(x[0], actual["nodes_with_cases_total"][0], width, label="Actual", color="black")
-    for i, trial in enumerate(top_trials):
-        pred = trial.user_attrs["predicted"][0]
-        label = f"Trial {trial.number} (value={trial.value:.2f})"
-        plt.bar(
-            x[1] + (i - n_best / 2) * width, pred["nodes_with_cases_total"][0], width, label=label, color=color_map[f"Trial {trial.number}"]
-        )
-    plt.xticks(x, ["Actual", "Predicted"])
-    plt.ylabel("Nodes")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(top_trials_dir / "nodes_with_cases_total_comparison.png", bbox_inches="tight")
-    plt.close()
+    if "nodes_with_cases_total" in actual:
+        plt.figure()
+        plt.title(f"Total Nodes with Cases - Top {n_best} Trials")
+        width = 0.8 / (n_best + 1)
+        x = np.arange(2)  # Just two categories: Actual and Predicted
+        plt.bar(x[0], actual["nodes_with_cases_total"][0], width, label="Actual", color="black")
+        for i, trial in enumerate(top_trials):
+            pred = trial.user_attrs["predicted"][0]
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            plt.bar(
+                x[1] + (i - n_best / 2) * width,
+                pred["nodes_with_cases_total"][0],
+                width,
+                label=label,
+                color=color_map[f"Trial {trial.number}"],
+            )
+        plt.xticks(x, ["Actual", "Predicted"])
+        plt.ylabel("Nodes")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "nodes_with_cases_total_comparison.png", bbox_inches="tight")
+        plt.close()
 
     # Monthly Nodes with Cases
-    n_months = len(actual["nodes_with_cases_timeseries"])
-    months = list(range(1, n_months + 1))
-    plt.figure(figsize=(10, 6))
-    plt.title(f"Monthly Nodes with Cases - Top {n_best} Trials")
-    plt.plot(months, actual["nodes_with_cases_timeseries"], "o-", label="Actual", color="black", linewidth=2)
-    for trial in top_trials:
-        pred = trial.user_attrs["predicted"][0]
-        label = f"Trial {trial.number} (value={trial.value:.2f})"
-        plt.plot(months, pred["nodes_with_cases_timeseries"], "o-", label=label, color=color_map[f"Trial {trial.number}"])
-    plt.xlabel("Month")
-    plt.ylabel("Number of Nodes with ≥1 Case")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.tight_layout()
-    plt.savefig(top_trials_dir / "nodes_with_cases_timeseries_comparison.png", bbox_inches="tight")
-    plt.close()
+    if "nodes_with_cases_timeseries" in actual:
+        n_months = len(actual["nodes_with_cases_timeseries"])
+        months = list(range(1, n_months + 1))
+        plt.figure(figsize=(10, 6))
+        plt.title(f"Monthly Nodes with Cases - Top {n_best} Trials")
+        plt.plot(months, actual["nodes_with_cases_timeseries"], "o-", label="Actual", color="black", linewidth=2)
+        for trial in top_trials:
+            pred = trial.user_attrs["predicted"][0]
+            label = f"Trial {trial.number} (value={trial.value:.2f})"
+            plt.plot(months, pred["nodes_with_cases_timeseries"], "o-", label=label, color=color_map[f"Trial {trial.number}"])
+        plt.xlabel("Month")
+        plt.ylabel("Number of Nodes with ≥1 Case")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+        plt.savefig(top_trials_dir / "nodes_with_cases_timeseries_comparison.png", bbox_inches="tight")
+        plt.close()
 
     # Plot choropleth of case count differences for all trials in one figure
     if shp is not None and node_lookup is not None:
@@ -1057,4 +1195,17 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
                 trial_predictions=trial_predictions,
                 output_path=top_trials_dir / "case_diff_choropleths.png",
                 legend_position="bottom",  # Add parameter to control legend position
+            )
+
+        # Plot temporal choropleth for the best trial
+        if "adm01_by_period" in actual:
+            best_trial = top_trials[0]
+            best_pred = best_trial.user_attrs["predicted"][0]
+            plot_case_diff_choropleth_temporal(
+                shp=shp,
+                node_lookup=node_lookup,
+                actual_cases_by_period=actual["adm01_by_period"],
+                pred_cases_by_period=best_pred["adm01_by_period"],
+                output_path=top_trials_dir / "case_diff_choropleth_temporal_best.png",
+                title=f"Case Count Difference by Period - Best Trial {best_trial.number} (value={best_trial.value:.2f})",
             )

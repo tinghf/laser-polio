@@ -20,10 +20,10 @@ import yaml
 # model_config = "config_nigeria_6y_2018_pim_gravity_zinb_ipv.yaml"
 # calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet.yaml"
 
-job_name = "laser-polio-sk4"
-study_name = "calib_nigeria_6y_2018_pim_grav_ipv_dirichlet_3periods_earlierandmoreseeds_20250619"
-model_config = "config_nigeria_6y_2018_underwt_gravity_zinb_ipv_moreseeds.yaml"
-calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet.yaml"
+# job_name = "laser-polio-sk4"
+# study_name = "calib_nigeria_6y_2018_pim_grav_ipv_dirichlet_3periods_earlierandmoreseeds_20250619"
+# model_config = "config_nigeria_6y_2018_underwt_gravity_zinb_ipv_moreseeds.yaml"
+# calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet.yaml"
 
 job_name = "laser-polio-sk5"
 study_name = "calib_nigeria_6y_2018_pim_grav_ipv_dirichlet_3periods_earlierandmoreseeds_immunadj_20250619"

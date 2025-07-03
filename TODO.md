@@ -1,5 +1,6 @@
 # --- PRIORITIES ---
 - Change calib year to 2022 (confirm if this is correct)
+- Make synthetic calibration with JB
 - Add weights to the total_by_period
 - Change seeding to only be two spots in each outbreak
 - Write out spec to enable vx transmission (& add genome R0 multiplier, Sabin = 1/4; nOPV2 = 1/8)

@@ -40,10 +40,10 @@ study_name = "calib_nigeria_6y_2018_underwt_gravity_zinb_ipv_wts_vxtranszero_202
 model_config = "config_nigeria_6y_2018_underwt_gravity_zinb_ipv_moreseeds_alt_zerovxtrans.yaml"
 calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts.yaml"
 
-job_name = "laser-polio-sk8"
-study_name = "calib_nigeria_6y_2018_underwt_gravity_zinb_ipv_wts_vxtrans_20250703"
-model_config = "config_nigeria_6y_2018_underwt_gravity_zinb_ipv_moreseeds_alt.yaml"
-calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts.yaml"
+# job_name = "laser-polio-sk8"
+# study_name = "calib_nigeria_6y_2018_underwt_gravity_zinb_ipv_wts_vxtrans_20250703"
+# model_config = "config_nigeria_6y_2018_underwt_gravity_zinb_ipv_moreseeds_alt.yaml"
+# calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts.yaml"
 
 fit_function = "log_likelihood"
 n_trials = 1  # Number of trials to run per pod

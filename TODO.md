@@ -1,4 +1,6 @@
 # --- PRIORITIES ---
+- Make synthetic calibration with JB
+- Sweep over zero inflation by strain
 - Calibrate without strains, with strains but strain_r0_scalars = 0, and another with strain_r0_scalars defaults
 - Try more general geographic counters (NE, NW, S, central Nigeria)
 - Add 0 weight to adm01 fits

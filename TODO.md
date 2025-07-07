@@ -3,7 +3,7 @@
 - Try more general geographic counters (NE, NW, S, central Nigeria)
 - Add 0 weight to adm01 fits
 - Check that weights are working correctly
-- Make synthetic calibration with JB
+- Make synthetic calibration with JB - try just KANO? Or a small geography? SK will noodle on it, write up script for making synthetic data, and send to JB. 
 - Sweep over zero inflation by strain
 - Add weights to the total_by_period
 - Add age pyramid by country (cuz we're getting close to running beyond Nigeria!)

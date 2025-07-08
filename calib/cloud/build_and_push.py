@@ -1,6 +1,11 @@
 import subprocess
+import sys
+from pathlib import Path
 
 import sciris as sc
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from get_lp_module_versions import check_version_match
 
 
 def run_docker_commands():
@@ -57,7 +62,7 @@ def run_docker_commands():
             print(f"Error reading file: {e}")
         # Push image
         subprocess.run(push_cmd, check=True)
-        print("Docker image pushed successfully.")
+        sc.printgreen("✅ Docker image pushed successfully.")
 
     except subprocess.CalledProcessError as e:
         sc.printred(f"Error: {e}")
@@ -66,3 +71,11 @@ def run_docker_commands():
 if __name__ == "__main__":
     print("Starting Docker build and push process...")
     run_docker_commands()
+
+    # Compare the version of laser_polio in the Docker image with the version in the GitHub repository
+    print("Checking the version of laser_polio in the Docker image against the version in the GitHub repository...")
+    check_version_match(
+        repo="InstituteforDiseaseModeling/laser-polio",
+        image_name="idm-docker-staging.packages.idmod.org/laser/laser-polio:latest",
+        container_path="/app/laser_polio_deps.txt",
+    )

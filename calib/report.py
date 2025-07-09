@@ -849,6 +849,60 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
             plt.savefig(best_dir / "plot_best_regional_by_period.png")
             plt.close()
 
+    if "regional_monthly_timeseries" in actual:
+        regional_monthly_timeseries_actual = actual.get("regional_monthly_timeseries")
+        regions = list(regional_monthly_timeseries_actual.keys())
+        n_regions = len(regions)
+
+        if n_regions > 0:
+            # Create subplot grid (2x2 for 4 regions, adjust if different number)
+            n_cols = 2
+            n_rows = (n_regions + n_cols - 1) // n_cols  # Ceiling division
+
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 10))
+            fig.suptitle("Regional Monthly Timeseries Comparison", fontsize=16)
+
+            # Flatten axes for easier indexing if multiple rows
+            if n_regions > 1:
+                axes = axes.flatten() if n_rows > 1 else [axes] if n_cols == 1 else axes
+            else:
+                axes = [axes]
+
+            n_months = len(actual["monthly_timeseries"])
+            months_series = pd.date_range(start=f"{start_year}-01-01", periods=n_months, freq="MS")
+
+            for idx, region in enumerate(regions):
+                ax = axes[idx]
+                timeseries = regional_monthly_timeseries_actual[region]
+
+                # Plot actual data
+                ax.plot(months_series, timeseries, "o-", label="Actual", color=color_map["Actual"], linewidth=2)
+
+                # Add predicted data for each replicate
+                for i, rep in enumerate(preds):
+                    if "regional_monthly_timeseries" in rep and region in rep["regional_monthly_timeseries"]:
+                        label = f"Rep {i + 1}"
+                        rep_timeseries = rep["regional_monthly_timeseries"][region]
+                        ax.plot(months_series, rep_timeseries, "o-", label=label, color=color_map[label])
+
+                ax.set_title(f"{region.replace('_', ' ').title()}")
+                ax.set_xlabel("Month")
+                ax.set_ylabel("Cases")
+                ax.tick_params(axis="x", rotation=45)
+                ax.grid(True, alpha=0.3)
+
+                # Only add legend to first subplot to avoid clutter
+                if idx == 0:
+                    ax.legend(loc="upper left")
+
+            # Hide any unused subplots
+            for idx in range(n_regions, len(axes)):
+                axes[idx].set_visible(False)
+
+            plt.tight_layout()
+            plt.savefig(best_dir / "plot_best_regional_monthly_timeseries_combined.png", dpi=300, bbox_inches="tight")
+            plt.close()
+
 
 def plot_likelihoods(study, output_dir=None, use_log=True):
     # Default output directory to current working dir if not provided

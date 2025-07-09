@@ -296,10 +296,23 @@ def calc_targets_regional_by_period(filename, model_config_path=None, is_actual_
         max_date = lp.find_latest_end_of_month(df["date"])
         df = df[df["date"] <= max_date]
 
-    # Add time period column with three periods (fast version)
-    bins = [pd.Timestamp.min, pd.Timestamp("2020-07-01"), pd.Timestamp("2022-07-01"), pd.Timestamp.max]
-    labels = ["2018-2020.5", "2020.5-2022.5", "2022.5-2024"]
-    df["time_period"] = pd.cut(df["date"], bins=bins, labels=labels, right=False)
+    # Get time bins from config or use defaults
+    if model_config and "summary_config" in model_config:
+        summary_config = model_config["summary_config"]
+
+        # Get time bins from config or use defaults
+        if "time_bins" in summary_config:
+            bin_config = summary_config["time_bins"]
+            bin_dates = [pd.Timestamp(d) for d in bin_config["bins"]]
+            # Add min/max bounds
+            bins = [pd.Timestamp.min, *bin_dates, pd.Timestamp.max]  # Unpack the list of bins
+            labels = bin_config["labels"]
+        else:
+            # Fallback to current hardcoded values
+            bins = [pd.Timestamp.min, pd.Timestamp("2020-07-01"), pd.Timestamp("2022-07-01"), pd.Timestamp.max]
+            labels = ["2018-2020.5", "2020.5-2022.5", "2022.5-2024"]
+        # Bin the data
+        df["time_period"] = pd.cut(df["date"], bins=bins, labels=labels, right=False)
 
     targets = {}
 

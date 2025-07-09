@@ -362,5 +362,24 @@ def calc_targets_regional_by_period(filename, model_config_path=None, is_actual_
             regional_by_period = df.groupby(["region", "time_period"], observed=True)[case_col].sum() * scale_factor
             targets["regional_by_period"] = regional_by_period.to_dict()
 
+            # Regional monthly timeseries
+            regional_monthly_df = (
+                df.groupby(["region", df["date"].dt.to_period("M")])[case_col].sum().sort_index().astype(float) * scale_factor
+            )
+
+            # Convert to dictionary with arrays per region
+            regional_monthly_timeseries = {}
+            for region in df["region"].unique():
+                if region in regions.keys():  # Only include defined regions
+                    # Get data for this region and convert to array
+                    region_data = (
+                        regional_monthly_df.loc[region]
+                        if region in regional_monthly_df.index.get_level_values(0)
+                        else pd.Series(dtype=float)
+                    )
+                    regional_monthly_timeseries[region] = region_data.values
+
+            targets["regional_monthly_timeseries"] = regional_monthly_timeseries
+
     print(f"{targets=}")
     return targets

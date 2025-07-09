@@ -1,5 +1,6 @@
 # --- PRIORITIES ---
 - Try starting in 2017
+- Plot # of nodes with X cases (all & by region)
 - Try adding in counts of regions with X cases
 - Try using PIM scalars again
 - Make synthetic calibration with JB - try just KANO? Or a small geography? SK will noodle on it, write up script for making synthetic data, and send to JB. 

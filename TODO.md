@@ -1,13 +1,10 @@
 # --- PRIORITIES ---
-- Make synthetic calibration with JB
-- Sweep over zero inflation by strain
 - Calibrate without strains, with strains but strain_r0_scalars = 0, and another with strain_r0_scalars defaults
+- Try dropping the initimmunscalar (or narrowing bounds)
 - Try more general geographic counters (NE, NW, S, central Nigeria)
-- Add 0 weight to adm01 fits
-- Check that weights are working correctly
+- Try yearly time periods
 - Make synthetic calibration with JB - try just KANO? Or a small geography? SK will noodle on it, write up script for making synthetic data, and send to JB. 
 - Sweep over zero inflation by strain
-- Add weights to the total_by_period
 - Add age pyramid by country (cuz we're getting close to running beyond Nigeria!)
 - Try playing with links between N & S Nigeria in network (maybe a scalar???)
 

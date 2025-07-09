@@ -12,7 +12,7 @@ shp = gpd.read_file(filename=lp.root / "data/shp_africa_low_res.gpkg", layer="ad
 shp = shp[shp["adm0_name"] == "NIGERIA"].copy()
 
 # Load model_config with regional groups
-config_file = lp.root / "calib/model_configs/config_nigeria_6y_2018_underwt_gravity_zinb_ipv_nsnga_bins.yaml"
+config_file = lp.root / "calib/model_configs/config_nigeria_6y_2018_underwt_gravity_zinb_ipv_nwecnga_3periods.yaml"
 config = yaml.safe_load(open(config_file))
 
 # Get the regional groups
@@ -65,7 +65,7 @@ ax.set_yticks([])
 plt.tight_layout()
 
 # Save the map
-output_path = Path("results/nigeria_regional_map.png")
+output_path = Path("results/sandbox/nigeria_regional_map.png")
 output_path.parent.mkdir(parents=True, exist_ok=True)
 plt.savefig(output_path, dpi=300, bbox_inches="tight")
 

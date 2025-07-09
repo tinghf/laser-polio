@@ -1,8 +1,7 @@
 # --- PRIORITIES ---
-- Calibrate without strains, with strains but strain_r0_scalars = 0, and another with strain_r0_scalars defaults
-- Try dropping the initimmunscalar (or narrowing bounds)
-- Try more general geographic counters (NE, NW, S, central Nigeria)
-- Try yearly time periods
+- Try starting in 2017
+- Try adding in counts of regions with X cases
+- Try using PIM scalars again
 - Make synthetic calibration with JB - try just KANO? Or a small geography? SK will noodle on it, write up script for making synthetic data, and send to JB. 
 - Sweep over zero inflation by strain
 - Add age pyramid by country (cuz we're getting close to running beyond Nigeria!)

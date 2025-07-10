@@ -68,5 +68,8 @@ summary_config:
       - "NIGERIA:OSUN"
       - "NIGERIA:OYO"
       - "NIGERIA:RIVERS"
+  case_bins:  # For counting the number of districts with X cases by region
+    bin_edges: [0, 1, 2, 3, 4, 5, 10, 20, .inf]  # Note: use .inf for infinity in YAML
+    bin_labels: ['0', '1', '2', '3', '4', '5-9', '10-19', '20+']
 use_pim_scalars: false
 node_seeding_dispersion: 1.0

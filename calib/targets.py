@@ -381,5 +381,25 @@ def calc_targets_regional_by_period(filename, model_config_path=None, is_actual_
 
             targets["regional_monthly_timeseries"] = regional_monthly_timeseries
 
-    print(f"{targets=}")
+            # Count number of districts with X cases by region
+            if "case_bins" in summary_config:
+                # Get case bins from config or use defaults
+                bin_config = summary_config["case_bins"]
+                bins = bin_config["bin_edges"]
+            else:
+                # Fallback to default values
+                bins = [0, 1, 2, 3, 4, 5, 10, 20, np.inf]
+            # Count number of districts with X cases by region
+            district_case_bin_counts_by_region = {}
+            for region in df["region"].unique():
+                if region in regions.keys():  # Only include defined regions
+                    region_mask = df["region"] == region
+                    region_district_cases = df[region_mask].groupby("dot_name")[case_col].sum() * scale_factor
+
+                    # Count districts in each bin
+                    hist_counts, _ = np.histogram(region_district_cases.values, bins=bins)
+                    district_case_bin_counts_by_region[region] = hist_counts.tolist()
+            targets["district_case_bin_counts_by_region"] = district_case_bin_counts_by_region
+
+    # print(f"{targets=}")
     return targets

@@ -493,6 +493,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.ylabel("Cases")
         plt.tight_layout()
         plt.savefig(best_dir / "plot_best_total_infected_comparison.png")
+        plt.close()
 
     # Yearly Cases
     if "yearly_cases" in actual:
@@ -508,6 +509,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.legend()
         plt.tight_layout()
         plt.savefig(best_dir / "plot_best_yearly_cases_comparison.png")
+        plt.close()
 
     # Monthly Cases
     if "monthly_cases" in actual:
@@ -523,6 +525,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.legend()
         plt.tight_layout()
         plt.savefig(best_dir / "plot_best_monthly_cases_comparison.png")
+        plt.close()
 
     # Monthly Timeseries Cases
     if "monthly_timeseries" in actual:
@@ -539,6 +542,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.legend()
         plt.tight_layout()
         plt.savefig(best_dir / "plot_best_monthly_timeseries_comparison.png")
+        plt.close()
 
     # adm0_cases (bar plot)
     if "adm0_cases" in actual:
@@ -570,6 +574,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
             plt.legend()
             plt.tight_layout()
             plt.savefig(best_dir / "plot_adm0_cases.png")
+            plt.close()
 
     # adm01_cases (bar plot)
     if "adm01_cases" in actual:
@@ -601,6 +606,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
             plt.legend()
             plt.tight_layout()
             plt.savefig(best_dir / "plot_best_adm01_cases.png")
+            plt.close()
 
     # Plot choropleth of case count differences for each replicate
     if shp is not None and "adm01_cases" in actual:
@@ -643,7 +649,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.legend()
         plt.tight_layout()
         plt.savefig(best_dir / "plot_best_regional_cases_comparison.png")
-        # plt.show()
+        plt.close()
 
     # Total Nodes with Cases
     if "nodes_with_cases_total" in actual:
@@ -658,6 +664,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.ylabel("Nodes")
         plt.tight_layout()
         plt.savefig(best_dir / "plot_best_nodes_with_cases_total.png")
+        plt.close()
 
     # Monthly Nodes with Cases
     if "nodes_with_cases_timeseries" in actual:
@@ -674,6 +681,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.legend()
         plt.tight_layout()
         plt.savefig(best_dir / "plot_best_nodes_with_cases_timeseries.png")
+        plt.close()
 
     if "total_by_period" in actual:
         # Use the keys from the dictionary in their natural order
@@ -780,7 +788,7 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
         plt.legend()
         plt.tight_layout()
         plt.savefig(best_dir / "plot_best_regional.png")
-        # plt.show()
+        plt.close()
 
     if "regional_by_period" in actual:
         regional_by_period_actual = actual.get("regional_by_period")
@@ -901,6 +909,78 @@ def plot_targets(study, output_dir=None, shp=None, start_year=2018):
 
             plt.tight_layout()
             plt.savefig(best_dir / "plot_best_regional_monthly_timeseries_combined.png", dpi=300, bbox_inches="tight")
+            plt.close()
+
+        # District Case Bin Counts (binned histogram comparison)
+    if "district_case_bin_counts_by_region" in actual:
+        # Read bin configuration from model config
+        bin_config = model_config.get("summary_config", {}).get("case_bins", {})
+        bin_labels = bin_config.get("bin_labels", ["0", "1", "2", "3", "4", "5-9", "10-19", "20+"])
+
+        district_bin_counts_actual = actual["district_case_bin_counts_by_region"]
+        regions = list(district_bin_counts_actual.keys())
+        n_regions = len(regions)
+
+        if n_regions > 0:
+            # Create subplot grid (2x2 for 4 regions, adjust if different number)
+            n_cols = 2
+            n_rows = (n_regions + n_cols - 1) // n_cols  # Ceiling division
+
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 10))
+            fig.suptitle("District Case Count Distribution by Region", fontsize=16)
+
+            # Flatten axes for easier indexing if multiple rows
+            if n_regions > 1:
+                axes = axes.flatten() if n_rows > 1 else [axes] if n_cols == 1 else axes
+            else:
+                axes = [axes]
+
+            # Get consistent y-axis scale across all subplots
+            all_counts = []
+            all_counts.extend(district_bin_counts_actual.values())
+            for rep in preds:
+                if "district_case_bin_counts_by_region" in rep:
+                    all_counts.extend(rep["district_case_bin_counts_by_region"].values())
+            max_count = max(max(counts) if counts else 0 for counts in all_counts)
+
+            for idx, region in enumerate(regions):
+                ax = axes[idx]
+                actual_counts = district_bin_counts_actual[region]
+                x_positions = range(len(bin_labels))
+
+                # Plot actual data as bars with edges only
+                ax.bar(x_positions, actual_counts, width=0.8, edgecolor=color_map["Actual"], facecolor="none", linewidth=2, label="Actual")
+
+                # Add predicted data for each replicate as dots
+                for i, rep in enumerate(preds):
+                    if "district_case_bin_counts_by_region" in rep and region in rep["district_case_bin_counts_by_region"]:
+                        label = f"Rep {i + 1}"
+                        rep_counts = rep["district_case_bin_counts_by_region"][region]
+                        ax.scatter(x_positions, rep_counts, label=label, color=color_map[label], marker="o", s=50)
+
+                ax.set_title(f"{region.replace('_', ' ').title()}")
+                ax.set_xlabel("Number of Cases")
+                ax.set_ylabel("Number of Districts")
+                ax.set_xticks(x_positions)
+                ax.set_xticklabels(bin_labels, rotation=0)
+                ax.set_ylim(0, max_count * 1.1)
+                ax.grid(True, alpha=0.3)
+
+                # Add count annotations on actual bars
+                for i, count in enumerate(actual_counts):
+                    if count > 0:
+                        ax.text(i, count + max_count * 0.02, f"{int(count)}", ha="center", va="bottom", fontsize=9)
+
+                # Only add legend to first subplot to avoid clutter
+                if idx == 0:
+                    ax.legend(loc="upper right")
+
+            # Hide any unused subplots
+            for idx in range(n_regions, len(axes)):
+                axes[idx].set_visible(False)
+
+            plt.tight_layout()
+            plt.savefig(best_dir / "plot_best_district_case_bin_counts.png", dpi=300, bbox_inches="tight")
             plt.close()
 
 

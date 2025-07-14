@@ -56,7 +56,7 @@ dependencies = [
     "tables",
     "tqdm",
     "unidecode",
-    "optuna"
+    "optuna",
 ]
 
 [tool.setuptools.package-data]

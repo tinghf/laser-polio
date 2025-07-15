@@ -8,7 +8,6 @@ from collections import defaultdict
 from datetime import timedelta
 from time import perf_counter_ns
 from zoneinfo import ZoneInfo  # Python 3.9+
-import re
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt

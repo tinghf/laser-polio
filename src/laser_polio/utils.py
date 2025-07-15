@@ -8,6 +8,7 @@ from collections import defaultdict
 from datetime import timedelta
 from time import perf_counter_ns
 from zoneinfo import ZoneInfo  # Python 3.9+
+import re
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -165,15 +166,21 @@ def find_latest_end_of_month(dates=None):
     return max(end_of_month_dates) if end_of_month_dates else None
 
 
-def find_matching_dot_names(patterns, ref_file, verbose=2):
+def find_matching_dot_names(patterns, ref_file, verbose=2, admin_level=None):
     """
     Finds and returns dot_names from a CSV file that contain the input string patterns.
     For example, if the input string is 'ZAMFARA', the function will return all dot_names
     that contain 'ZAMFARA' in the 'dot_names' column of the CSV file (e.g., 'AFRO:NIGERIA:ZAMFARA:ANKA').
 
     Parameters:
-    patterns (list of str): List of region names to patern match in the 'dot_names' column.
-    ref_file (str): Path to the CSV file that contains a 'dot_names' column to serve as a reference of possible dot_name values.
+    patterns (list of str): List of region names to pattern match in the specified column.
+    ref_file (str): Path to the CSV file that contains a 'dot_name' column to serve as a reference of possible dot_name values.
+    verbose (int): Verbosity level for output messages.
+    admin_level (int, optional): Admin level to match against (0, 1, or 2). 
+                                If None (default), matches against 'dot_name' column.
+                                If 0, matches against 'adm0_name' column.
+                                If 1, matches against 'adm1_name' column.
+                                If 2, matches against 'adm2_name' column.
 
     Returns:
     list of str: A list of matched region names.
@@ -182,16 +189,55 @@ def find_matching_dot_names(patterns, ref_file, verbose=2):
     # Load the CSV file
     df = pd.read_csv(ref_file)
 
-    # Ensure the 'dot_names' column exists
-    if "dot_name" not in df.columns:
-        raise ValueError("The CSV file must contain a 'dot_name' column")
+    # Determine which column to match against
+    if admin_level is None:
+        match_column = "dot_name"
+        if "dot_name" not in df.columns:
+            raise ValueError("The CSV file must contain a 'dot_name' column")
+    elif admin_level == 0:
+        match_column = "adm0_name"
+        if "adm0_name" not in df.columns:
+            raise ValueError("The CSV file must contain an 'adm0_name' column")
+    elif admin_level == 1:
+        match_column = "adm1_name"
+        if "adm1_name" not in df.columns:
+            raise ValueError("The CSV file must contain an 'adm1_name' column")
+    elif admin_level == 2:
+        match_column = "adm2_name"
+        if "adm2_name" not in df.columns:
+            raise ValueError("The CSV file must contain an 'adm2_name' column")
+    else:
+        raise ValueError("admin_level must be None, 0, 1, or 2")
 
     # Convert input patterns to uppercase
     patterns = [pattern.upper() for pattern in patterns]
 
-    # Filter rows where 'dot_names' contain any of the country names
-    matched_regions = df[df["dot_name"].str.contains("|".join(patterns), case=False, na=False)]
-    matched_dot_names = np.unique(matched_regions["dot_name"].tolist())  # Find unique dot_names & sort
+    if admin_level is None:
+        # If no admin level is specified, match against dot_name using a regex (e.g., 'MALI' will match any dot_name containing 'MALI' including 'AFRO:SOMALIA:...')
+        filtered_df = df[df[match_column].str.contains("|".join(patterns), case=False, na=False)]
+    else:
+        # If an admin level is specified, match against the specified column using an exact match
+        filtered_df = df[df[match_column].isin(patterns)]
+
+    # Filter rows where the specified column contains any of the patterns
+    filtered_df = df[df[match_column].isin(patterns)]
+    unique_matched_values = filtered_df[match_column].unique()
+    matched_dot_names = np.unique(filtered_df["dot_name"].tolist())  # Find unique dot_names & sort
+
+    # Check for unmatched patterns
+    unmatched_patterns = []
+    for pattern in patterns:
+        if pattern not in unique_matched_values:
+            unmatched_patterns.append(pattern)
+    if unmatched_patterns:
+        print(f"Warning: The following patterns did not match any {match_column} values: {unmatched_patterns}")
+    # Check if the number of unique matched values differs from the number of patterns
+    if len(unique_matched_values) != len(patterns):
+        print(f"Warning: Found {len(unique_matched_values)} unique {match_column} values but provided {len(patterns)} patterns")
+        if verbose >= 1:
+            print(f"Matched {match_column} values: {sorted(unique_matched_values)}")
+    if verbose >= 1:
+        print(f"Matched {match_column} values: {sorted(unique_matched_values)}")
 
     # Extract hierarchical levels
     regions = {name.split(":")[0] for name in matched_dot_names}
@@ -201,8 +247,9 @@ def find_matching_dot_names(patterns, ref_file, verbose=2):
 
     # Print summary
     if verbose >= 2:
+        level_desc = f"admin level {admin_level}" if admin_level is not None else "dot_name"
         print(
-            f"The input pattern(s) {patterns} matched dot_names for {len(regions)} region(s), {len(adm0)} admin0, {len(adm1)} admin1, {len(adm2)} admin2 "
+            f"The input pattern(s) {patterns} matched against {level_desc} for {len(regions)} region(s), {len(adm0)} admin0, {len(adm1)} admin1, {len(adm2)} admin2 "
         )
 
     return matched_dot_names

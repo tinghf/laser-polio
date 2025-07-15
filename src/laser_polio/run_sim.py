@@ -63,6 +63,7 @@ def run_sim(
 
     # Extract simulation setup parameters with defaults or overrides
     regions = configs.pop("regions", ["ZAMFARA"])
+    admin_level = configs.pop("admin_level", 0)  # level to match region strings against: 0: adm0, 1: adm1, 2: adm2
     start_year = configs.pop("start_year", 2018)
     n_days = configs.pop("n_days", 365)
     pop_scale = configs.pop("pop_scale", 1)
@@ -86,9 +87,8 @@ def run_sim(
     sia_re_scale = configs.pop("sia_re_scale", 1.0)
 
     # Geography
-    dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv", verbose=verbose)
+    dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv", verbose=verbose, admin_level=admin_level)
     node_lookup = lp.get_node_lookup(lp.root / "data/node_lookup.json", dot_names)
-    # dist_matrix = lp.get_distance_matrix(lp.root / "data/distance_matrix_africa_adm2.h5", dot_names)
     shp = gpd.read_file(filename=lp.root / "data/shp_africa_low_res.gpkg", layer="adm2")
     shp = shp[shp["dot_name"].isin(dot_names)]
     # Sort the GeoDataFrame by the order of dot_names

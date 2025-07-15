@@ -18,7 +18,7 @@ from report import save_study_results
 
 def port_forward():
     print("🔌 Setting up port forwarding to MySQL...")
-    pf = subprocess.Popen(["kubectl", "port-forward", "mysql-0", "3306:3306"])
+    pf = subprocess.Popen(["kubectl", "port-forward", "mysql-0", "3307:3306"])
     time.sleep(3)  # wait for port-forward to take effect
     return pf
 

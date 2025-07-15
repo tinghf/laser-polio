@@ -12,6 +12,7 @@ include .pre-commit-config.yaml
 include .readthedocs.yml
 include pytest.ini
 include tox.ini
+include pyrightconfig.json
 
 include AUTHORS.rst
 include CHANGELOG.rst

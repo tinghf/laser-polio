@@ -227,10 +227,10 @@ def find_matching_dot_names(patterns, ref_file, verbose=2, admin_level=None):
     for pattern in patterns:
         if pattern not in unique_matched_values:
             unmatched_patterns.append(pattern)
-    if unmatched_patterns:
+    if unmatched_patterns and admin_level is not None:
         print(f"Warning: The following patterns did not match any {match_column} values: {unmatched_patterns}")
     # Check if the number of unique matched values differs from the number of patterns
-    if len(unique_matched_values) != len(patterns):
+    if len(unique_matched_values) != len(patterns) and admin_level is not None:
         print(f"Warning: Found {len(unique_matched_values)} unique {match_column} values but provided {len(patterns)} patterns")
         if verbose >= 1:
             print(f"Matched {match_column} values: {sorted(unique_matched_values)}")

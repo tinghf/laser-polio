@@ -63,7 +63,7 @@ def run_sim(
 
     # Extract simulation setup parameters with defaults or overrides
     regions = configs.pop("regions", ["ZAMFARA"])
-    admin_level = configs.pop("admin_level", 0)  # level to match region strings against: 0: adm0, 1: adm1, 2: adm2
+    admin_level = configs.pop("admin_level", None)  # level to match region strings against: None: dot_name, 0: adm0, 1: adm1, 2: adm2
     start_year = configs.pop("start_year", 2018)
     n_days = configs.pop("n_days", 365)
     pop_scale = configs.pop("pop_scale", 1)

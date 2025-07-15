@@ -176,7 +176,7 @@ def find_matching_dot_names(patterns, ref_file, verbose=2, admin_level=None):
     patterns (list of str): List of region names to pattern match in the specified column.
     ref_file (str): Path to the CSV file that contains a 'dot_name' column to serve as a reference of possible dot_name values.
     verbose (int): Verbosity level for output messages.
-    admin_level (int, optional): Admin level to match against (0, 1, or 2). 
+    admin_level (int, optional): Admin level to match against (0, 1, or 2).
                                 If None (default), matches against 'dot_name' column.
                                 If 0, matches against 'adm0_name' column.
                                 If 1, matches against 'adm1_name' column.

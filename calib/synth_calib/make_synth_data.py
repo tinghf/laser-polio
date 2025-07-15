@@ -40,13 +40,12 @@ gravity_a = 1.99
 gravity_b = 1.99
 gravity_c = 0.99
 node_seeding_zero_inflation = 0.83
-r0_scalar_wt_slope = 87.
+r0_scalar_wt_slope = 87.0
 r0_scalar_wt_intercept = 0.06
 r0_scalar_wt_center = 0.22
 sia_re_center = 0.05
 sia_re_scale = 0.2
 init_immun_scalar = 1.0
-
 
 
 ######### END OF USER PARS ########

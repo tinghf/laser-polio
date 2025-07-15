@@ -5,7 +5,23 @@ import laser_polio as lp
 ###################################
 ######### USER PARAMETERS #########
 
-regions = ["BENIN", "BURKINA_FASO", "COTE_DIVOIRE", "GAMBIA", "GHANA", "GUINEA", "GUINEA_BISSAU", "LIBERIA", "MALI", "MAURITANIA", "NIGER", "NIGERIA", "SENEGAL", "SIERRA_LEONE", "TOGO"]
+regions = [
+    "BENIN",
+    "BURKINA_FASO",
+    "COTE_DIVOIRE",
+    "GAMBIA",
+    "GHANA",
+    "GUINEA",
+    "GUINEA_BISSAU",
+    "LIBERIA",
+    "MALI",
+    "MAURITANIA",
+    "NIGER",
+    "NIGERIA",
+    "SENEGAL",
+    "SIERRA_LEONE",
+    "TOGO",
+]
 admin_level = 0
 start_year = 2017
 n_days = 2655
@@ -21,10 +37,10 @@ missed_frac = 0.1
 use_pim_scalars = False
 results_path = "results/demo_west_africa"
 seed_schedule = [
-    {"date": "2017-10-01", "dot_name": "AFRO:NIGERIA:JIGAWA:HADEJIA", "prevalence": 100},  
-    {"date": "2017-10-01", "dot_name": "AFRO:NIGERIA:JIGAWA:GARKI", "prevalence": 100},  
-    {"date": "2020-07-01", "dot_name": "AFRO:NIGERIA:ZAMFARA:TALATA_MAFARA", "prevalence": 100},  
-    {"date": "2020-10-01", "dot_name": "AFRO:NIGERIA:NIGER:SULEJA", "prevalence": 100},  
+    {"date": "2017-10-01", "dot_name": "AFRO:NIGERIA:JIGAWA:HADEJIA", "prevalence": 100},
+    {"date": "2017-10-01", "dot_name": "AFRO:NIGERIA:JIGAWA:GARKI", "prevalence": 100},
+    {"date": "2020-07-01", "dot_name": "AFRO:NIGERIA:ZAMFARA:TALATA_MAFARA", "prevalence": 100},
+    {"date": "2020-10-01", "dot_name": "AFRO:NIGERIA:NIGER:SULEJA", "prevalence": 100},
 ]
 
 

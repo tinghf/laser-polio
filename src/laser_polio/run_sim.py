@@ -87,7 +87,9 @@ def run_sim(
     sia_re_scale = configs.pop("sia_re_scale", 1.0)
 
     # Geography
-    dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv", verbose=verbose, admin_level=admin_level)
+    dot_names = lp.find_matching_dot_names(
+        regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv", verbose=verbose, admin_level=admin_level
+    )
     node_lookup = lp.get_node_lookup(lp.root / "data/node_lookup.json", dot_names)
     shp = gpd.read_file(filename=lp.root / "data/shp_africa_low_res.gpkg", layer="adm2")
     shp = shp[shp["dot_name"].isin(dot_names)]

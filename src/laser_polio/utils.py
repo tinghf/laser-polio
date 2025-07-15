@@ -212,14 +212,13 @@ def find_matching_dot_names(patterns, ref_file, verbose=2, admin_level=None):
     patterns = [pattern.upper() for pattern in patterns]
 
     if admin_level is None:
-        # If no admin level is specified, match against dot_name using a regex (e.g., 'MALI' will match any dot_name containing 'MALI' including 'AFRO:SOMALIA:...')
+        # If no admin level is specified, find ANY matching patterns against dot_name using a regex (e.g., 'MALI' will match any dot_name containing 'MALI' including 'AFRO:SOMALIA:...')
         filtered_df = df[df[match_column].str.contains("|".join(patterns), case=False, na=False)]
     else:
         # If an admin level is specified, match against the specified column using an exact match
         filtered_df = df[df[match_column].isin(patterns)]
 
     # Filter rows where the specified column contains any of the patterns
-    filtered_df = df[df[match_column].isin(patterns)]
     unique_matched_values = filtered_df[match_column].unique()
     matched_dot_names = np.unique(filtered_df["dot_name"].tolist())  # Find unique dot_names & sort
 

@@ -1768,6 +1768,19 @@ class Transmission_ABM:
                 alive_counts[:, np.newaxis], 1
             )  # convert total FOI to per-agent exposure rate
             prob_exp_by_node_strain = 1 - np.exp(-per_agent_exp_rate)  # convert rate to probability of exposure
+            
+            # Ensure probabilities are non-negative (handle any remaining numerical issues)
+            prob_exp_by_node_strain = np.maximum(prob_exp_by_node_strain, 0)
+            
+            # Debug: Check for negative values and log them
+            negative_mask = prob_exp_by_node_strain < 0
+            if np.any(negative_mask):
+                logger.warning(f"Negative prob_exp_by_node_strain detected at timestep {self.sim.t}")
+                logger.warning(f"Negative values: {prob_exp_by_node_strain[negative_mask]}")
+                logger.warning(f"Corresponding per_agent_exp_rate: {per_agent_exp_rate[negative_mask]}")
+                logger.warning(f"Corresponding beta_by_node_strain: {beta_by_node_strain[negative_mask]}")
+                logger.warning(f"Corresponding alive_counts: {alive_counts[np.any(negative_mask, axis=1)]}")
+            
             total_exposure_prob_per_node = prob_exp_by_node_strain.sum(axis=1)  # Total prob of exposure per node (sum across all strains)
             expected_exposures_per_node = exposure_by_node * total_exposure_prob_per_node  # Expected exposures per node
 

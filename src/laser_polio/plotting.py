@@ -64,7 +64,7 @@ def plot_choropleth_and_hist(shp, par, values, results_path, cmap="viridis", fig
     shp_copy = shp.copy()
     shp_copy[par] = values
 
-    fig = plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize, constrained_layout=True)
     gs = fig.add_gridspec(2, 1, height_ratios=[3, 1], hspace=0.3)
 
     ax_map = fig.add_subplot(gs[0])
@@ -78,7 +78,6 @@ def plot_choropleth_and_hist(shp, par, values, results_path, cmap="viridis", fig
     ax_hist.set_xlabel(par)
     ax_hist.set_ylabel("Count")
 
-    plt.tight_layout()
     plt.savefig(results_path / f"plot_{par}.png")
     plt.close(fig)
 
@@ -130,11 +129,11 @@ def plot_init_immun_grid(shp, init_immun_df, results_path, cmap="viridis", n_col
         axes[j].axis("off")
 
     # Add a single colorbar
+    fig.subplots_adjust(right=0.88)  # Leave space for colorbar
     cbar_ax = fig.add_axes([0.92, 0.15, 0.015, 0.7])  # [left, bottom, width, height]
     cbar = fig.colorbar(sm, cax=cbar_ax)
     cbar.set_label("Immunity")
 
-    plt.tight_layout(rect=[0, 0, 0.9, 1])  # Leave space on the right for colorbar
     plt.savefig(results_path / "plot_init_immun.png")
     plt.close(fig)
 
@@ -156,7 +155,7 @@ def plot_sia_schedule(shp, sia_schedule, results_path, n_cols=6, figsize=(20, 12
     else:
         n_rows = int(np.ceil(n_sias / n_cols))
 
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize, constrained_layout=True)
     if isinstance(axes, np.ndarray):
         axes = axes.flatten()
     else:
@@ -194,7 +193,6 @@ def plot_sia_schedule(shp, sia_schedule, results_path, n_cols=6, figsize=(20, 12
     uncovered_patch = mpatches.Patch(color="lightgrey", label="Not covered")
     fig.legend(handles=[uncovered_patch, covered_patch], loc="lower center", ncol=2, frameon=False, bbox_to_anchor=(0.5, -0.01))
 
-    plt.tight_layout()
     plt.savefig(results_path / "plot_sia_schedule.png")
     plt.close(fig)
 
@@ -256,10 +254,10 @@ def plot_seed_schedule(shp, seed_schedule, node_lookup, results_path, n_cols=4, 
         axes[j].axis("off")
 
     # Add shared colorbar
+    fig.subplots_adjust(right=0.88)
     cbar_ax = fig.add_axes([0.92, 0.15, 0.015, 0.7])
     fig.colorbar(sm, cax=cbar_ax, label="Prevalence")
 
-    plt.tight_layout(rect=[0, 0, 0.9, 1])
     plt.savefig(results_path / "seed_schedule_grid.png")
     plt.close(fig)
 

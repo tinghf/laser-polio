@@ -1,7 +1,7 @@
 # --- PRIORITIES ---
+- Check latest round of results
 - Try starting in 2017
-- Plot # of nodes with X cases (all & by region)
-- Try adding in counts of regions with X cases
+- Set regional timeseries wts to 0
 - Try using PIM scalars again
 - Make synthetic calibration with JB - try just KANO? Or a small geography? SK will noodle on it, write up script for making synthetic data, and send to JB. 
 - Sweep over zero inflation by strain

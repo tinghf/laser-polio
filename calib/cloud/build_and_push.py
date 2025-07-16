@@ -1,7 +1,6 @@
 import subprocess
 import sys
 from pathlib import Path
-
 import sciris as sc
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -11,8 +10,9 @@ from get_lp_module_versions import check_version_match
 def run_docker_commands():
     image_tag = "idm-docker-staging.packages.idmod.org/laser/laser-polio:latest"
     dockerfile = "calib/Dockerfile"
+    platform = "linux/amd64"  # Setting for aks. If you're running locally (e.g. on a mac), you'll need to change this to "linux/arm64". 
 
-    build_cmd = ["docker", "build", ".", "-f", dockerfile, "-t", image_tag]
+    build_cmd = ["docker", "build", ".", "-f", dockerfile, "-t", image_tag, "--platform", platform]
     create_cmd = ["docker", "create", "--name", "temp_laser", image_tag]
     cp_cmd = ["docker", "cp", "temp_laser:/app/laser_polio_deps.txt", "./laser_polio_deps.txt"]
     rm_cmd = ["docker", "rm", "temp_laser"]

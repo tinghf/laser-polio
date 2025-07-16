@@ -82,7 +82,8 @@ def run_worker_main(
 
     # Load the actual case data (moved from run_sim into calib code)
     regions = model_config_dict.pop("regions", ["ZAMFARA"])
-    dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")
+    admin_level = model_config_dict.get("admin_level", None)
+    dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv", verbose=0, admin_level=admin_level)
     node_lookup = lp.get_node_lookup(lp.root / "data/node_lookup.json", dot_names)
     actual_data = model_config_dict.pop("actual_data", lp.root / "data/epi_africa_20250421.h5")
     start_year = model_config_dict["start_year"]

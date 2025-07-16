@@ -418,9 +418,10 @@ def get_shapefile_from_config(model_config):
     regions = model_config.get("regions", [])
     if not regions:
         raise ValueError("No regions specified in model config")
+    admin_level = model_config.get("admin_level", None)
 
     # Get dot names for the regions
-    dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")
+    dot_names = lp.find_matching_dot_names(regions, lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv", admin_level=admin_level)
 
     # Load node lookup and create dot_name to adm01 mapping
     node_lookup_full = lp.get_node_lookup("data/node_lookup.json", dot_names)

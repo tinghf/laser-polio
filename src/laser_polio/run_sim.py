@@ -96,6 +96,11 @@ def run_sim(
     # Sort the GeoDataFrame by the order of dot_names
     shp.set_index("dot_name", inplace=True)
     shp = shp.loc[dot_names].reset_index()
+    # Check that the ordering is correct
+    node_lookup_dot_names = [node_lookup[i]["dot_name"] for i in sorted(node_lookup.keys())]
+    assert np.all(node_lookup_dot_names == dot_names), "Node lookup dot names do not match dot names"
+    shp_dot_names = shp["dot_name"].tolist()
+    assert np.all(shp_dot_names == dot_names), "shp dot names do not match dot names"
 
     # Immunity
     init_immun = pd.read_hdf(lp.root / "data/init_immunity_0.5coverage_january.h5", key="immunity")

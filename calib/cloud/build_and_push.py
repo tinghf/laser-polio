@@ -1,6 +1,7 @@
 import subprocess
 import sys
 from pathlib import Path
+
 import sciris as sc
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))

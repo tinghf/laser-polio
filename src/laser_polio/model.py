@@ -1789,7 +1789,7 @@ class Transmission_ABM:
 
             total_exposure_prob_per_node = prob_exp_by_node_strain.sum(axis=1)  # Total prob of exposure per node (sum across all strains)
             expected_exposures_per_node = exposure_by_node * total_exposure_prob_per_node  # Expected exposures per node
-           
+
             # Step 5: Compute the number of new exposures per node, by strain
             n_exposures_to_create_by_node_strain = np.zeros_like(prob_exp_by_node_strain, dtype=np.int32)  # shape: (n_nodes, n_strains)
 

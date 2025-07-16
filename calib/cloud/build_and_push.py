@@ -10,7 +10,7 @@ from get_lp_module_versions import check_version_match
 def run_docker_commands():
     image_tag = "idm-docker-staging.packages.idmod.org/laser/laser-polio:latest"
     dockerfile = "calib/Dockerfile"
-    platform = "linux/amd64"  # Setting for aks. If you're running locally (e.g. on a mac), you'll need to change this to "linux/arm64". 
+    platform = "linux/amd64"  # Setting for aks. If you're running locally (e.g. on a mac), you'll need to change this to "linux/arm64".
 
     build_cmd = ["docker", "build", ".", "-f", dockerfile, "-t", image_tag, "--platform", platform]
     create_cmd = ["docker", "create", "--name", "temp_laser", image_tag]

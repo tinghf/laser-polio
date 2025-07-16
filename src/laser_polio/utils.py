@@ -232,9 +232,9 @@ def find_matching_dot_names(patterns, ref_file, verbose=2, admin_level=None):
     # Check if the number of unique matched values differs from the number of patterns
     if len(unique_matched_values) != len(patterns) and admin_level is not None:
         print(f"Warning: Found {len(unique_matched_values)} unique {match_column} values but provided {len(patterns)} patterns")
-        if verbose >= 1:
+        if verbose >= 2:
             print(f"Matched {match_column} values: {sorted(unique_matched_values)}")
-    if verbose >= 1:
+    if verbose >= 2:
         print(f"Matched {match_column} values: {sorted(unique_matched_values)}")
 
     # Extract hierarchical levels

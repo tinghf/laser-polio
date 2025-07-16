@@ -1657,9 +1657,15 @@ class Transmission_ABM:
             lats = np.array([node_lookup[i]["lat"] for i in node_ids])
             lons = np.array([node_lookup[i]["lon"] for i in node_ids])
             dist_matrix = np.zeros((n_nodes, n_nodes))
+            epsilon = 1
             for i in range(n_nodes):
-                for j in range(n_nodes):
-                    dist_matrix[i, j] = distance(lats[i], lons[i], lats[j], lons[j])
+                for j in range(i + 1, n_nodes):  # Only compute upper triangle
+                    d = distance(lats[i], lons[i], lats[j], lons[j])
+                    if d == 0:
+                        print(f"WARNING: Distance between nodes {i} and {j} is 0. Replacing with {epsilon}")
+                        d = epsilon
+                    dist_matrix[i, j] = d
+                    dist_matrix[j, i] = d  # Mirror to lower triangle
         # Setup the network
         logger.info("END of slow network calc.")
         if self.pars.migration_method.lower() == "gravity":
@@ -1783,7 +1789,7 @@ class Transmission_ABM:
 
             total_exposure_prob_per_node = prob_exp_by_node_strain.sum(axis=1)  # Total prob of exposure per node (sum across all strains)
             expected_exposures_per_node = exposure_by_node * total_exposure_prob_per_node  # Expected exposures per node
-
+           
             # Step 5: Compute the number of new exposures per node, by strain
             n_exposures_to_create_by_node_strain = np.zeros_like(prob_exp_by_node_strain, dtype=np.int32)  # shape: (n_nodes, n_strains)
 

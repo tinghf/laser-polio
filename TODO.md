@@ -1,12 +1,9 @@
 # --- PRIORITIES ---
-- Check latest round of results
-- Try starting in 2017
-- Set regional timeseries wts to 0
-- Try using PIM scalars again
-- Make synthetic calibration with JB - try just KANO? Or a small geography? SK will noodle on it, write up script for making synthetic data, and send to JB. 
-- Sweep over zero inflation by strain
 - Add age pyramid by country (cuz we're getting close to running beyond Nigeria!)
-- Try playing with links between N & S Nigeria in network (maybe a scalar???)
+- Make synthetic calibration with JB - try just KANO? Or a small geography? SK will noodle on it, write up script for making synthetic data, and send to JB. 
+- Try adding --no-cache to the docker image
+- Try using PIM scalars again
+- Sweep over zero inflation by strain
 
 CALIBRATION
 - Run sim for top 1-10 calibrations

@@ -11,7 +11,7 @@ import yaml
 # calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
 job_name = "laser-polio-sk1"
-study_name = "calib_west_africa_7y_2017_underwt_20250715"
+study_name = "calib_west_africa_7y_2017_underwt_20250716"
 model_config = "config_west_africa_7y_2017_underwt.yaml"
 calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 

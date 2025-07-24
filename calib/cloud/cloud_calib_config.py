@@ -15,26 +15,26 @@ import yaml
 # model_config = "config_west_africa_7y_2017_underwt.yaml"
 # calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
-job_name = "laser-polio-sk3"
-study_name = "calib_west_africa_7y_2017_underwt_20250723"
-model_config = "config_west_africa_7y_2017_underwt.yaml"
-calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
+# job_name = "laser-polio-sk3"
+# study_name = "calib_west_africa_7y_2017_underwt_20250723"
+# model_config = "config_west_africa_7y_2017_underwt.yaml"
+# calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
 # job_name = "laser-polio-sk4"
 # study_name = "calib_west_africa_7y_2017_underwt_lwrmigr_20250724"
 # model_config = "config_west_africa_7y_2017_underwt_lwrmigr.yaml"
 # calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
-# job_name = "laser-polio-sk5"
-# study_name = "calib_west_africa_7y_2017_underwt_radiation_20250724"
-# model_config = "config_west_africa_7y_2017_underwt_lwrmigr_radiation.yaml"
-# calib_config = "r0_ssn_rad_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
+job_name = "laser-polio-sk5"
+study_name = "calib_west_africa_7y_2017_underwt_radiation_20250724"
+model_config = "config_west_africa_7y_2017_underwt_lwrmigr_radiation.yaml"
+calib_config = "r0_ssn_rad_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
 fit_function = "log_likelihood"
 n_trials = 1  # Number of trials to run per pod
 n_replicates = 1  # Number of replicates to run for each trial
-parallelism = 100  # The number of pods (i.e., jobs) to run in parallel
-completions = 20000  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
+parallelism = 50  # The number of pods (i.e., jobs) to run in parallel
+completions = 10000  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
 
 # ---------------------------------------------------
 

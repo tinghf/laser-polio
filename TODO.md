@@ -7,11 +7,14 @@
 - Try adding --no-cache to the docker image
 - Try using PIM scalars again
 - Sweep over zero inflation by strain
+- The actual and simulation data is getting quite large. Could we switch to the adm01 level??
+- Lighter initialization for only necessary agents that obviates need for squashing.
+- Combine Disease & Transmission components
+- Move init_from_file option to a separate file to simplify initialization in model.py
+- Add strain tracking to understand number of exportations that result in cases.
 
 CALIBRATION
-- Run sim for top 1-10 calibrations
 - Try a missed pop frac scalar based on X (immunity, underwt, sia_coverage)
-- Calibrate with missed pop
 - Sweep over radiation k and make a scatterplot like I did for gravity
 - Sweep over hetero with best pars from calib
 - Plot out 'bad' calib trials, get a smattering of options for each r0, both high and low likelihoods
@@ -19,13 +22,9 @@ CALIBRATION
 NEW FEATURES
 - Enable RI for nOPV2
 - Add age pyramid by country
-- Reactive SIAs
-- Perf improvements
 - Try alternate migration models like discrete radiation (JG recommends)
-- Add scalar for N Nigeria
 - Add CBR by country-year
 - Curate the surveillance delays
-- Add surveillance delays to reactive SIAs
 - Enabling RI with specific vaccines & dates
 - Fix death rates
 

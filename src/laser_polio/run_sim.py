@@ -102,41 +102,6 @@ def run_sim(
     shp_dot_names = shp["dot_name"].tolist()
     assert np.all(shp_dot_names == dot_names), "shp dot names do not match dot names"
 
-    # Immunity
-    init_immun = pd.read_hdf(lp.root / "data/init_immunity_0.5coverage_january.h5", key="immunity")
-    init_immun = init_immun.set_index("dot_name").loc[dot_names]
-    init_immun = init_immun[init_immun["period"] == start_year]
-    # Apply scalar multiplier to immunity values, clipping to [0.0, 1.0]
-    immunity_cols = [col for col in init_immun.columns if col.startswith("immunity_")]
-    init_immun[immunity_cols] = init_immun[immunity_cols].clip(lower=0.0, upper=1.0) * init_immun_scalar
-    # Apply geographic scalars if specified in configs
-    if "immun_scalar_borno" in configs:
-        borno_scalar = configs.pop("immun_scalar_borno")
-        borno_mask = init_immun.index.str.contains("NIGERIA:BORNO")
-        init_immun.loc[borno_mask, immunity_cols] *= borno_scalar
-    if "immun_scalar_jigawa" in configs:
-        jigawa_scalar = configs.pop("immun_scalar_jigawa")
-        jigawa_mask = init_immun.index.str.contains("NIGERIA:JIGAWA")
-        init_immun.loc[jigawa_mask, immunity_cols] *= jigawa_scalar
-    if "immun_scalar_kano" in configs:
-        kano_scalar = configs.pop("immun_scalar_kano")
-        kano_mask = init_immun.index.str.contains("NIGERIA:KANO")
-        init_immun.loc[kano_mask, immunity_cols] *= kano_scalar
-    if "immun_scalar_katsina" in configs:
-        katsina_scalar = configs.pop("immun_scalar_katsina")
-        katsina_mask = init_immun.index.str.contains("NIGERIA:KATSINA")
-        init_immun.loc[katsina_mask, immunity_cols] *= katsina_scalar
-    if "immun_scalar_kebbi" in configs:
-        kebbi_scalar = configs.pop("immun_scalar_kebbi")
-        kebbi_mask = init_immun.index.str.contains("NIGERIA:KEBBI")
-        init_immun.loc[kebbi_mask, immunity_cols] *= kebbi_scalar
-    if "immun_scalar_kwara" in configs:
-        kwasu_scalar = configs.pop("immun_scalar_kwara")
-        kwasu_mask = init_immun.index.str.contains("NIGERIA:KWARA")
-        init_immun.loc[kwasu_mask, immunity_cols] *= kwasu_scalar
-
-    init_immun[immunity_cols] = init_immun[immunity_cols].clip(upper=1.0, lower=0.0)
-
     # Initial infection seeding
     init_prevs = np.zeros(len(dot_names))
     prev_indices = [i for i, dot_name in enumerate(dot_names) if init_region in dot_name]
@@ -175,7 +140,7 @@ def run_sim(
     # Demographics and risk
     df_comp = pd.read_csv(lp.root / "data/compiled_cbr_pop_ri_sia_underwt_africa.csv")
     df_comp = df_comp[df_comp["year"] == start_year]
-    pop = df_comp.set_index("dot_name").loc[dot_names, "pop_total"].values * pop_scale
+    pop = (df_comp.set_index("dot_name").loc[dot_names, "pop_total"].values * pop_scale).astype(int)
     cbr = df_comp.set_index("dot_name").loc[dot_names, "cbr"].values
     ri = df_comp.set_index("dot_name").loc[dot_names, "ri_eff"].values
     ri_ipv = df_comp.set_index("dot_name").loc[dot_names, "dpt3"].values
@@ -202,8 +167,163 @@ def run_sim(
     else:
         r0_scalars = r0_scalars_wt
 
+    # --- Calculate the number of initial susceptible people ---
+
+    # Load the age pyramid
+    age_pyramid = lp.load_age_pyramid(lp.root / "data/Nigeria_age_pyramid_2024.csv")
+    age_pyramid["age_min_months_pyramid"] = age_pyramid["age_min"] * 12  # Convert to months
+    age_pyramid["age_max_months_pyramid"] = age_pyramid["age_max"] * 12  # Convert to months
+    age_pyramid = age_pyramid.drop(columns=["age_min", "age_max"])
+    age_pyramid = age_pyramid.rename(columns={"pop_frac": "pop_frac_pyramid"})
+
+    # Immunity
+    init_immun = pd.read_hdf(lp.root / "data/init_immunity_0.5coverage_january.h5", key="immunity")
+    init_immun = init_immun.set_index("dot_name").loc[dot_names]
+    init_immun = init_immun[init_immun["period"] == start_year]
+    # Apply scalar multiplier to immunity values, clipping to [0.0, 1.0]
+    immunity_cols = [col for col in init_immun.columns if col.startswith("immunity_")]
+    init_immun[immunity_cols] = init_immun[immunity_cols].clip(lower=0.0, upper=1.0) * init_immun_scalar
+    # Set immunity for 15+ to 1.0
+    init_immun.loc[:, "immunity_180_1200"] = 1.0
+    # Wide → Long
+    init_immun_long = init_immun.reset_index().melt(
+        id_vars="dot_name",
+        value_vars=[col for col in init_immun.columns if col.startswith("immunity_")],
+        var_name="age_bin",
+        value_name="immune_frac",
+    )
+    # Parse age bins into min/max months
+    init_immun_long[["age_min_months_immun", "age_max_months_immun"]] = init_immun_long["age_bin"].str.extract(r"immunity_(\d+)_(\d+)")
+    init_immun_long[["age_min_months_immun", "age_max_months_immun"]] = init_immun_long[
+        ["age_min_months_immun", "age_max_months_immun"]
+    ].astype(int)
+    init_immun_long["age_max_months_immun"] += 1  # Make age_max exclusive
+    init_immun_long = init_immun_long.drop(columns=["age_bin"])
+    # Perform a cross join and filter down to rows where the bins overlap
+    # Add temporary join key for cross-join
+    init_immun_long["key"] = 1
+    age_pyramid["key"] = 1
+    # Cross join: all age bins for all pyramid bins
+    age_merged = pd.merge(init_immun_long, age_pyramid, on="key").drop("key", axis=1)
+    # Filter to overlapping age bins (i.e., where any overlap exists)
+    # This logic matches: (start1 < end2) & (start2 < end1)
+    age_merged = age_merged[
+        (age_merged["age_min_months_immun"] < age_merged["age_max_months_pyramid"])
+        & (age_merged["age_max_months_immun"] > age_merged["age_min_months_pyramid"])
+    ]
+    # Compute the overlap width (in months)
+    age_merged["overlap_months"] = (
+        np.minimum(age_merged["age_max_months_immun"], age_merged["age_max_months_pyramid"])
+        - np.maximum(age_merged["age_min_months_immun"], age_merged["age_min_months_pyramid"])
+    ).clip(lower=0)
+    # Calculate overlap weight as fraction of the pyramid bin
+    age_merged["weight"] = age_merged["overlap_months"] / (age_merged["age_max_months_pyramid"] - age_merged["age_min_months_pyramid"])
+    age_merged.drop(
+        columns=["pop"], inplace=True
+    )  # Drop the pop column since this is for all of Nigeria. We'll replace with node-level total pop below
+    # Attach pop data and node id
+    node_info = pd.DataFrame(
+        {
+            "node_id": sorted(node_lookup.keys()),
+            "dot_name": dot_names,
+            "pop_total": pop,
+        }
+    )
+    age_merged = age_merged.merge(node_info, on="dot_name", how="left")
+    # Adjust population count in that bin accordingly
+    age_merged["pop_in_age_bin"] = age_merged["pop_total"] * age_merged["pop_frac_pyramid"] * age_merged["weight"]
+    # Compute immune/susceptible counts
+    age_merged["n_immune"] = age_merged["pop_in_age_bin"] * age_merged["immune_frac"]
+    age_merged["n_susceptible"] = age_merged["pop_in_age_bin"] * (1 - age_merged["immune_frac"])
+    # Group and summarize
+    sus_by_age_node = (
+        age_merged.groupby(["dot_name", "node_id", "age_min_months_immun", "age_max_months_immun"])[["n_susceptible", "n_immune"]]
+        .sum()
+        .round()
+        .astype(int)
+        .reset_index()
+    )
+    # Sum by dot_name
+    immun_summary = sus_by_age_node.groupby("dot_name")[["n_immune", "n_susceptible"]].sum()
+    # Account for rounding errors & handle them in the oldest age bin
+    pop_diff = pop - immun_summary["n_immune"] - immun_summary["n_susceptible"]
+    sus_by_age_node.loc[sus_by_age_node["age_max_months_immun"] == 1201, "n_immune"] += pop_diff.values
+    # Re-calculate the immune & susceptible counts
+    immun_summary = sus_by_age_node.groupby("dot_name")[["n_immune", "n_susceptible"]].sum()
+    # Convert age_min_months_immun to years
+    sus_by_age_node["age_min_yr"] = sus_by_age_node["age_min_months_immun"] / 12
+    # Convert age_max_months_immun to years
+    sus_by_age_node["age_max_yr"] = sus_by_age_node["age_max_months_immun"] / 12
+    # Drop age_min_months_immun and age_max_months_immun
+    sus_by_age_node = sus_by_age_node.drop(columns=["age_min_months_immun", "age_max_months_immun"])
+    sus_summary = sus_by_age_node.groupby("dot_name")["n_susceptible"].sum().astype(int)
+    assert np.all(immun_summary["n_immune"] + immun_summary["n_susceptible"] <= pop), (
+        "Immune + susceptible counts are greater than population counts"
+    )
+    assert np.all(sus_summary <= pop), "Susceptible counts are greater than population counts"
+
+    # ---- Backcalculate RI IPV Protection ----
+    # IPV prevents paralysis but does not block transmission.
+    # Since IPV and OPV immunity groups are assumed to overlap, and OPV-protected individuals
+    # were already marked as Recovered (i.e., immune to both transmission and paralysis),
+    # we only need to assign IPV protection to those who are not already immune.
+    # Therefore, IPV protection is only applied when IPV coverage exceeds OPV-derived immunity.
+    # Initialize IPV protection column
+    sus_by_age_node["n_ipv_protected"] = 0
+    # Check if IPV parameters are available
+    if ri_ipv is not None and len(ri_ipv) > 0:
+        # IPV eligibility threshold (must be born after ipv_start_year) + 98 days (roughly the timing of 2nd dose of RI IPV (+ 3rd dose of OPV))
+        # Convert to years for comparison with age bins
+        ipv_start_year = config.get("ipv_start_year", 2015)  # Default IPV start year is 2015
+        max_age_for_ipv_years = start_date.year - ipv_start_year + (98 / 365)
+        # Create mapping from dot_name to ri_ipv coverage
+        ipv_coverage_map = dict(zip(dot_names, ri_ipv, strict=False))
+        # IPV minimum age threshold in years (98 days)
+        ipv_min_age_years = 98 / 365
+        # Calculate IPV protection for each row in sus_by_age_node
+        for idx, row in sus_by_age_node.iterrows():
+            dot_name = row["dot_name"]
+            age_min_yr = row["age_min_yr"]
+            age_max_yr = row["age_max_yr"]
+            n_susceptible = row["n_susceptible"]
+            n_immune = row["n_immune"]
+            # Check if this age bin has any overlap with IPV eligibility
+            if age_max_yr >= ipv_min_age_years and age_min_yr <= max_age_for_ipv_years:
+                # Get IPV coverage for this node
+                vx_prob_ipv = ipv_coverage_map.get(dot_name, 0)
+                if vx_prob_ipv > 0:
+                    # Calculate total population in this age bin
+                    total_pop = n_susceptible + n_immune
+                    if total_pop > 0:
+                        # Calculate the proportion of this age bin that's eligible for IPV
+                        # Eligible age range: [ipv_min_age_years, max_age_for_ipv_years]
+                        # Age bin range: [age_min_yr, age_max_yr]
+
+                        # Find the overlap between eligible age range and age bin
+                        overlap_min = max(age_min_yr, ipv_min_age_years)
+                        overlap_max = min(age_max_yr, max_age_for_ipv_years)
+
+                        if overlap_max > overlap_min:
+                            # Calculate eligible fraction within this age bin
+                            age_bin_width = age_max_yr - age_min_yr
+                            overlap_width = overlap_max - overlap_min
+                            eligible_fraction = overlap_width / age_bin_width if age_bin_width > 0 else 0
+
+                            # Current immune fraction in this age bin
+                            immune_fraction = n_immune / total_pop
+
+                            # IPV gap: additional protection beyond existing immunity
+                            ipv_gap = max(0, vx_prob_ipv - immune_fraction)
+
+                            # Apply IPV protection to eligible portion only
+                            # IPV protects against paralysis but not transmission, so these remain susceptible for transmission
+                            eligible_pop = total_pop * eligible_fraction
+                            eligible_susceptible = n_susceptible * eligible_fraction
+                            n_ipv_protected = min(eligible_susceptible, eligible_pop * ipv_gap)
+                            sus_by_age_node.loc[idx, "n_ipv_protected"] = int(n_ipv_protected)
+
     # Validate all arrays match
-    assert all(len(arr) == len(dot_names) for arr in [shp, init_immun, node_lookup, init_prevs, pop, cbr, ri, ri_ipv, sia_prob, r0_scalars])
+    assert all(len(arr) == len(dot_names) for arr in [shp, node_lookup, init_prevs, pop, cbr, ri, ri_ipv, sia_prob, r0_scalars])
 
     # Setup results path
     if results_path is None:
@@ -216,10 +336,9 @@ def run_sim(
     base_pars = {
         "start_date": start_date,
         "dur": n_days,
-        "n_ppl": pop,
-        "age_pyramid_path": lp.root / "data/Nigeria_age_pyramid_2024.csv",
+        "init_pop": pop,
+        "init_sus_by_age": sus_by_age_node,
         "cbr": cbr,
-        "init_immun": init_immun,
         "init_prev": init_prevs,
         "r0_scalars": r0_scalars,
         "distances": None,
@@ -241,7 +360,13 @@ def run_sim(
 
     def from_file(init_pop_file):
         # logger.info(f"Initializing SEIR_ABM from file: {init_pop_file}")
-        people, results_R, pars_loaded = LaserFrame.load_snapshot(init_pop_file, n_ppl=pars["n_ppl"], cbr=pars["cbr"], nt=pars["dur"])
+        # Experience shows that the current math, even the fudge factor in load_snapshot,
+        # is resulting in undersizing the capacity such that we exceed in the last timestep
+        # in very large simulations. Easiest approach is to add a week or two to sim length
+        # we tell load_snapshot. Yes, we're lying to this function.
+        people, results_R, pars_loaded = LaserFrame.load_snapshot(
+            init_pop_file, n_ppl=pars["init_pop"], cbr=pars["cbr"], nt=pars["dur"] + 10
+        )  # +10 fudge factor
 
         sim = lp.SEIR_ABM.init_from_file(people, pars)
         if pars_loaded and "r0" in pars_loaded:

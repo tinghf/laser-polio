@@ -10,9 +10,9 @@ import laser_polio as lp
 # Test impact of differnt dur_inf
 
 
-def setup_sim(dur=1, n_ppl=None, r0_scalars=None, r0=14, dur_exp=None, dur_inf=None, init_immun=0.8, init_prev=0.01, seed=None):
-    if n_ppl is None:
-        n_ppl = np.array([10000, 10000])
+def setup_sim(dur=1, init_pop=None, r0_scalars=None, r0=14, dur_exp=None, dur_inf=None, init_immun=0.8, init_prev=0.01, seed=None):
+    if init_pop is None:
+        init_pop = np.array([10000, 10000])
     if r0_scalars is None:
         r0_scalars = np.array([0.5, 2.0], dtype=np.float32)
     # if dur_exp is None:
@@ -24,7 +24,7 @@ def setup_sim(dur=1, n_ppl=None, r0_scalars=None, r0=14, dur_exp=None, dur_inf=N
             "seed": seed,
             "start_date": lp.date("2020-01-01"),
             "dur": dur,
-            "n_ppl": n_ppl,  # Two nodes with populations
+            "init_pop": init_pop,  # Two nodes with populations
             "cbr": np.array([30, 25]),  # Birth rate per 1000/year
             "r0_scalars": r0_scalars,  # Spatial transmission scalar (multiplied by global rate)
             "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",  # From https://www.populationpyramid.net/nigeria/2024/
@@ -150,7 +150,7 @@ def setup_NxN_sim(N=4, duration=365, r0=14, init_immun=None, init_prev=None):
         {
             "start_date": lp.date("2020-01-01"),
             "dur": duration,
-            "n_ppl": np.array([10000] * N),
+            "init_pop": np.array([10000] * N),
             "cbr": np.array([36.5] * N, dtype=np.float32),  # Birth rate per 1000/year
             "r0_scalars": np.ones(N, dtype=np.float32),  # Spatial transmission scalar (multiplied by global rate)
             "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",  # From https://www.populationpyramid.net/nigeria/2024/
@@ -256,7 +256,7 @@ def test_zero_inflation():
                 "seed": seed,
                 "start_date": lp.date("2020-01-01"),
                 "dur": duration,
-                "n_ppl": np.array([5000] * n_nodes),
+                "init_pop": np.array([5000] * n_nodes),
                 "cbr": np.array([36.5] * n_nodes, dtype=np.float32),
                 "r0_scalars": np.ones(n_nodes, dtype=np.float32),
                 "age_pyramid_path": "data/Nigeria_age_pyramid_2024.csv",
@@ -281,9 +281,9 @@ def test_zero_inflation():
     seeds = np.arange(1000, 1000 + n_reps)  # Fixed seeds for reproducibility
 
     nodes_with_cases_no_inflation = []
-    nodes_with_cases_half_inflation = []
+    nodes_with_cases_inflation = []
     day1_nodes_with_cases_no_inflation = []
-    day1_nodes_with_cases_half_inflation = []
+    day1_nodes_with_cases_inflation = []
 
     for seed in seeds:
         # No zero inflation
@@ -293,33 +293,33 @@ def test_zero_inflation():
         nodes_with_cases_no_inflation.append(np.sum(total_cases_by_node_no_inflation > 0))  # Number of nodes with cases across all time
         day1_nodes_with_cases_no_inflation.append(np.sum(sim_no_inflation.results.E[1] > 0))  # Number of nodes with cases on day 1
 
-        # 50% zero inflation
-        sim_half_inflation = setup_zero_inflation_sim(zero_inflation=0.5, seed=seed)
-        sim_half_inflation.run()
-        total_cases_by_node_half_inflation = sim_half_inflation.results.E[1:].sum(axis=0)  # Sum over time, keep nodes separate
-        nodes_with_cases_half_inflation.append(np.sum(total_cases_by_node_half_inflation > 0))  # Number of nodes with cases across all time
-        day1_nodes_with_cases_half_inflation.append(np.sum(sim_half_inflation.results.E[1] > 0))  # Number of nodes with cases on day 1
+        # 90% zero inflation
+        sim_inflation = setup_zero_inflation_sim(zero_inflation=0.9, seed=seed)
+        sim_inflation.run()
+        total_cases_by_node_inflation = sim_inflation.results.E[1:].sum(axis=0)  # Sum over time, keep nodes separate
+        nodes_with_cases_inflation.append(np.sum(total_cases_by_node_inflation > 0))  # Number of nodes with cases across all time
+        day1_nodes_with_cases_inflation.append(np.sum(sim_inflation.results.E[1] > 0))  # Number of nodes with cases on day 1
 
     nodes_with_cases_no_inflation = np.array(nodes_with_cases_no_inflation)
-    nodes_with_cases_half_inflation = np.array(nodes_with_cases_half_inflation)
+    nodes_with_cases_inflation = np.array(nodes_with_cases_inflation)
     day1_nodes_with_cases_no_inflation = np.array(day1_nodes_with_cases_no_inflation)
-    day1_nodes_with_cases_half_inflation = np.array(day1_nodes_with_cases_half_inflation)
+    day1_nodes_with_cases_inflation = np.array(day1_nodes_with_cases_inflation)
 
     # --- Assertions ---
     # Both should have at least node 0 with cases (the initially infected node)
     assert np.all(nodes_with_cases_no_inflation >= 1), "No inflation simulations should always have at least 1 node with cases"
-    assert np.all(nodes_with_cases_half_inflation >= 1), "Half inflation simulations should always have at least 1 node with cases"
+    assert np.all(nodes_with_cases_inflation >= 1), "Inflation simulations should always have at least 1 node with cases"
 
     # With zero inflation, we should generally have fewer nodes with cases
     mean_nodes_no_inflation_day1 = np.mean(day1_nodes_with_cases_no_inflation)
-    mean_nodes_half_inflation_day1 = np.mean(day1_nodes_with_cases_half_inflation)
-    assert mean_nodes_half_inflation_day1 < mean_nodes_no_inflation_day1, (
-        f"Zero inflation should reduce nodes with cases. No inflation: {mean_nodes_no_inflation_day1:.2f}, Half inflation: {mean_nodes_half_inflation_day1:.2f}"
+    mean_nodes_inflation_day1 = np.mean(day1_nodes_with_cases_inflation)
+    assert mean_nodes_inflation_day1 < mean_nodes_no_inflation_day1, (
+        f"Zero inflation should reduce nodes with cases. No inflation: {mean_nodes_no_inflation_day1:.2f}, With inflation: {mean_nodes_inflation_day1:.2f}"
     )
     mean_nodes_no_inflation = np.mean(nodes_with_cases_no_inflation)
-    mean_nodes_half_inflation = np.mean(nodes_with_cases_half_inflation)
-    assert mean_nodes_half_inflation < mean_nodes_no_inflation, (
-        f"Zero inflation should reduce nodes with cases. No inflation: {mean_nodes_no_inflation:.2f}, Half inflation: {mean_nodes_half_inflation:.2f}"
+    mean_nodes_inflation = np.mean(nodes_with_cases_inflation)
+    assert mean_nodes_inflation < mean_nodes_no_inflation, (
+        f"Zero inflation should reduce nodes with cases. No inflation: {mean_nodes_no_inflation:.2f}, With inflation: {mean_nodes_inflation:.2f}"
     )
 
     # Test extreme case: 99% zero inflation should dramatically reduce spread
@@ -334,11 +334,11 @@ def test_zero_inflation():
 
     mean_nodes_extreme_inflation = np.mean(nodes_with_cases_extreme_inflation)
     mean_nodes_extreme_inflation_day1 = np.mean(day1_nodes_with_cases_extreme_inflation)
-    assert mean_nodes_extreme_inflation_day1 < mean_nodes_half_inflation_day1, (
-        f"Extreme zero inflation should reduce spread even more. Half: {mean_nodes_half_inflation_day1:.2f}, Extreme: {mean_nodes_extreme_inflation_day1:.2f}"
+    assert mean_nodes_extreme_inflation_day1 < mean_nodes_inflation_day1, (
+        f"Extreme zero inflation should reduce spread even more. No inflation: {mean_nodes_inflation_day1:.2f}, Extreme: {mean_nodes_extreme_inflation_day1:.2f}"
     )
-    assert mean_nodes_extreme_inflation < mean_nodes_half_inflation, (
-        f"Extreme zero inflation should reduce spread even more. Half: {mean_nodes_half_inflation:.2f}, Extreme: {mean_nodes_extreme_inflation:.2f}"
+    assert mean_nodes_extreme_inflation < mean_nodes_inflation, (
+        f"Extreme zero inflation should reduce spread even more. No inflation: {mean_nodes_inflation:.2f}, Extreme: {mean_nodes_extreme_inflation:.2f}"
     )
 
 

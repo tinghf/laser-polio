@@ -18,7 +18,7 @@ regions: [
 admin_level: 0
 start_year: 2017
 n_days: 2555
-pop_scale: 0.5
+pop_scale: 1.0
 vx_prob_ri: 0.0
 init_region: "BIRINIWA"
 init_prev: 0

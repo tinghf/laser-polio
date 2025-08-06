@@ -25,10 +25,15 @@ import yaml
 # model_config = "config_west_africa_7y_2017_underwt_lwrmigr.yaml"
 # calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
-job_name = "laser-polio-sk5"
-study_name = "calib_west_africa_7y_2017_underwt_radiation_20250724"
-model_config = "config_west_africa_7y_2017_underwt_lwrmigr_radiation.yaml"
-calib_config = "r0_ssn_rad_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
+# job_name = "laser-polio-sk5"
+# study_name = "calib_west_africa_7y_2017_underwt_radiation_20250724"
+# model_config = "config_west_africa_7y_2017_underwt_lwrmigr_radiation.yaml"
+# calib_config = "r0_ssn_rad_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
+
+job_name = "laser-polio-sk6"
+study_name = "calib_west_africa_7y_2017_underwt_region_strategy_20250806"
+model_config = "config_west_africa_7y_2017_region_strategy.yaml"
+calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
 fit_function = "log_likelihood"
 n_trials = 1  # Number of trials to run per pod

@@ -95,6 +95,21 @@ def run_worker_main(
     n_days = model_config_dict["n_days"]
     epi = lp.get_epi_data(actual_data, dot_names, node_lookup, start_year, n_days)
     epi.rename(columns={"cases": "P"}, inplace=True)
+    # Apply temporal and regional groupings using the same config as simulation data
+    summary_config = model_config_dict.get("summary_config", None)
+    if summary_config is not None:
+        # Ensure date column is datetime
+        if "date" in epi.columns and not epi["date"].dtype.name.startswith("datetime"):
+            epi["date"] = epi["date"].astype("datetime64[ns]")
+        # Apply temporal groupings
+        if "time_periods" in summary_config:
+            epi = lp.add_temporal_groupings(epi, summary_config["time_periods"])
+        # Apply regional groupings
+        if "region_groupings" in summary_config:
+            epi = lp.add_regional_groupings(epi, summary_config["region_groupings"])
+        elif admin_level == 0:
+            epi = lp.add_regional_groupings(epi)
+    # Save actual data with groupings applied
     epi.to_csv(results_path / "actual_data.csv", index=False)
 
     # Run the study

@@ -56,8 +56,8 @@ template = client.V1PodTemplateSpec(
         containers=[container],
         restart_policy="OnFailure",
         image_pull_secrets=[client.V1LocalObjectReference(name="idmodregcred3")],
-        node_selector={"nodepool": "64gb"},
-        tolerations=[client.V1Toleration(key="nodepool", operator="Equal", value="64gb", effect="NoSchedule")],
+        node_selector={"nodepool": "128gb"},
+        tolerations=[client.V1Toleration(key="nodepool", operator="Equal", value="128gb", effect="NoSchedule")],
         volumes=[
             client.V1Volume(
                 name="shared-data",

@@ -57,6 +57,7 @@ dependencies = [
     "tqdm",
     "unidecode",
     "optuna",
+    "pymysql",  # MySQL driver for local calibration
 ]
 
 [tool.setuptools.package-data]

@@ -41,6 +41,11 @@ def objective(
     seeds = []
     predictions = []
     for rep in range(n_replicates):
+        actual = None
+        predicted = None
+        scores = None
+        fit_scores = None
+        seeds = None
         try:
             # Run sim
             sim = lp.run_sim(config, verbose=0)

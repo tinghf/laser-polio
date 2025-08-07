@@ -184,8 +184,15 @@ class SEIR_ABM:
         with self.perf_stats.start(self.__class__.__name__ + ".__init__()"):
             # Load default parameters and optionally override with user-specified ones
             self.pars = deepcopy(lp.default_pars)
-            if pars is not None:
-                self.pars <<= pars  # strictly override existing parameters; all keys in `pars` must already exist in `self.pars`
+        if pars is not None:
+            unexpected_keys = set(pars.keys()) - set(self.pars.keys())
+            if unexpected_keys and self.verbose >= 0:
+                sc.printred(f"Warning: ignoring unexpected parameters: {list(unexpected_keys)}")
+                # Filter out unexpected keys before override
+                filtered_pars = {k: v for k, v in pars.items() if k in self.pars}
+                self.pars <<= filtered_pars
+            else:
+                self.pars <<= pars  # override existing parameters
             pars = self.pars
 
             self.verbose = pars["verbose"] if "verbose" in pars else 1

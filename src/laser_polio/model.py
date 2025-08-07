@@ -185,8 +185,8 @@ class SEIR_ABM:
             # Load default parameters and optionally override with user-specified ones
             self.pars = deepcopy(lp.default_pars)
         if pars is not None:
-            unexpected_keys = set(pars.keys()) - set(self.pars.keys())
-            if unexpected_keys and self.verbose >= 0:
+            unexpected_keys = set(pars.to_dict().keys()) - set(self.pars.to_dict().keys())
+            if unexpected_keys:
                 sc.printred(f"Warning: ignoring unexpected parameters: {list(unexpected_keys)}")
                 # Filter out unexpected keys before override
                 filtered_pars = {k: v for k, v in pars.items() if k in self.pars}

@@ -34,18 +34,18 @@ def objective(
     # Load base config
     with open(model_config_path) as f:
         model_config = yaml.safe_load(f)
-    # Merge with precedence to Optuna params
+    # Merge Optuna parameters into config
     config = {**model_config, **suggested_params}
     config["results_path"] = results_path
+
+    # Initialize outputs
     fit_scores = []
     seeds = []
     predictions = []
+    actual = None
+    predicted = None
+
     for rep in range(n_replicates):
-        actual = None
-        predicted = None
-        scores = None
-        fit_scores = None
-        seeds = None
         try:
             # Run sim
             sim = lp.run_sim(config, verbose=0)

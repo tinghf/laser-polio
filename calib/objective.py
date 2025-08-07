@@ -66,7 +66,6 @@ def objective(
 
         except Exception as e:
             print(f"[ERROR] Simulation failed in replicate {rep}: {e}")
-            fit_scores.append(float("inf"))
 
     # Save per-replicate scores & seeds to Optuna
     trial.set_user_attr("actual", json_friendly(actual))

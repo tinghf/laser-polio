@@ -26,8 +26,8 @@ import laser_polio as lp
 # calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
 study_name = "calib_west_africa_7y_2017_underwt_region_strategy_20250806_v2"
-model_config = "config_west_africa_7y_2017_region_strategy_sansnga.yaml"
-# model_config = "config_west_africa_7y_2017_region_strategy.yaml"
+# model_config = "config_west_africa_7y_2017_region_strategy_sansnga.yaml"
+model_config = "config_west_africa_7y_2017_region_strategy.yaml"
 calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 
 fit_function = "log_likelihood"

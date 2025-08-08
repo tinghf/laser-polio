@@ -43,7 +43,7 @@ def main():
         plot_optuna(cfg.study_name, study.storage_url, output_dir=results_path)
 
         print("📊 Plotting target comparisons...")
-        plot_targets(study, output_dir=results_path, start_year=start_year)
+        plot_targets(study, output_dir=results_path)
 
         print("📊 Plotting top trials...")
         plot_top_trials(study, output_dir=results_path, n_best=10, start_year=start_year)

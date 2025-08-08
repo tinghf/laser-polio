@@ -8,7 +8,7 @@ ENV NUMBA_CPU_NAME=generic
 ENV HEADLESS=1
 
 # Install laser-polio (maximize layer cache)
-RUN pip3 install --no-cache-dir --force-reinstall --no-deps -i https://packages.idmod.org/api/pypi/pypi-production/simple laser-polio
+RUN pip install --no-cache-dir --upgrade -i https://packages.idmod.org/api/pypi/pypi-production/simple laser-polio
 
 # Copy application code and configuration files
 COPY calib/ ./calib/

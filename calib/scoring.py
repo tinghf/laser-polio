@@ -141,8 +141,24 @@ def compute_nll_dirichlet(actual, predicted, weights=None):
                 if set(a.keys()) != set(p.keys()):
                     raise ValueError(f"Key mismatch in nested dict '{key}': {set(a.keys()) ^ set(p.keys())}")
                 subkeys = sorted(a.keys())  # enforce consistent order
-                v_obs = np.array([a[k] for k in subkeys], dtype=int)
-                v_sim = np.array([p[k] for k in subkeys], dtype=float)
+
+                # Check if values are also dictionaries (doubly nested)
+                obs_values = []
+                sim_values = []
+                for k in subkeys:
+                    obs_val = a[k]
+                    sim_val = p[k]
+
+                    if isinstance(obs_val, dict) and isinstance(sim_val, dict):
+                        # Handle doubly nested case - flatten by summing values
+                        obs_values.append(sum(obs_val.values()))
+                        sim_values.append(sum(sim_val.values()))
+                    else:
+                        obs_values.append(obs_val)
+                        sim_values.append(sim_val)
+
+                v_obs = np.array(obs_values, dtype=int)
+                v_sim = np.array(sim_values, dtype=float)
 
             # Handle flat arrays or lists
             else:

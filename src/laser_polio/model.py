@@ -861,6 +861,7 @@ class DiseaseState_ABM:
         self.plot_new_exposed_by_strain(save=save, results_path=results_path)
         if self.pars.shp is not None:
             self.plot_infected_choropleth(save=save, results_path=results_path)
+            self.plot_infected_choropleth_by_strain(save=save, results_path=results_path)
 
     def plot_total_seir_counts(self, save=False, results_path=None):
         plt.figure(figsize=(10, 6))
@@ -1165,6 +1166,78 @@ class DiseaseState_ABM:
             plt.savefig(results_path / "infected_choropleth.png")
         else:
             plt.show()
+
+    def plot_infected_choropleth_by_strain(self, save=False, results_path=None, n_panels=6):
+        """
+        Plot separate choropleth figures for each strain using results.I_by_strain.
+        Creates one figure per strain, each with n_panels showing infection counts over time.
+        """
+
+        timepoints = np.linspace(0, self.pars.dur, n_panels, dtype=int)
+        shp = self.pars.shp.copy()  # Don't mutate original GeoDataFrame
+
+        # Get strain information
+        strain_ids = self.sim.pars.strain_ids
+        # results.I_by_strain has shape (time, nodes, strains)
+        I_by_strain = self.results.I_by_strain
+        for strain_idx, strain_id in enumerate(strain_ids):
+            # Get data for this strain across all time and nodes
+            strain_data = I_by_strain[:, :, strain_idx]  # shape: (time, nodes)
+
+            # Get global min/max for consistent color scale across panels for this strain
+            infection_min = np.min(strain_data[strain_data > 0]) if np.any(strain_data > 0) else 0
+            infection_max = np.max(strain_data)
+
+            # Skip strains with no infections
+            if infection_max == 0:
+                print(f"Skipping strain {strain_id} - no infections found")
+                continue
+
+            alpha = 0.9
+            rows, cols = 2, int(np.ceil(n_panels / 2))
+            fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 6), constrained_layout=True)
+            axs = axs.ravel()
+
+            # Use rainbow colormap
+            cmap = plt.cm.get_cmap("rainbow")
+            norm = mcolors.Normalize(vmin=infection_min, vmax=infection_max)
+
+            for i, ax in enumerate(axs[:n_panels]):
+                t = timepoints[i]
+                infection_counts = strain_data[t, :]  # shape = (num_nodes,)
+                shp["infected"] = infection_counts
+                shp["infected_masked"] = shp["infected"].replace({0: np.nan})  # Mask out zeros
+                shp.plot(
+                    column="infected_masked",
+                    ax=ax,
+                    cmap=cmap,
+                    norm=norm,
+                    alpha=alpha,
+                    linewidth=0.1,
+                    edgecolor="white",
+                    legend=False,
+                    missing_kwds={"color": "lightgrey", "label": "Zero infections"},
+                )
+            ax.set_title(f"Strain {strain_id} Infections at t={t}")
+            ax.set_axis_off()
+
+            # Add a shared colorbar
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+            sm._A = []
+            cbar = fig.colorbar(sm, ax=axs, orientation="vertical", fraction=0.03, pad=0.01)
+            cbar.solids.set_alpha(alpha)
+            cbar.set_label("Infection Count")
+            fig.suptitle(f"Choropleth of Infected Population by Node - Strain {strain_id}", fontsize=16)
+
+            if save:
+                if results_path is None:
+                    raise ValueError("Please provide a results path to save the plots.")
+                plt.savefig(
+                    results_path / f"infected_choropleth_strain_{strain_id}.png", dpi=300, format="png", facecolor="white", edgecolor="none"
+                )
+                plt.close(fig)
+            else:
+                plt.show()
 
 
 @nb.njit((nb.int16[:], nb.int8[:], nb.int8[:], nb.int8[:], nb.int8[:], nb.int32, nb.int32, nb.int32), parallel=True, nogil=True)

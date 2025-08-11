@@ -5,8 +5,8 @@ import yaml
 
 # ------------------- USER CONFIGS -------------------
 
-job_name = "lp-sk-1"
-study_name = "calib_west_africa_7y_2017_underwt_region_strategy_20250807"
+job_name = "lpsk1"
+study_name = "calib_west_africa_7y_2017_underwt_region_strategy_20250808"
 model_config = "config_west_africa_7y_2017_region_strategy.yaml"
 calib_config = "r0_ssn_gravkabc_zinb_r0sclrs_siasclrs_initimmunsclrs_dirichlet_wts_narrower_regionaltimeseries.yaml"
 

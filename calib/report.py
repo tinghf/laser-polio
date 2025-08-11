@@ -3,9 +3,13 @@ from datetime import datetime
 from pathlib import Path
 
 import geopandas as gpd
+import matplotlib
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Ensure we're using the Agg backend for better cross-platform compatibility
+matplotlib.use("Agg")
 import optuna
 import optuna.visualization as vis
 import pandas as pd
@@ -902,7 +906,7 @@ def plot_likelihoods(study, output_dir=None, use_log=True):
     values = [likelihoods[k] for k in keys]
 
     fig, ax = plt.subplots(figsize=(12, 7))  # Increased height to accommodate labels
-    bars = ax.bar(keys, values)
+    bars = ax.bar(keys, values)  # noqa: F841
     if use_log:
         ax.set_yscale("log")
         ax.set_ylabel("Log Likelihood")
@@ -911,21 +915,25 @@ def plot_likelihoods(study, output_dir=None, use_log=True):
     ax.set_title("Calibration Log-Likelihoods by Component")
     ax.set_xticks(range(len(keys)))
     ax.set_xticklabels(keys, rotation=45, ha="right")
-    # Annotate bars
-    for bar in bars:
-        height = bar.get_height()
-        label = f"{height:.1f}"
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            height,
-            label,
-            ha="center",
-            va="bottom" if not use_log else "top",
-            fontsize=9,
-        )
+    # Add text labels on bars after scale is set
+    try:
+        for bar in ax.patches:
+            height = bar.get_height()
+            if height > 0:  # Only add labels for positive values
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    height * (1.05 if not use_log else 0.95),  # Offset slightly from bar
+                    f"{height:.1f}",
+                    ha="center",
+                    va="bottom" if not use_log else "top",
+                    fontsize=9,
+                )
+    except Exception as e:
+        print(f"[WARN] Could not add bar labels: {e}")
     plt.subplots_adjust(bottom=0.2)  # Reserve 20% of figure height for x-labels
     plt.savefig(output_dir / "plot_likelihoods.png", bbox_inches="tight")
-    # plt.show()
+    plt.close()
+    plt.show()
 
 
 def plot_runtimes(study, output_dir=None):
@@ -958,6 +966,7 @@ def plot_runtimes(study, output_dir=None):
         plt.grid(True, linestyle="--", alpha=0.5)
         plt.tight_layout()
         plt.savefig(output_dir / "plot_runtimes.png")
+        plt.close()
         # plt.show()
     else:
         print("No completed trials with valid timestamps to plot.")

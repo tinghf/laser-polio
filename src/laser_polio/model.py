@@ -27,6 +27,8 @@ from laser_core.migration import row_normalizer
 from laser_core.propertyset import PropertySet
 from laser_core.random import seed as set_seed
 from laser_core.utils import calc_capacity
+from matplotlib import cm
+from matplotlib.ticker import FormatStrFormatter
 from tqdm import tqdm
 
 import laser_polio as lp
@@ -1840,6 +1842,57 @@ class Transmission_ABM:
         print( f"{self.calc_ni_time=}" )
         print( f"{self.do_ni_time=}" )
         """
+        self.plot_network(self.network, save=save, results_path=results_path)
+
+    def plot_network(self, network, save=False, results_path=""):
+        """
+        Plot a heatmap of the network & a histogram of the proportions of infections leaving each node.
+        """
+        # Handle paths
+        results_path = Path(results_path)
+        results_path.mkdir(parents=True, exist_ok=True)
+
+        fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+
+        # Convert to array
+        network_array = np.array(network)
+
+        # Mask zeros
+        masked_network = np.ma.masked_where(network_array == 0.0, network_array)
+
+        # Create custom colormap
+        cmap = cm.get_cmap("plasma").copy()
+        cmap.set_bad("white")
+
+        # Plot heatmap using imshow
+        im = axs[0].imshow(masked_network, cmap=cmap, origin="upper", interpolation="none")
+        axs[0].set_title("Transmission Matrix (Heatmap)")
+        axs[0].set_xlabel("Destination Node")
+        axs[0].set_ylabel("Source Node")
+        fig.colorbar(im, ax=axs[0], fraction=0.046, pad=0.04)
+
+        # Optionally annotate small networks
+        if network_array.shape[0] <= 10:
+            for i in range(network_array.shape[0]):
+                for j in range(network_array.shape[1]):
+                    val = network_array[i, j]
+                    if val != 0.0:
+                        axs[0].text(j, i, f"{val:.2f}", ha="center", va="center", fontsize=8, color="black")
+
+        # Histogram
+        values = network_array.sum(axis=1)
+        axs[1].hist(values, bins=10, edgecolor="black", color="steelblue")
+        axs[1].set_title("Proportion of Infections Leaving Each Node")
+        axs[1].set_xlabel("Proportion")
+        axs[1].set_ylabel("Count")
+        axs[1].xaxis.set_major_formatter(FormatStrFormatter("%.2f"))  # round x-axis
+        axs[1].yaxis.set_major_formatter(FormatStrFormatter("%.2f"))  # optional: round y-axis
+
+        plt.tight_layout()
+
+        if save:
+            fig.savefig(results_path / "network.png", dpi=300)
+        plt.close(fig)
 
 
 @nb.njit(parallel=True, cache=False)

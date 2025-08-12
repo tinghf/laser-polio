@@ -564,13 +564,15 @@ def plot_targets(study, output_dir=None, shp=None):
     if "cases_by_region" in actual:
         region_labels = list(actual["cases_by_region"].keys())
         x = np.arange(len(region_labels))
-        width = 0.1
-        plt.figure()
+        width = 0.6
+        plt.figure(figsize=(12, 8))
         plt.title("Regional Cases")
-        plt.bar(x, actual["cases_by_region"].values(), width, label="Actual", color=color_map["Actual"])
+        plt.bar(
+            x, actual["cases_by_region"].values(), width, label="Actual", edgecolor=color_map["Actual"], facecolor="none", linewidth=1.5
+        )
         for i, rep in enumerate(preds):
             label = f"Rep {i + 1}"
-            plt.bar(x + (i + 1) * width, rep["cases_by_region"].values(), width, label=f"Rep {i + 1}", color=color_map[label])
+            plt.scatter(x, rep["cases_by_region"].values(), label=f"Rep {i + 1}", color=color_map[label], marker="o", s=50)
         plt.xticks(x + width * (len(preds) // 2), region_labels, rotation=45, ha="right")
         plt.ylabel("Cases")
         plt.legend()
@@ -635,12 +637,22 @@ def plot_targets(study, output_dir=None, shp=None):
             n_cols = 2
             n_rows = (n_regions + n_cols - 1) // n_cols  # Ceiling division
 
-            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 10))
+            # Define dynamic figure size: scale height per row and keep width fixed
+            fig_height_per_row = 3.5
+            fig_width = 15
+            fig_height = n_rows * fig_height_per_row
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(fig_width, fig_height))
             fig.suptitle("Regional Monthly Timeseries Comparison", fontsize=16)
 
             # Flatten axes for easier indexing if multiple rows
-            if n_regions > 1:
-                axes = axes.flatten() if n_rows > 1 else [axes] if n_cols == 1 else axes
+            # if n_regions > 1:
+            #     axes = axes.flatten() if n_rows > 1 else [axes] if n_cols == 1 else axes
+            # else:
+            #     axes = [axes]
+
+            # Normalize axes to always be a flat list of Axes
+            if isinstance(axes, np.ndarray):
+                axes = axes.flatten()
             else:
                 axes = [axes]
 
@@ -696,7 +708,11 @@ def plot_targets(study, output_dir=None, shp=None):
             n_cols = 2
             n_rows = (n_regions + n_cols - 1) // n_cols  # Ceiling division
 
-            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 10))
+            fig_height_per_row = 3
+            fig_width = 15
+            fig_height = n_rows * fig_height_per_row
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(fig_width, fig_height))
+            # fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 10))
             fig.suptitle("District Case Count Distribution by Region", fontsize=16)
 
             # Flatten axes for easier indexing if multiple rows

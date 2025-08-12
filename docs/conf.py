@@ -15,7 +15,7 @@ project = "LASER Polio (PHASER)"
 year = "2025"
 author = "Institute for Disease Modeling"
 copyright = f"{year}, Gates Foundation"
-version = release = "0.2.18"
+version = release = "0.2.19"
 
 pygments_style = "trac"
 templates_path = ["."]

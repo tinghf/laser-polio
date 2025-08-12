@@ -74,3 +74,4 @@ docs/_build
 *simulation_log*.txt
 *COMPS_log.log
 *idmtools.log
+.vscode/launch.json

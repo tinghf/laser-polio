@@ -14,14 +14,14 @@ init_prev = 200
 r0 = 14
 migration_method = "radiation"
 radiation_k = 0.5
-max_migr_frac = 1.0
+max_migr_frac = 0.1
 verbose = 1
 vx_prob_ri = 0.0
 missed_frac = 0.1
-seed_schedule = [
-    {"date": "2018-01-02", "dot_name": "AFRO:NIGERIA:ZAMFARA:BAKURA", "prevalence": 200},  # day 1
-    {"date": "2018-11-07", "dot_name": "AFRO:NIGERIA:ZAMFARA:GUMMI", "prevalence": 200},  # day 2
-]
+# seed_schedule = [
+#     {"date": "2018-01-02", "dot_name": "AFRO:NIGERIA:ZAMFARA:BAKURA", "prevalence": 200},  # day 1
+#     {"date": "2018-11-07", "dot_name": "AFRO:NIGERIA:ZAMFARA:GUMMI", "prevalence": 200},  # day 2
+# ]
 save_plots = True
 save_data = True
 plot_pars = True
@@ -56,7 +56,7 @@ sim = lp.run_sim(
     save_init_pop=save_init_pop,
     vx_prob_ri=vx_prob_ri,
     init_pop_file=init_pop_file,
-    seed_schedule=seed_schedule,
+    # seed_schedule=seed_schedule,
     missed_frac=missed_frac,
     use_pim_scalars=True,
 )

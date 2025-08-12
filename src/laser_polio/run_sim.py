@@ -182,7 +182,7 @@ def run_sim(
     init_immun = init_immun[init_immun["period"] == start_year]
     # Apply scalar multiplier to immunity values, clipping to [0.0, 1.0]
     immunity_cols = [col for col in init_immun.columns if col.startswith("immunity_")]
-    init_immun[immunity_cols] = init_immun[immunity_cols] * init_immun_scalar
+    init_immun.loc[:, immunity_cols] = init_immun[immunity_cols] * init_immun_scalar
     # Set immunity for 15+ to 1.0
     init_immun.loc[:, "immunity_180_1200"] = 1.0
     # Clip immunity values to [0.0, 1.0]

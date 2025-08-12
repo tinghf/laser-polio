@@ -105,10 +105,15 @@ def run_worker_main(
         if "time_periods" in summary_config:
             epi = lp.add_temporal_groupings(epi, summary_config["time_periods"])
         # Apply regional groupings
-        if "region_groupings" in summary_config:
-            epi = lp.add_regional_groupings(epi, summary_config["region_groupings"])
-        elif admin_level == 0:
-            epi = lp.add_regional_groupings(epi)
+        if "region_groupings" in summary_config and "grouping_level" in summary_config:
+            epi = lp.add_regional_groupings(epi, summary_config["region_groupings"], grouping_level=summary_config["grouping_level"])
+        elif "region_groupings" in summary_config:
+            epi = lp.add_regional_groupings(epi, summary_config["region_groupings"], grouping_level="adm0")
+        elif "grouping_level" in summary_config:
+            epi = lp.add_regional_groupings(epi, grouping_level=summary_config["grouping_level"])
+        else:
+            epi = lp.add_regional_groupings(epi, grouping_level="dot_name")  # Default to dot_name
+
     # Save actual data with groupings applied
     epi.to_csv(results_path / "actual_data.csv", index=False)
 

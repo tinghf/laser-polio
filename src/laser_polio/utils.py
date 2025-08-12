@@ -694,10 +694,14 @@ def save_sim_results(data, filename="simulation_results.csv", summary_config=Non
             df = add_temporal_groupings(df, summary_config["time_periods"])
 
         # Apply regional groupings
-        if "region_groupings" in summary_config:
-            df = add_regional_groupings(df, summary_config["region_groupings"])
-        elif summary_config.get("admin_level", None) == 0:
-            df = add_regional_groupings(df)  # Default to adm0 level if admin_level is 0
+        if "region_groupings" in summary_config and "grouping_level" in summary_config:
+            df = add_regional_groupings(df, summary_config["region_groupings"], grouping_level=summary_config["grouping_level"])
+        elif "region_groupings" in summary_config:
+            df = add_regional_groupings(df, summary_config["region_groupings"], grouping_level="adm0")
+        elif "grouping_level" in summary_config:
+            df = add_regional_groupings(df, grouping_level=summary_config["grouping_level"])
+        else:
+            df = add_regional_groupings(df, grouping_level="dot_name")  # Default to dot_name
 
     # Save to CSV
     df.to_csv(filename, index=False)
@@ -993,7 +997,7 @@ def add_temporal_groupings(df, time_config):
     return df
 
 
-def add_regional_groupings(df, region_groupings=None, regions_yaml_path=None):
+def add_regional_groupings(df, region_groupings=None, grouping_level="adm0", regions_yaml_path=None):
     """
     Add regional groupings based on region_groupings list.
     Countries in the list use regions.yaml, all others use adm0.
@@ -1028,8 +1032,10 @@ def add_regional_groupings(df, region_groupings=None, regions_yaml_path=None):
     df["adm1"] = dot_parts[2]
     df["adm01"] = df["adm0"] + ":" + df["adm1"]
 
-    # Default: group by adm0 (country level)
-    df["region"] = df["adm0"]
+    # Set default grouping based on specified admin level
+    if grouping_level not in {"adm0", "adm01", "dot_name"}:
+        raise ValueError(f"Invalid grouping_level: {grouping_level}. Must be one of 'adm0', 'adm01', or 'dot_name'.")
+    df["region"] = df[grouping_level]
 
     # Apply custom regions for specified countries if provided
     if region_groupings:
@@ -1052,12 +1058,19 @@ def add_regional_groupings(df, region_groupings=None, regions_yaml_path=None):
                     for group_name, patterns in region_groups.items():
                         pattern_mask = pd.Series(False, index=df.index)
 
+                        # for pattern in patterns:
+                        #     if ":" in pattern and not pattern.startswith("AFRO:"):
+                        #         # Pattern like "NIGERIA:JIGAWA" - match against adm01
+                        #         pattern_mask |= df["adm01"] == pattern
+                        #     else:
+                        #         # Pattern for dot_name matching
+                        #         pattern_mask |= df["dot_name"].str.contains(pattern, case=False, na=False)
                         for pattern in patterns:
-                            if ":" in pattern and not pattern.startswith("AFRO:"):
-                                # Pattern like "NIGERIA:JIGAWA" - match against adm01
+                            if grouping_level == "adm01" and ":" in pattern:
                                 pattern_mask |= df["adm01"] == pattern
+                            elif grouping_level == "adm1":
+                                pattern_mask |= df["adm1"] == pattern
                             else:
-                                # Pattern for dot_name matching
                                 pattern_mask |= df["dot_name"].str.contains(pattern, case=False, na=False)
 
                         # Apply to this country only

@@ -19,6 +19,7 @@ CALIBRATION
 - Plot out 'bad' calib trials, get a smattering of options for each r0, both high and low likelihoods
 
 NEW FEATURES
+- Save the model and calib config names to the study_metadata.json in calibration
 - Enable RI for nOPV2
 - Add age pyramid by country
 - Try alternate migration models like discrete radiation (JG recommends)

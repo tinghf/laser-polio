@@ -36,10 +36,12 @@ classifiers = [
 
 dependencies = [
     "alive_progress",
+    "cartopy",
     "click",
     "geopandas",
     "geopy",
     "h5py",
+    "imageio_ffmpeg",
     "laser-core~=0.6",
     "matplotlib",
     "numba>=0.59.1",

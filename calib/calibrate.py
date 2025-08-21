@@ -17,11 +17,9 @@ import laser_polio as lp
 
 # ------------------- USER CONFIGS -------------------
 
-# Goal: Go back to 4 pars
-job_name = "lpsk5"
-study_name = "calib_nigeria_7y_2017_underwt_region_groupings_20250814"
-model_config = "config_nigeria_7y_2017_region_groupings.yaml"
-calib_config = "r0_k_ssn_wts.yaml"
+study_name = "calib_nigeria_sweep_ssnamp_20250820"
+model_config = "config_nigeria_7y_2017_r0_spd_radk_mmf.yaml"
+calib_config = "ssnamp.yaml"
 
 fit_function = "log_likelihood"
 n_trials = 2

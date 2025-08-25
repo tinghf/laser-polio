@@ -21,7 +21,7 @@ fit_function = "log_likelihood"
 n_trials = 1  # Number of trials to run per pod
 n_replicates = 1  # Number of replicates to run for each trial
 parallelism = 200  # The number of pods (i.e., jobs) to run in parallel
-completions = 1000  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
+completions = 5000  # The total number of pods (i.e., jobs) that need to successfully complete before the job is considered "done"
 
 # ---------------------------------------------------
 

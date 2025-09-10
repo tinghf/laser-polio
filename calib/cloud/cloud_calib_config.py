@@ -11,11 +11,11 @@ import yaml
 # model_config = "config_nigeria_7y_2017_regions_sansmaxmigrfrac.yaml"
 # calib_config = "r0_k_ssn_wts_maxmigrfrac_lowerr0_zi.yaml"
 
-# Goal: region calib after fixing the strain paralysis issue
-job_name = "lpsk1"
-study_name = "calib_nigeria_7y_2017_regions_gravity_ssn_nozi_pim_20250908"
-model_config = "nigeria_7y_2017_regions_gravity_ssn_nozi_pim.yaml"
-calib_config = "r0_gravk_mmf.yaml"
+# # Goal: region calib after fixing the strain paralysis issue
+# job_name = "lpsk1"
+# study_name = "calib_nigeria_7y_2017_regions_gravity_ssn_nozi_pim_20250908"
+# model_config = "nigeria_7y_2017_regions_gravity_ssn_nozi_pim.yaml"
+# calib_config = "r0_gravk_mmf.yaml"
 
 # # Goal: region calib after fixing the strain paralysis issue
 # job_name = "lpsk2"
@@ -29,11 +29,11 @@ calib_config = "r0_gravk_mmf.yaml"
 # model_config = "nigeria_7y_2017_regions_radiation_ssn_nozi_pim.yaml"
 # calib_config = "r0_radk_mmf.yaml"
 
-# # Goal: region calib after fixing the strain paralysis issue
-# job_name = "lpsk4"
-# study_name = "calib_nigeria_7y_2017_regions_radiation_ssn_nozi_underwt_20250908"
-# model_config = "nigeria_7y_2017_regions_radiation_ssn_nozi_underwt.yaml"
-# calib_config = "r0_radk_mmf.yaml"
+# Goal: region calib after fixing the strain paralysis issue
+job_name = "lpsk4"
+study_name = "calib_nigeria_7y_2017_regions_radiation_ssn_nozi_underwt_20250908"
+model_config = "nigeria_7y_2017_regions_radiation_ssn_nozi_underwt.yaml"
+calib_config = "r0_radk_mmf.yaml"
 
 fit_function = "log_likelihood"
 n_trials = 1  # Number of trials to run per pod

@@ -38,7 +38,7 @@ if os.getenv("POLIO_ROOT"):
     lp.root = Path(os.getenv("POLIO_ROOT"))
 
 
-def resolve_paths(study_name, model_config, calib_config, results_path=None, actual_data_file=None):
+def resolve_paths(study_name, model_config, calib_config, actual_data_file, results_path=None):
     """
     Build composite paths
     """
@@ -65,7 +65,11 @@ def resolve_paths(study_name, model_config, calib_config, results_path=None, act
 
 def main(study_name, model_config, calib_config, fit_function, n_replicates, n_trials, results_path, actual_data_file, dry_run):
     model_config, calib_config, results_path, actual_data_file = resolve_paths(
-        study_name, model_config, calib_config, results_path, actual_data_file
+        study_name,
+        model_config,
+        calib_config,
+        actual_data_file,
+        results_path,
     )
 
     print(f"🔍 Running calibration for study '{study_name}'...")

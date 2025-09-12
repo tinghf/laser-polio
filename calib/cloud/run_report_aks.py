@@ -9,6 +9,7 @@ import optuna
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import yaml
 from report import plot_likelihoods
+from report import plot_likelihoods_vs_params
 from report import plot_optuna
 from report import plot_runtimes
 from report import plot_targets
@@ -53,6 +54,9 @@ def main():
 
         print("📊 Plotting likelihoods...")
         plot_likelihoods(study, output_dir=Path(results_path), use_log=True)
+
+        print("📊 Plotting likelihoods vs params...")
+        plot_likelihoods_vs_params(study, output_dir=Path(results_path), use_log=True)
 
         # print("📊 Running top trials on COMPS...")
         # from report import run_top_n_on_comps

@@ -1444,3 +1444,57 @@ def plot_top_trials(study, output_dir, n_best=10, title="Top Calibration Results
                 output_path=top_trials_dir / "case_diff_choropleth_temporal_best.png",
                 title=f"Case Count Difference by Period - Best Trial {best_trial.number} (value={best_trial.value:.2f})",
             )
+
+
+def plot_likelihoods_vs_params(study, output_dir=None, use_log=True, figsize=(12, 8), point_size=20, alpha=0.7):
+    # Load trials dataframe
+    df = study.trials_dataframe(attrs=("number", "value", "params", "state", "user_attrs"))
+    params = [c for c in df.columns if c.startswith("params_")]
+    cols_to_keep = params + ["user_attrs_likelihoods"]  # noqa: RUF005
+    df = df[cols_to_keep]
+    # Expand dicts into separate columns
+    expanded = df["user_attrs_likelihoods"].apply(pd.Series)
+    if 0 in expanded.columns:
+        expanded = expanded.drop(columns=[0])
+    # Optionally prefix the new columns
+    expanded = expanded.add_prefix("ll_")
+    ll_cols = [c for c in expanded.columns if c.startswith("ll_")]
+    # Join back to the original dataframe (and drop the old dict column if you want)
+    df_expanded = pd.concat([df.drop(columns=["user_attrs_likelihoods"]), expanded], axis=1)
+    # Drop rows where any column is NaN
+    df_expanded = df_expanded.dropna(how="any")
+
+    for param in params:
+        n = len(ll_cols)
+        ncols = 3 if n >= 3 else n
+        nrows = int(np.ceil(n / ncols))
+
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize, squeeze=False)
+        axes = axes.flatten()
+
+        # Shared X data
+        x = df_expanded[param].values
+
+        for i, ycol in enumerate(ll_cols):
+            ax = axes[i]
+            y = df_expanded[ycol].values
+            ax.scatter(x, y, s=point_size, alpha=alpha)
+            if use_log:
+                # Only set log if all positive
+                if np.all(y > 0):
+                    ax.set_yscale("log")
+            like_label = ycol.replace("like_", "")
+            param_label = param.replace("params_", "")
+            ax.set_title(f"{like_label}")  # vs {param_label}
+            ax.set_xlabel(param_label)
+            ax.set_ylabel(like_label)
+
+        # Hide any unused subplots
+        for j in range(i + 1, len(axes)):
+            axes[j].set_visible(False)
+
+        fig.tight_layout()
+        out = Path(output_dir / "likelihoods_vs_params" / f"likelihoods_vs_{param_label}.png")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out, dpi=200, bbox_inches="tight")
+        plt.close(fig)

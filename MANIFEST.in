@@ -2,6 +2,7 @@ graft docs
 graft src
 graft ci
 graft tests
+graft tests_scientific
 
 include .bumpversion.cfg
 include .cookiecutterrc
@@ -12,6 +13,8 @@ include .pre-commit-config.yaml
 include .readthedocs.yml
 include pytest.ini
 include tox.ini
+include pyrightconfig.json
+include CLAUDE.md
 
 include AUTHORS.rst
 include CHANGELOG.rst
@@ -22,9 +25,13 @@ include README.rst
 recursive-include examples *
 
 exclude TODO.md
+exclude tests/data/initpop_testcase/init_pop.h5
 exclude .vscode/settings.json
+recursive-exclude calib *
 recursive-exclude data *
+recursive-exclude data_curation_scripts *
+recursive-exclude results *
 recursive-exclude scripts *
 
 recursive-exclude .devcontainer *
-global-exclude *.py[cod] __pycache__/* *.so *.dylib
+global-exclude *.py[cod] __pycache__/* *.so *.dylib .DS_Store

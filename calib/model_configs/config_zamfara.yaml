@@ -1,0 +1,15 @@
+regions: ["ZAMFARA"]
+start_year: 2019
+n_days: 1095
+pop_scale: 1.0
+vx_prob_ri: null
+init_region: "ANKA"
+init_prev: 0.05
+migration_method: "radiation"
+results_path: "results/demo_zamfara"
+save_plots: false
+save_data: true
+summary_config:
+  time_periods:
+    bins: ["2020-07-01", "2022-07-01"]  # Split points
+    labels: ["2017-2020.5", "2020.5-2022.5", "2022.5-2024"]

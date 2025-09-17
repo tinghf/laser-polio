@@ -1,0 +1,9 @@
+{
+    "typeCheckingMode": "off",  // or "off", "strict"
+    "reportOptionalMemberAccess": false,
+    "reportOptionalSubscript": false,
+    "reportOptionalCall": false,
+    "reportGeneralTypeIssues": "none",
+    "reportAttributeAccessIssue": false,
+    "reportArgumentType": "none"
+  }

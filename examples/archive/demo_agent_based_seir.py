@@ -31,14 +31,14 @@ pars = PropertySet(
         "start_date": start_date,  # Start date of the simulation
         "dur": 180,  # Number of timesteps
         # Population
-        "n_ppl": pop,  # np.array([30000, 10000, 15000, 20000, 25000]),
+        "init_pop": pop,  # np.array([30000, 10000, 15000, 20000, 25000]),
         "distances": dist_matrix,  # Distance in km
         # Disease
         "init_prev": np.array([0, 0.01, 0, 0, 0]),  # Initial prevalence per node (1% infected)
         "beta_global": 0.3,  # Global infection rate
-        "beta_spatial": np.array([0.8, 2.0, 0.9, 1.5, 0.5]),  # Spatial transmission scalar (multiplied by global rate)
-        "seasonal_factor": 0.125,  # Seasonal variation in transmission
-        "seasonal_phase": 180,  # Phase of seasonal variation
+        "r0_scalars": np.array([0.8, 2.0, 0.9, 1.5, 0.5]),  # Spatial transmission scalar (multiplied by global rate)
+        "seasonal_amplitude": 0.125,  # Seasonal variation in transmission
+        "seasonal_peak_doy": 180,  # Phase of seasonal variation
         "p_paralysis": 1 / 20,  # Probability of paralysis
         "dur_exp": 4,  # Duration of the exposed state
         "dur_inf": 24,  # Duration of the infectious state

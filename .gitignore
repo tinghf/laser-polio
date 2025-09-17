@@ -6,6 +6,7 @@ uv.lock
 
 # File types
 *.cpg
+*.db
 *.dbf
 *.geojson
 *.nbc
@@ -19,12 +20,26 @@ uv.lock
 *.shx
 *.tif
 
+# Calibration & results files
+*local_storage.yaml
+*params.json
+*simulation_results.csv
+*simulation_results.h5
+results/
+*local_storage.yaml
+*laser_polio_deps.txt
+
 # Large files
+*shape0.gpkg
+*shape1.gpkg
+*shape2.gpkg
+*shape_combined_simplified.gpkg
 *distance_matrix_africa.csv
 *dpt_district_summaries.csv
 *geojson.zip
 *sia_district_rows.csv
 *WPP2024_POP_F02_1_POPULATION_5-YEAR_AGE_GROUPS_BOTH_SEXES.xlsx
+*init_pop*.h5
 
 # Python
 *.py[cod]
@@ -55,3 +70,9 @@ docs/_build
 
 # Tox
 .tox/
+
+# Logs
+*simulation_log*.txt
+*COMPS_log.log
+*idmtools.log
+.vscode/launch.json

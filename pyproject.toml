@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laser_polio"
-version = "0.1.0"
+version = "0.2.30"
 authors = [
   { name="Jonathan Bloedow", email="jonathan.bloedow@gatesfoundation.org" },
   { name="Christopher Lorton", email="christopher.lorton@gatesfoundation.org" },
@@ -36,11 +36,13 @@ classifiers = [
 
 dependencies = [
     "alive_progress",
+    "cartopy",
     "click",
     "geopandas",
     "geopy",
     "h5py",
-    "laser-core~=0.2",
+    "imageio_ffmpeg",
+    "laser-core~=0.6",
     "matplotlib",
     "numba>=0.59.1",
     "numpy>=1.26.4,<2.0.0",
@@ -48,7 +50,7 @@ dependencies = [
     "pypdf",
     "pytest",
     "openpyxl",
-    "rastertools @ git+https://github.com/InstituteforDiseaseModeling/RasterTools.git@76e4b737337449b103d8d9070248a970e9c05713",
+    # "rastertools @ git+https://github.com/InstituteforDiseaseModeling/RasterTools.git@76e4b737337449b103d8d9070248a970e9c05713",
     "requests",
     "scipy",
     "sciris==3.1.7",
@@ -56,6 +58,8 @@ dependencies = [
     "tables",
     "tqdm",
     "unidecode",
+    "optuna",
+    "pymysql",  # MySQL driver for local calibration
 ]
 
 [tool.setuptools.package-data]
@@ -96,13 +100,14 @@ laser-polio = "laser_polio.cli:run"
 extend-exclude = ["static", "ci/templates"]
 line-length = 140
 src = ["src", "tests"]
-target-version = "py39"
+target-version = "py312"
 
 [tool.ruff.lint.per-file-ignores]
 "ci/*" = ["S"]
 
 [tool.ruff.lint]
 ignore = [
+    "RUF059", # unused unpacked variables
     "RUF001", # ruff-specific rules ambiguous-unicode-character-string
     "S101", # flake8-bandit assert
     "S308", # flake8-bandit suspicious-mark-safe-usage
@@ -117,7 +122,10 @@ ignore = [
     "PTH122", # I have neither desire nor need to think about paths as objects
     "PTH123", # I have neither desire nor need to think about paths as objects
     "PTH208",
-    "DTZ002" # I want to be able to just call a today() function.
+    "PT028", # default arguments in test functions
+    "DTZ001", # Ignore datetime timezone issues 
+    "DTZ002", # I want to be able to just call a today() function.
+    "W291",  # Never again do I want to think about trailing whitespace
 ]
 select = [
     "B", # flake8-bugbear
@@ -152,7 +160,7 @@ force-single-line = true
 quote-style = "double"
 
 [tool.bumpversion]
-current_version = "0.1.0"
+current_version = "0.2.30"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"
@@ -211,17 +219,14 @@ legacy_tox_ini = """
         clean,
         check,
         docs,
-        {py39,py310,py311,py312},
+        {py312},
         report
     ignore_basepython_conflict = true
 
     [testenv]
     basepython =
-        py39: {env:TOXPYTHON:python3.9}
-        py310: {env:TOXPYTHON:python3.10}
-        py311: {env:TOXPYTHON:python3.11}
         py312: {env:TOXPYTHON:python3.12}
-        {bootstrap,clean,check,report,docs,codecov}: {env:TOXPYTHON:python39}
+        {bootstrap,clean,check,report,docs,codecov}: {env:TOXPYTHON:python312}
     setenv =
         PYTHONPATH={toxinidir}/tests
         PYTHONUNBUFFERED=yes

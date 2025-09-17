@@ -277,7 +277,7 @@ class SEIR_ABM:
             sc.printcyan("Simulation complete.")
 
         self.perf_stats.log(logger)
-        # step_stats.log(logger)
+        step_stats.log(logger)
 
         return
 
@@ -1453,8 +1453,8 @@ class Transmission_ABM:
                     f"Tot exp exposures: {total_expected:.2f}, Total pois draw: {tot_poisson_draw}, Tot realized exposures: {num_new_exposed}"
                 )
 
-        # if self.sim.t == self.sim.nt - 1:
-        #     self.step_stats.log(logger)
+        if self.sim.t == self.sim.nt - 1:
+            self.step_stats.log(logger)
 
         return
 
